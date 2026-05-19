@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="ja" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="google" content="notranslate">
+<meta name="theme-color" content="#0e0d0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>日本語 — Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: 'Crimson Pro', Georgia, serif;
+  background: #0e0d0b;
+  color: #e8e2d9;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overscroll-behavior-y: contain;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+button { font-family: inherit; -webkit-appearance: none; appearance: none; }
+
+/* ── Top bar ── */
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  min-height: 48px;
+  padding-top: max(12px, env(safe-area-inset-top));
+  padding-bottom: 12px;
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  background: #0e0d0b;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.top-title {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6b5e45;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.btn-mode {
+  background: none;
+  border: 1px solid rgba(200,185,154,0.25);
+  color: #6b5e45;
+  font-size: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: border-color 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+.btn-mode:hover, .btn-mode:focus-visible, .btn-mode:active {
+  border-color: rgba(200,185,154,0.5);
+  color: #c8b99a;
+  outline: none;
+}
+.back-link {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: #6b5e45;
+  text-decoration: none;
+  white-space: nowrap;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  transition: color 0.15s;
+}
+.back-link:hover, .back-link:focus-visible { color: #c8b99a; outline: none; }
+
+/* ── Main ── */
+.main {
+  padding-top: 32px;
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-bottom: max(64px, calc(40px + env(safe-area-inset-bottom)));
+  min-height: calc(100dvh - 48px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+}
+
+/* ── Card ── */
+.card {
+  width: 100%;
+  max-width: 520px;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 2px;
+  background: rgba(255,255,255,0.02);
+}
+
+/* ── Drill selection ── */
+.select-screen { width: 100%; max-width: 520px; padding: 0; }
+.select-heading {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6b5e45;
+  margin-bottom: 16px;
+}
+.drill-cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 40px; }
+.select-divider {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin: 0 0 28px;
+}
+.drill-card {
+  width: 100%;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 2px;
+  padding: 16px 20px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+  min-height: 44px;
+  user-select: none;
+  box-sizing: border-box;
+}
+.drill-card:hover, .drill-card:focus-visible, .drill-card:active {
+  border-color: rgba(200,185,154,0.3);
+  background: rgba(255,255,255,0.04);
+  outline: none;
+}
+.drill-card.selected {
+  border-color: rgba(200,185,154,0.6);
+  background: rgba(168,152,128,0.08);
+}
+.drill-card:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.drill-card-label {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 15px;
+  color: #c8b99a;
+  margin-bottom: 4px;
+}
+.drill-card-desc {
+  font-size: 13px;
+  color: #6b5e45;
+  font-style: italic;
+}
+.drill-notice {
+  font-size: 12px;
+  color: #a07050;
+  font-style: italic;
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+/* ── Round length selector ── */
+.round-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+.round-label {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6b5e45;
+  flex-shrink: 0;
+}
+.round-btns { display: flex; gap: 8px; }
+.btn-round {
+  background: none;
+  border: 1px solid rgba(200,185,154,0.25);
+  color: #6b5e45;
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 14px;
+  min-width: 56px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  user-select: none;
+}
+.btn-round:hover, .btn-round:focus-visible, .btn-round:active {
+  border-color: rgba(200,185,154,0.5);
+  color: #c8b99a;
+  outline: none;
+}
+.btn-round.selected {
+  border-color: rgba(200,185,154,0.7);
+  color: #c8b99a;
+  background: rgba(168,152,128,0.12);
+}
+
+/* ── Start button ── */
+.btn-start {
+  width: 100%;
+  max-width: 520px;
+  background: rgba(200,185,154,0.1);
+  border: 1px solid rgba(200,185,154,0.35);
+  color: #c8b99a;
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 14px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  min-height: 52px;
+  user-select: none;
+  box-sizing: border-box;
+}
+.btn-start:hover, .btn-start:focus-visible, .btn-start:active {
+  background: rgba(200,185,154,0.18);
+  border-color: rgba(200,185,154,0.6);
+  outline: none;
+}
+.btn-start:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Quiz card ── */
+.quiz-card { width: 100%; max-width: 520px; }
+.card-header {
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-drill-name {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #6b5e45;
+}
+.card-progress-text {
+  font-size: 12px;
+  color: #6b5e45;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Progress bar */
+.progress-bar-wrap {
+  height: 2px;
+  background: rgba(255,255,255,0.05);
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: #a89880;
+  transition: width 0.3s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar-fill { transition: none; }
+}
+
+/* Question area */
+.question-area {
+  padding: 36px 24px 28px;
+  text-align: center;
+  user-select: text;
+}
+.q-kanji {
+  font-family: 'Noto Serif JP', serif;
+  font-size: min(14vw, 5rem);
+  font-weight: 300;
+  color: #f0ebe0;
+  line-height: 1.2;
+  word-break: keep-all;
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+.q-reading {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.8rem;
+  font-weight: 300;
+  color: #a89880;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+.q-meaning {
+  font-size: 1.1rem;
+  color: #6b5e45;
+  font-style: italic;
+}
+
+/* Options */
+.options-list {
+  list-style: none;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+.options-list li { border-bottom: 1px solid rgba(255,255,255,0.04); }
+.options-list li:last-child { border-bottom: none; }
+.btn-option {
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 20px;
+  min-height: 56px;
+  transition: background 0.12s;
+  user-select: none;
+  white-space: normal;
+  word-break: break-word;
+  text-align: left;
+  box-sizing: border-box;
+}
+.btn-option:hover, .btn-option:focus-visible, .btn-option:active {
+  background: rgba(255,255,255,0.03);
+  outline: none;
+}
+.btn-option:disabled { cursor: default; }
+.btn-option:disabled:hover { background: none; }
+.option-key {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: #4a4030;
+  width: 16px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  padding-top: 2px;
+}
+.option-text {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 15px;
+  color: #c8b99a;
+  text-align: left;
+  line-height: 1.5;
+}
+.option-text .opt-en {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 13px;
+  color: #6b5e45;
+  font-style: italic;
+}
+
+/* Answer feedback states */
+.btn-option.correct {
+  background: rgba(120,200,120,0.12);
+  border-left: 3px solid rgba(120,200,120,0.6);
+}
+.btn-option.wrong {
+  background: rgba(200,80,80,0.12);
+  border-left: 3px solid rgba(200,80,80,0.5);
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-option.correct, .btn-option.wrong { transition: none; }
+}
+
+/* ── Katakana English reveal ── */
+.katakana-english {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-style: italic;
+  font-size: 1.1rem;
+  color: #a89880;
+  text-align: center;
+  margin-top: 10px;
+  opacity: 0;
+  transition: opacity 200ms ease;
+  min-height: 1.4em;
+}
+.katakana-english.visible { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .katakana-english { transition: none; }
+}
+
+/* ── Results screen ── */
+.results-card {
+  width: 100%;
+  max-width: 520px;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 2px;
+  background: rgba(255,255,255,0.02);
+  padding: 40px 32px 36px;
+  text-align: center;
+}
+.results-label {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6b5e45;
+  margin-bottom: 28px;
+}
+.results-score {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 3.5rem;
+  font-weight: 300;
+  color: #f0ebe0;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+.results-pct {
+  font-size: 1.2rem;
+  color: #a89880;
+  margin-bottom: 36px;
+}
+.results-btns { display: flex; flex-direction: column; gap: 12px; }
+.btn-results {
+  width: 100%;
+  background: none;
+  border: 1px solid rgba(200,185,154,0.3);
+  color: #c8b99a;
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  padding: 13px 20px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  min-height: 48px;
+  user-select: none;
+}
+.btn-results:hover, .btn-results:focus-visible, .btn-results:active {
+  background: rgba(200,185,154,0.08);
+  border-color: rgba(200,185,154,0.55);
+  outline: none;
+}
+
+/* ── Light mode ── */
+body.light {
+  background: #f5efe3;
+  color: #2a1e0a;
+}
+body.light .top-bar {
+  background: #f5efe3;
+  border-bottom-color: rgba(0,0,0,0.08);
+}
+body.light .top-title { color: #8a6040; }
+body.light .btn-mode { border-color: rgba(100,70,40,0.3); color: #7a5830; }
+body.light .btn-mode:hover, body.light .btn-mode:focus-visible { border-color: rgba(100,70,40,0.6); color: #3a1e00; }
+body.light .back-link { color: #8a6040; }
+body.light .back-link:hover { color: #3a1e00; }
+body.light .select-heading { color: #8a6040; }
+body.light .drill-card { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.1); }
+body.light .drill-card:hover, body.light .drill-card:focus-visible { background: rgba(0,0,0,0.04); border-color: rgba(100,70,40,0.3); }
+body.light .drill-card.selected { border-color: rgba(100,70,40,0.6); background: rgba(100,70,40,0.07); }
+body.light .drill-card-label { color: #2a1e0a; }
+body.light .drill-card-desc { color: #8a6040; }
+body.light .drill-notice { color: #c05030; }
+body.light .round-label { color: #8a6040; }
+body.light .btn-round { border-color: rgba(100,70,40,0.3); color: #7a5830; }
+body.light .btn-round:hover, body.light .btn-round:focus-visible { border-color: rgba(100,70,40,0.6); color: #3a1e00; }
+body.light .btn-round.selected { border-color: rgba(100,70,40,0.7); color: #3a1e00; background: rgba(100,70,40,0.08); }
+body.light .btn-start { background: rgba(100,70,40,0.08); border-color: rgba(100,70,40,0.35); color: #5a3010; }
+body.light .btn-start:hover, body.light .btn-start:focus-visible { background: rgba(100,70,40,0.14); border-color: rgba(100,70,40,0.6); }
+body.light .card, body.light .quiz-card .card, body.light .results-card {
+  border-color: rgba(0,0,0,0.1);
+  background: rgba(0,0,0,0.02);
+}
+body.light .card-header { border-bottom-color: rgba(0,0,0,0.08); }
+body.light .card-drill-name { color: #8a6040; }
+body.light .card-progress-text { color: #8a6040; }
+body.light .progress-bar-wrap { background: rgba(0,0,0,0.08); }
+body.light .progress-bar-fill { background: #8a6040; }
+body.light .q-kanji { color: #1a0e00; }
+body.light .q-reading { color: #8a6040; }
+body.light .q-meaning { color: #8a6040; }
+body.light .katakana-english { color: #8a6040; }
+body.light .options-list li { border-bottom-color: rgba(0,0,0,0.06); }
+body.light .btn-option:hover, body.light .btn-option:focus-visible { background: rgba(0,0,0,0.03); }
+body.light .option-key { color: #b0906a; }
+body.light .option-text { color: #3a1e00; }
+body.light .option-text .opt-en { color: #8a6040; }
+body.light .btn-option.correct { background: rgba(60,140,60,0.1); border-left-color: rgba(60,140,60,0.5); }
+body.light .btn-option.wrong { background: rgba(180,50,50,0.1); border-left-color: rgba(180,50,50,0.5); }
+body.light .results-card { border-color: rgba(0,0,0,0.1); background: rgba(0,0,0,0.02); }
+body.light .results-label { color: #8a6040; }
+body.light .results-score { color: #1a0e00; }
+body.light .results-pct { color: #8a6040; }
+body.light .btn-results { border-color: rgba(100,70,40,0.3); color: #5a3010; }
+body.light .btn-results:hover, body.light .btn-results:focus-visible { background: rgba(100,70,40,0.07); border-color: rgba(100,70,40,0.55); }
+body.light .select-divider { border-top-color: rgba(0,0,0,0.1); }
+
+@media (max-width: 400px) {
+  .drill-card { padding: 14px 16px; }
+  .drill-card-label { font-size: 14px; }
+  .drill-card-desc { font-size: 12px; }
+  .btn-option { padding: 12px 14px; font-size: 0.95rem; }
+  .question-area { padding: 24px 16px 20px; }
+}
+</style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="btn-mode" id="btnMode" onclick="toggleMode()" aria-label="Toggle theme" aria-pressed="false">☀</button>
+  <span class="top-title">Japanese Quiz</span>
+  <a class="back-link" href="./japanese-vocab.html">← Back to vocab</a>
+</header>
+<main class="main" id="main">
+  <!-- rendered by render() -->
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  KATAKANA BANK  (300+ entries)
+// ═══════════════════════════════════════════════════════════════
+const KATAKANA_BANK = [
+  // Food & Beverage
+  { k: "レストラン",       h: "れすとらん",     e: "restaurant" },
+  { k: "コーヒー",         h: "こーひー",       e: "coffee" },
+  { k: "ビール",           h: "びーる",         e: "beer" },
+  { k: "ケーキ",           h: "けーき",         e: "cake" },
+  { k: "アイスクリーム",   h: "あいすくりーむ", e: "ice cream" },
+  { k: "ラーメン",         h: "らーめん",       e: "ramen" },
+  { k: "パスタ",           h: "ぱすた",         e: "pasta" },
+  { k: "サンドイッチ",     h: "さんどいっち",   e: "sandwich" },
+  { k: "ジュース",         h: "じゅーす",       e: "juice" },
+  { k: "ミルク",           h: "みるく",         e: "milk" },
+  { k: "チーズ",           h: "ちーず",         e: "cheese" },
+  { k: "バター",           h: "ばたー",         e: "butter" },
+  { k: "チョコレート",     h: "ちょこれーと",   e: "chocolate" },
+  { k: "オレンジ",         h: "おれんじ",       e: "orange" },
+  { k: "バナナ",           h: "ばなな",         e: "banana" },
+  { k: "トマト",           h: "とまと",         e: "tomato" },
+  { k: "レモン",           h: "れもん",         e: "lemon" },
+  { k: "サラダ",           h: "さらだ",         e: "salad" },
+  { k: "ピザ",             h: "ぴざ",           e: "pizza" },
+  { k: "ハンバーガー",     h: "はんばーがー",   e: "hamburger" },
+  { k: "フライドポテト",   h: "ふらいどぽてと", e: "French fries" },
+  { k: "ステーキ",         h: "すてーき",       e: "steak" },
+  { k: "シーフード",       h: "しーふーど",     e: "seafood" },
+  { k: "スープ",           h: "すーぷ",         e: "soup" },
+  { k: "カレー",           h: "かれー",         e: "curry" },
+  { k: "ワイン",           h: "わいん",         e: "wine" },
+  { k: "ウイスキー",       h: "ういすきー",     e: "whisky" },
+  { k: "ドーナツ",         h: "どーなつ",       e: "doughnut" },
+  { k: "クッキー",         h: "くっきー",       e: "cookie" },
+  { k: "エスプレッソ",     h: "えすぷれっそ",   e: "espresso" },
+  { k: "カプチーノ",       h: "かぷちーの",     e: "cappuccino" },
+  { k: "オムレツ",         h: "おむれつ",       e: "omelette" },
+  { k: "スムージー",       h: "すむーじー",     e: "smoothie" },
+  { k: "ヨーグルト",       h: "よーぐると",     e: "yogurt" },
+  { k: "アボカド",         h: "あぼかど",       e: "avocado" },
+  { k: "ブロッコリー",     h: "ぶろっこりー",   e: "broccoli" },
+  { k: "ポテト",           h: "ぽてと",         e: "potato" },
+  { k: "キャベツ",         h: "きゃべつ",       e: "cabbage" },
+  { k: "マスタード",       h: "ますたーど",     e: "mustard" },
+  { k: "ケチャップ",       h: "けちゃっぷ",     e: "ketchup" },
+  { k: "マヨネーズ",       h: "まよねーず",     e: "mayonnaise" },
+  { k: "ソース",           h: "そーす",         e: "sauce" },
+  { k: "バニラ",           h: "ばにら",         e: "vanilla" },
+  { k: "キャラメル",       h: "きゃらめる",     e: "caramel" },
+  { k: "マフィン",         h: "まふぃん",       e: "muffin" },
+  { k: "クレープ",         h: "くれーぷ",       e: "crêpe" },
+  { k: "ワッフル",         h: "わっふる",       e: "waffle" },
+  { k: "パンケーキ",       h: "ぱんけーき",     e: "pancake" },
+  { k: "グラノーラ",       h: "ぐらのーら",     e: "granola" },
+  { k: "カフェ",           h: "かふぇ",         e: "café" },
+  { k: "ランチ",           h: "らんち",         e: "lunch" },
+  { k: "ディナー",         h: "でぃなー",       e: "dinner" },
+
+  // Household & Everyday Items
+  { k: "テレビ",           h: "てれび",         e: "TV" },
+  { k: "カメラ",           h: "かめら",         e: "camera" },
+  { k: "ラジオ",           h: "らじお",         e: "radio" },
+  { k: "パソコン",         h: "ぱそこん",       e: "computer" },
+  { k: "スマートフォン",   h: "すまーとふぉん", e: "smartphone" },
+  { k: "タブレット",       h: "たぶれっと",     e: "tablet" },
+  { k: "キーボード",       h: "きーぼーど",     e: "keyboard" },
+  { k: "マウス",           h: "まうす",         e: "mouse" },
+  { k: "プリンター",       h: "ぷりんたー",     e: "printer" },
+  { k: "ソファ",           h: "そふぁ",         e: "sofa" },
+  { k: "カーテン",         h: "かーてん",       e: "curtain" },
+  { k: "カーペット",       h: "かーぺっと",     e: "carpet" },
+  { k: "クッション",       h: "くっしょん",     e: "cushion" },
+  { k: "タオル",           h: "たおる",         e: "towel" },
+  { k: "シャンプー",       h: "しゃんぷー",     e: "shampoo" },
+  { k: "コンディショナー", h: "こんでぃしょなー", e: "conditioner" },
+  { k: "バッグ",           h: "ばっぐ",         e: "bag" },
+  { k: "スーツケース",     h: "すーつけーす",   e: "suitcase" },
+  { k: "ウォレット",       h: "うぉれっと",     e: "wallet" },
+  { k: "ネクタイ",         h: "ねくたい",       e: "necktie" },
+  { k: "ジャケット",       h: "じゃけっと",     e: "jacket" },
+  { k: "セーター",         h: "せーたー",       e: "sweater" },
+  { k: "コート",           h: "こーと",         e: "coat" },
+  { k: "ブーツ",           h: "ぶーつ",         e: "boots" },
+  { k: "スニーカー",       h: "すにーかー",     e: "sneakers" },
+  { k: "サングラス",       h: "さんぐらす",     e: "sunglasses" },
+  { k: "ヘルメット",       h: "へるめっと",     e: "helmet" },
+  { k: "リモコン",         h: "りもこん",       e: "remote control" },
+  { k: "ドライヤー",       h: "どらいやー",     e: "hair dryer" },
+  { k: "アイロン",         h: "あいろん",       e: "iron" },
+  { k: "ランプ",           h: "らんぷ",         e: "lamp" },
+  { k: "シーツ",           h: "しーつ",         e: "bed sheets" },
+  { k: "マットレス",       h: "まっとれす",     e: "mattress" },
+  { k: "ボトル",           h: "ぼとる",         e: "bottle" },
+
+  // Entertainment & Media
+  { k: "ゲーム",           h: "げーむ",         e: "game" },
+  { k: "アニメ",           h: "あにめ",         e: "anime" },
+  { k: "マンガ",           h: "まんが",         e: "manga" },
+  { k: "ミュージック",     h: "みゅーじっく",   e: "music" },
+  { k: "コンサート",       h: "こんさーと",     e: "concert" },
+  { k: "シアター",         h: "しあたー",       e: "theater" },
+  { k: "ドラマ",           h: "どらま",         e: "drama" },
+  { k: "ニュース",         h: "にゅーす",       e: "news" },
+  { k: "インターネット",   h: "いんたーねっと", e: "internet" },
+  { k: "ウェブサイト",     h: "うぇぶさいと",   e: "website" },
+  { k: "ブログ",           h: "ぶろぐ",         e: "blog" },
+  { k: "ポッドキャスト",   h: "ぽっどきゃすと", e: "podcast" },
+  { k: "ライブ",           h: "らいぶ",         e: "live show" },
+  { k: "アルバム",         h: "あるばむ",       e: "album" },
+  { k: "ギター",           h: "ぎたー",         e: "guitar" },
+  { k: "ピアノ",           h: "ぴあの",         e: "piano" },
+  { k: "ドラム",           h: "どらむ",         e: "drums" },
+  { k: "ステージ",         h: "すてーじ",       e: "stage" },
+  { k: "キャラクター",     h: "きゃらくたー",   e: "character" },
+  { k: "ストーリー",       h: "すとーりー",     e: "story" },
+  { k: "ムービー",         h: "むーびー",       e: "movie" },
+  { k: "コメディ",         h: "こめでぃ",       e: "comedy" },
+  { k: "アクション",       h: "あくしょん",     e: "action" },
+  { k: "ホラー",           h: "ほらー",         e: "horror" },
+  { k: "ポップス",         h: "ぽっぷす",       e: "pop music" },
+  { k: "ロック",           h: "ろっく",         e: "rock" },
+  { k: "ジャズ",           h: "じゃず",         e: "jazz" },
+  { k: "クラシック",       h: "くらしっく",     e: "classical" },
+  { k: "アイドル",         h: "あいどる",       e: "idol" },
+
+  // Sports & Fitness
+  { k: "サッカー",         h: "さっかー",       e: "soccer" },
+  { k: "テニス",           h: "てにす",         e: "tennis" },
+  { k: "バスケットボール", h: "ばすけっとぼーる", e: "basketball" },
+  { k: "バレーボール",     h: "ばれーぼーる",   e: "volleyball" },
+  { k: "スイミング",       h: "すいみんぐ",     e: "swimming" },
+  { k: "ランニング",       h: "らんにんぐ",     e: "running" },
+  { k: "ヨガ",             h: "よが",           e: "yoga" },
+  { k: "ジム",             h: "じむ",           e: "gym" },
+  { k: "スポーツ",         h: "すぽーつ",       e: "sport" },
+  { k: "チーム",           h: "ちーむ",         e: "team" },
+  { k: "ゴール",           h: "ごーる",         e: "goal" },
+  { k: "フィールド",       h: "ふぃーるど",     e: "field" },
+  { k: "トレーニング",     h: "とれーにんぐ",   e: "training" },
+  { k: "エクササイズ",     h: "えくささいず",   e: "exercise" },
+  { k: "ウォーキング",     h: "うぉーきんぐ",   e: "walking" },
+  { k: "サイクリング",     h: "さいくりんぐ",   e: "cycling" },
+  { k: "スキー",           h: "すきー",         e: "skiing" },
+  { k: "スケート",         h: "すけーと",       e: "skating" },
+  { k: "ボクシング",       h: "ぼくしんぐ",     e: "boxing" },
+  { k: "ゴルフ",           h: "ごるふ",         e: "golf" },
+  { k: "ラグビー",         h: "らぐびー",       e: "rugby" },
+  { k: "バドミントン",     h: "ばどみんとん",   e: "badminton" },
+  { k: "マラソン",         h: "まらそん",       e: "marathon" },
+  { k: "フィットネス",     h: "ふぃっとねす",   e: "fitness" },
+  { k: "プール",           h: "ぷーる",         e: "pool" },
+
+  // Places & Transport
+  { k: "ホテル",           h: "ほてる",         e: "hotel" },
+  { k: "アパート",         h: "あぱーと",       e: "apartment" },
+  { k: "マンション",       h: "まんしょん",     e: "condo" },
+  { k: "スーパー",         h: "すーぱー",       e: "supermarket" },
+  { k: "デパート",         h: "でぱーと",       e: "department store" },
+  { k: "コンビニ",         h: "こんびに",       e: "convenience store" },
+  { k: "バス",             h: "ばす",           e: "bus" },
+  { k: "タクシー",         h: "たくしー",       e: "taxi" },
+  { k: "トラック",         h: "とらっく",       e: "truck" },
+  { k: "エレベーター",     h: "えれべーたー",   e: "elevator" },
+  { k: "エスカレーター",   h: "えすかれーたー", e: "escalator" },
+  { k: "ターミナル",       h: "たーみなる",     e: "terminal" },
+  { k: "エアポート",       h: "えあぽーと",     e: "airport" },
+  { k: "スタジアム",       h: "すたじあむ",     e: "stadium" },
+  { k: "パーク",           h: "ぱーく",         e: "park" },
+  { k: "センター",         h: "せんたー",       e: "center" },
+  { k: "タワー",           h: "たわー",         e: "tower" },
+  { k: "ビル",             h: "びる",           e: "building" },
+  { k: "ガレージ",         h: "がれーじ",       e: "garage" },
+  { k: "ロビー",           h: "ろびー",         e: "lobby" },
+  { k: "トンネル",         h: "とんねる",       e: "tunnel" },
+  { k: "モール",           h: "もーる",         e: "mall" },
+  { k: "オフィス",         h: "おふぃす",       e: "office" },
+  { k: "レセプション",     h: "れせぷしょん",   e: "reception" },
+  { k: "リゾート",         h: "りぞーと",       e: "resort" },
+
+  // Technology & Science
+  { k: "ロボット",         h: "ろぼっと",       e: "robot" },
+  { k: "エンジン",         h: "えんじん",       e: "engine" },
+  { k: "システム",         h: "しすてむ",       e: "system" },
+  { k: "ネットワーク",     h: "ねっとわーく",   e: "network" },
+  { k: "データ",           h: "でーた",         e: "data" },
+  { k: "サーバー",         h: "さーばー",       e: "server" },
+  { k: "ソフトウェア",     h: "そふとうぇあ",   e: "software" },
+  { k: "アプリ",           h: "あぷり",         e: "app" },
+  { k: "プログラム",       h: "ぷろぐらむ",     e: "program" },
+  { k: "アルゴリズム",     h: "あるごりずむ",   e: "algorithm" },
+  { k: "バッテリー",       h: "ばってりー",     e: "battery" },
+  { k: "エネルギー",       h: "えねるぎー",     e: "energy" },
+  { k: "テクノロジー",     h: "てくのろじー",   e: "technology" },
+  { k: "サイエンス",       h: "さいえんす",     e: "science" },
+  { k: "ラボ",             h: "らぼ",           e: "lab" },
+  { k: "テスト",           h: "てすと",         e: "test" },
+  { k: "センサー",         h: "せんさー",       e: "sensor" },
+  { k: "モーター",         h: "もーたー",       e: "motor" },
+  { k: "コントローラー",   h: "こんとろーらー", e: "controller" },
+  { k: "モニター",         h: "もにたー",       e: "monitor" },
+  { k: "クラウド",         h: "くらうど",       e: "cloud" },
+  { k: "データベース",     h: "でーたべーす",   e: "database" },
+  { k: "インターフェース", h: "いんたーふぇーす", e: "interface" },
+  { k: "デジタル",         h: "でじたる",       e: "digital" },
+  { k: "ウイルス",         h: "ういるす",       e: "virus" },
+  { k: "セキュリティ",     h: "せきゅりてぃ",   e: "security" },
+  { k: "プロセッサー",     h: "ぷろせっさー",   e: "processor" },
+  { k: "ストレージ",       h: "すとれーじ",     e: "storage" },
+
+  // Nature & Weather
+  { k: "トロピカル",       h: "とろぴかる",     e: "tropical" },
+  { k: "ジャングル",       h: "じゃんぐる",     e: "jungle" },
+  { k: "サバンナ",         h: "さばんな",       e: "savanna" },
+  { k: "モンスーン",       h: "もんすーん",     e: "monsoon" },
+  { k: "ハリケーン",       h: "はりけーん",     e: "hurricane" },
+  { k: "タイフーン",       h: "たいふーん",     e: "typhoon" },
+  { k: "トルネード",       h: "とるねーど",     e: "tornado" },
+  { k: "オーシャン",       h: "おーしゃん",     e: "ocean" },
+  { k: "リバー",           h: "りばー",         e: "river" },
+  { k: "マウンテン",       h: "まうんてん",     e: "mountain" },
+  { k: "フォレスト",       h: "ふぉれすと",     e: "forest" },
+  { k: "クライメート",     h: "くらいめーと",   e: "climate" },
+  { k: "シーズン",         h: "しーずん",       e: "season" },
+  { k: "ハーブ",           h: "はーぶ",         e: "herb" },
+  { k: "フラワー",         h: "ふらわー",       e: "flower" },
+  { k: "コーラル",         h: "こーらる",       e: "coral" },
+  { k: "グレイシャー",     h: "ぐれいしゃー",   e: "glacier" },
+  { k: "バレー",           h: "ばれー",         e: "valley" },
+
+  // People & Social
+  { k: "パートナー",       h: "ぱーとなー",     e: "partner" },
+  { k: "メンバー",         h: "めんばー",       e: "member" },
+  { k: "グループ",         h: "ぐるーぷ",       e: "group" },
+  { k: "リーダー",         h: "りーだー",       e: "leader" },
+  { k: "マネージャー",     h: "まねーじゃー",   e: "manager" },
+  { k: "スタッフ",         h: "すたっふ",       e: "staff" },
+  { k: "ボランティア",     h: "ぼらんてぃあ",   e: "volunteer" },
+  { k: "アーティスト",     h: "あーてぃすと",   e: "artist" },
+  { k: "デザイナー",       h: "でざいなー",     e: "designer" },
+  { k: "エンジニア",       h: "えんじにあ",     e: "engineer" },
+  { k: "ドクター",         h: "どくたー",       e: "doctor" },
+  { k: "ナース",           h: "なーす",         e: "nurse" },
+  { k: "ティーチャー",     h: "てぃーちゃー",   e: "teacher" },
+  { k: "コーチ",           h: "こーち",         e: "coach" },
+  { k: "ファン",           h: "ふぁん",         e: "fan" },
+  { k: "ゲスト",           h: "げすと",         e: "guest" },
+  { k: "ホスト",           h: "ほすと",         e: "host" },
+  { k: "タレント",         h: "たれんと",       e: "talent" },
+  { k: "モデル",           h: "もでる",         e: "model" },
+  { k: "ヒーロー",         h: "ひーろー",       e: "hero" },
+  { k: "スター",           h: "すたー",         e: "star" },
+  { k: "セレブ",           h: "せれぶ",         e: "celebrity" },
+  { k: "パイロット",       h: "ぱいろっと",     e: "pilot" },
+
+  // Business
+  { k: "ビジネス",         h: "びじねす",       e: "business" },
+  { k: "ミーティング",     h: "みーてぃんぐ",   e: "meeting" },
+  { k: "プロジェクト",     h: "ぷろじぇくと",   e: "project" },
+  { k: "スケジュール",     h: "すけじゅーる",   e: "schedule" },
+  { k: "プレゼン",         h: "ぷれぜん",       e: "presentation" },
+  { k: "レポート",         h: "れぽーと",       e: "report" },
+  { k: "ファイル",         h: "ふぁいる",       e: "file" },
+  { k: "メール",           h: "めーる",         e: "email" },
+  { k: "チャット",         h: "ちゃっと",       e: "chat" },
+  { k: "ビデオ",           h: "びでお",         e: "video" },
+  { k: "オンライン",       h: "おんらいん",     e: "online" },
+  { k: "リモート",         h: "りもーと",       e: "remote" },
+  { k: "ボーナス",         h: "ぼーなす",       e: "bonus" },
+  { k: "クライアント",     h: "くらいあんと",   e: "client" },
+  { k: "サービス",         h: "さーびす",       e: "service" },
+  { k: "ブランド",         h: "ぶらんど",       e: "brand" },
+  { k: "マーケット",       h: "まーけっと",     e: "market" },
+  { k: "プレミアム",       h: "ぷれみあむ",     e: "premium" },
+
+  // General / Miscellaneous
+  { k: "スタイル",         h: "すたいる",       e: "style" },
+  { k: "デザイン",         h: "でざいん",       e: "design" },
+  { k: "アイデア",         h: "あいであ",       e: "idea" },
+  { k: "テーマ",           h: "てーま",         e: "theme" },
+  { k: "イメージ",         h: "いめーじ",       e: "image" },
+  { k: "ポイント",         h: "ぽいんと",       e: "point" },
+  { k: "レベル",           h: "れべる",         e: "level" },
+  { k: "チャンス",         h: "ちゃんす",       e: "chance" },
+  { k: "リスク",           h: "りすく",         e: "risk" },
+  { k: "スタート",         h: "すたーと",       e: "start" },
+  { k: "バランス",         h: "ばらんす",       e: "balance" },
+  { k: "テクニック",       h: "てくにっく",     e: "technique" },
+  { k: "スキル",           h: "すきる",         e: "skill" },
+  { k: "パターン",         h: "ぱたーん",       e: "pattern" },
+  { k: "サンプル",         h: "さんぷる",       e: "sample" },
+  { k: "オリジナル",       h: "おりじなる",     e: "original" },
+  { k: "スペシャル",       h: "すぺしゃる",     e: "special" },
+  { k: "ノーマル",         h: "のーまる",       e: "normal" },
+  { k: "シンプル",         h: "しんぷる",       e: "simple" },
+  { k: "アドベンチャー",   h: "あどべんちゃー", e: "adventure" },
+  { k: "ミステリー",       h: "みすてりー",     e: "mystery" },
+  { k: "ファンタジー",     h: "ふぁんたじー",   e: "fantasy" },
+  { k: "ロマンス",         h: "ろまんす",       e: "romance" },
+  { k: "エレガント",       h: "えれがんと",     e: "elegant" },
+  { k: "クール",           h: "くーる",         e: "cool" },
+  { k: "フレッシュ",       h: "ふれっしゅ",     e: "fresh" },
+  { k: "ナチュラル",       h: "なちゅらる",     e: "natural" },
+  { k: "グローバル",       h: "ぐろーばる",     e: "global" },
+  { k: "スパ",             h: "すぱ",           e: "spa" },
+  { k: "サウナ",           h: "さうな",         e: "sauna" },
+  { k: "マッサージ",       h: "まっさーじ",     e: "massage" },
+  { k: "アロマ",           h: "あろま",         e: "aroma" },
+  { k: "セラピー",         h: "せらぴー",       e: "therapy" },
+  { k: "ハーモニー",       h: "はーもにー",     e: "harmony" },
+  { k: "リズム",           h: "りずむ",         e: "rhythm" },
+  { k: "メロディー",       h: "めろでぃー",     e: "melody" },
+  { k: "テンポ",           h: "てんぽ",         e: "tempo" },
+  { k: "ボリューム",       h: "ぼりゅーむ",     e: "volume" },
+  { k: "エネルギー",       h: "えねるぎー",     e: "energy" },
+  { k: "カラー",           h: "からー",         e: "color" },
+  { k: "スペース",         h: "すぺーす",       e: "space" },
+  { k: "スクリーン",       h: "すくりーん",     e: "screen" },
+  { k: "ネオン",           h: "ねおん",         e: "neon" },
+  { k: "ガラス",           h: "がらす",         e: "glass" },
+  { k: "プラスチック",     h: "ぷらすちっく",   e: "plastic" },
+  { k: "ゴム",             h: "ごむ",           e: "rubber" },
+  { k: "メタル",           h: "めたる",         e: "metal" },
+  { k: "ダイヤモンド",     h: "だいやもんど",   e: "diamond" },
+  { k: "シルバー",         h: "しるばー",       e: "silver" },
+  { k: "ゴールド",         h: "ごーるど",       e: "gold" },
+  { k: "クリスタル",       h: "くりすたる",     e: "crystal" },
+  { k: "パール",           h: "ぱーる",         e: "pearl" },
+  { k: "ビタミン",         h: "びたみん",       e: "vitamin" },
+  { k: "カルシウム",       h: "かるしうむ",     e: "calcium" },
+  { k: "プロテイン",       h: "ぷろていん",     e: "protein" },
+  { k: "カロリー",         h: "かろりー",       e: "calorie" },
+  { k: "ダイエット",       h: "だいえっと",     e: "diet" },
+  { k: "ストレス",         h: "すとれす",       e: "stress" },
+  { k: "リラックス",       h: "りらっくす",     e: "relax" },
+  { k: "エネルギッシュ",   h: "えねるぎっしゅ", e: "energetic" },
+  { k: "ポジティブ",       h: "ぽじてぃぶ",     e: "positive" },
+  { k: "ネガティブ",       h: "ねがてぃぶ",     e: "negative" },
+  { k: "ユニーク",         h: "ゆにーく",       e: "unique" },
+  { k: "クリエイティブ",   h: "くりえいてぃぶ", e: "creative" },
+  { k: "インスピレーション", h: "いんすぴれーしょん", e: "inspiration" },
+  { k: "モチベーション",   h: "もちべーしょん", e: "motivation" },
+  { k: "コミュニケーション", h: "こみゅにけーしょん", e: "communication" },
+  { k: "インフォメーション", h: "いんふぉめーしょん", e: "information" },
+  { k: "コレクション",     h: "これくしょん",   e: "collection" },
+  { k: "セレクション",     h: "せれくしょん",   e: "selection" },
+  { k: "プロフェッショナル", h: "ぷろふぇっしょなる", e: "professional" },
+  { k: "インテリジェント", h: "いんてりじぇんと", e: "intelligent" },
+  { k: "コンフィデンス",   h: "こんふぃでんす", e: "confidence" },
+  { k: "ドレス",           h: "どれす",         e: "dress" },
+  { k: "スーツ",           h: "すーつ",         e: "suit" },
+  { k: "シャツ",           h: "しゃつ",         e: "shirt" },
+  { k: "パンツ",           h: "ぱんつ",         e: "pants" },
+  { k: "スカート",         h: "すかーと",       e: "skirt" },
+  { k: "ワンピース",       h: "わんぴーす",     e: "one-piece dress" },
+  { k: "アクセサリー",     h: "あくせさりー",   e: "accessory" },
+  { k: "ネックレス",       h: "ねっくれす",     e: "necklace" },
+  { k: "リング",           h: "りんぐ",         e: "ring" },
+  { k: "ブレスレット",     h: "ぶれすれっと",   e: "bracelet" },
+  { k: "イヤリング",       h: "いやりんぐ",     e: "earring" },
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════
+const LS_MODE        = 'jp-vocab-mode';
+const LS_ROUND_LEN   = 'jp-quiz-round-length';
+const LS_VOCAB       = 'jp-vocab-data';
+
+const state = {
+  screen:       'select',
+  drillType:    null,
+  roundLength:  10,
+  questions:    [],
+  currentIndex: 0,
+  score:        0,
+  answered:     false,
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════════════════
+function lsGet(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch(e) {} }
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function pickDistractors(pool, exclude, count) {
+  const filtered = pool.filter(x => x !== exclude);
+  return shuffle(filtered).slice(0, count);
+}
+
+function loadVocabWords() {
+  const raw = lsGet(LS_VOCAB);
+  if (!raw) return [];
+  try {
+    const deck = JSON.parse(raw);
+    return (deck.words || []).filter(w => w.w && w.r && w.m);
+  } catch(e) { return []; }
+}
+
+function reducedMotion() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  BUILD QUESTIONS
+// ═══════════════════════════════════════════════════════════════
+function buildQuestions() {
+  const { drillType, roundLength } = state;
+
+  if (drillType === 'katakana-reading') {
+    const shuffled = shuffle(KATAKANA_BANK);
+    const questions = [];
+    for (let i = 0; i < roundLength; i++) {
+      const correct = shuffled[i % shuffled.length];
+      const distractors = pickDistractors(KATAKANA_BANK, correct, 3);
+      const options = shuffle([
+        { ...correct, isCorrect: true },
+        ...distractors.map(d => ({ ...d, isCorrect: false })),
+      ]);
+      questions.push({ katakana: correct, options });
+    }
+    return questions;
+  }
+
+  // vocab drills
+  const words = loadVocabWords();
+  const pool = shuffle(words);
+  const questions = [];
+  const usedIndices = new Set();
+
+  for (let i = 0; i < roundLength; i++) {
+    let wordIdx;
+    if (usedIndices.size < pool.length) {
+      for (let j = 0; j < pool.length; j++) {
+        if (!usedIndices.has(j)) { wordIdx = j; break; }
+      }
+      usedIndices.add(wordIdx);
+    } else {
+      wordIdx = Math.floor(Math.random() * pool.length);
+    }
+    const correct = pool[wordIdx];
+    const distractors = pickDistractors(pool, correct, 3);
+    const options = shuffle([
+      { ...correct, isCorrect: true },
+      ...distractors.map(d => ({ ...d, isCorrect: false })),
+    ]);
+    questions.push({ word: correct, options });
+  }
+  return questions;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════════════════
+function render() {
+  const main = document.getElementById('main');
+  if (state.screen === 'select')  { main.innerHTML = renderSelect();  }
+  if (state.screen === 'quiz')    { main.innerHTML = renderQuiz();    }
+  if (state.screen === 'results') { main.innerHTML = renderResults(); }
+}
+
+// ── Screen 1 ──
+function renderSelect() {
+  const words = loadVocabWords();
+  const enoughWords = words.length >= 4;
+  const saved = parseInt(lsGet(LS_ROUND_LEN), 10);
+  if ([5, 10, 20].includes(saved)) state.roundLength = saved;
+
+  const drills = [
+    { id: 'kanji-to-reading', label: 'Kanji → Reading & Meaning', desc: 'See a kanji word. Pick its hiragana reading + English meaning from 4 options.', needsVocab: true },
+    { id: 'reading-to-kanji', label: 'Reading → Kanji',          desc: 'See the hiragana reading and English meaning. Pick the correct kanji from 4 options.', needsVocab: true },
+    { id: 'katakana-reading', label: 'Katakana Reading Drill',    desc: 'See a katakana word. Pick its hiragana reading from 4 options.', needsVocab: false },
+  ];
+
+  const drillCards = drills.map(d => {
+    const disabled = d.needsVocab && !enoughWords;
+    const selected = state.drillType === d.id;
+    return `<button class="drill-card${selected ? ' selected' : ''}"
+      ${disabled ? 'disabled' : ''}
+      onclick="selectDrill('${d.id}')"
+      aria-pressed="${selected}">
+      <div class="drill-card-label">${d.label}</div>
+      <div class="drill-card-desc">${d.desc}</div>
+    </button>`;
+  }).join('');
+
+  const notice = !enoughWords
+    ? `<p class="drill-notice">Add at least 4 words to your vocabulary deck to use the kanji drills.</p>`
+    : '';
+
+  const roundBtns = [5, 10, 20].map(n =>
+    `<button class="btn-round${state.roundLength === n ? ' selected' : ''}" onclick="setRoundLength(${n})" aria-pressed="${state.roundLength === n}">${n}</button>`
+  ).join('');
+
+  const canStart = state.drillType !== null;
+
+  return `<div class="select-screen">
+    <p class="select-heading">Choose a drill</p>
+    <div class="drill-cards">${drillCards}</div>
+    <hr class="select-divider">
+    ${notice}
+    <div class="round-row">
+      <span class="round-label">Questions</span>
+      <div class="round-btns">${roundBtns}</div>
+    </div>
+    <button class="btn-start" onclick="startQuiz()" ${canStart ? '' : 'disabled'}>Start</button>
+  </div>`;
+}
+
+// ── Screen 2 ──
+function renderQuiz() {
+  const q = state.questions[state.currentIndex];
+  const total = state.questions.length;
+  const num = state.currentIndex + 1;
+  const pct = Math.round((num / total) * 100);
+
+  const drillNames = {
+    'kanji-to-reading': 'Kanji → Reading',
+    'reading-to-kanji': 'Reading → Kanji',
+    'katakana-reading': 'Katakana Reading',
+  };
+  const drillName = drillNames[state.drillType] || '';
+
+  let questionHTML = '';
+  if (state.drillType === 'kanji-to-reading') {
+    questionHTML = `<div class="q-kanji">${q.word.w}</div>`;
+  } else if (state.drillType === 'reading-to-kanji') {
+    questionHTML = `<div class="q-reading">${q.word.r}</div><div class="q-meaning">${q.word.m}</div>`;
+  } else {
+    questionHTML = `<div class="q-kanji">${q.katakana.k}</div><p class="katakana-english"></p>`;
+  }
+
+  const keys = ['A', 'B', 'C', 'D'];
+  const optionItems = q.options.map((opt, i) => {
+    let text = '';
+    if (state.drillType === 'kanji-to-reading') {
+      text = `<span>${opt.r}</span> <span class="opt-en">• ${opt.m}</span>`;
+    } else if (state.drillType === 'reading-to-kanji') {
+      text = `<span>${opt.w}</span>`;
+    } else {
+      text = `<span>${opt.h}</span>`;
+    }
+    const ariaLabel = state.drillType === 'kanji-to-reading'
+      ? `${keys[i]}: ${opt.r}, ${opt.m}`
+      : state.drillType === 'reading-to-kanji'
+        ? `${keys[i]}: ${opt.w}`
+        : `${keys[i]}: ${opt.h}`;
+
+    return `<li>
+      <button class="btn-option" data-index="${i}" onclick="handleAnswer(${i})"
+        ${state.answered ? 'disabled' : ''}
+        aria-label="${ariaLabel}">
+        <span class="option-key">${keys[i]}</span>
+        <span class="option-text">${text}</span>
+      </button>
+    </li>`;
+  }).join('');
+
+  return `<div class="quiz-card card">
+    <div class="card-header">
+      <span class="card-drill-name">${drillName}</span>
+      <span class="card-progress-text">${num} / ${total}</span>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" style="width: ${pct}%"></div>
+    </div>
+    <div class="question-area">${questionHTML}</div>
+    <ul class="options-list">${optionItems}</ul>
+  </div>`;
+}
+
+// ── Screen 3 ──
+function renderResults() {
+  const total = state.questions.length;
+  const score = state.score;
+  const pct = Math.round((score / total) * 100);
+  return `<div class="results-card">
+    <p class="results-label">Results</p>
+    <div class="results-score">${score} / ${total}</div>
+    <div class="results-pct">${pct}% correct</div>
+    <div class="results-btns">
+      <button class="btn-results" onclick="tryAgain()">Try again — same drill</button>
+      <button class="btn-results" onclick="changeDrill()">Change drill</button>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ACTIONS
+// ═══════════════════════════════════════════════════════════════
+function selectDrill(id) {
+  state.drillType = id;
+  render();
+}
+
+function setRoundLength(n) {
+  state.roundLength = n;
+  lsSet(LS_ROUND_LEN, String(n));
+  render();
+}
+
+function startQuiz() {
+  if (!state.drillType) return;
+  state.questions    = buildQuestions();
+  state.currentIndex = 0;
+  state.score        = 0;
+  state.answered     = false;
+  state.screen       = 'quiz';
+  render();
+}
+
+function handleAnswer(optionIndex) {
+  if (state.answered) return;
+  state.answered = true;
+
+  const q = state.questions[state.currentIndex];
+  const chosen = q.options[optionIndex];
+  const isCorrect = chosen.isCorrect;
+  if (isCorrect) state.score++;
+
+  // Apply visual feedback immediately
+  const buttons = document.querySelectorAll('.btn-option');
+  buttons.forEach(btn => { btn.disabled = true; });
+  buttons[optionIndex].classList.add(isCorrect ? 'correct' : 'wrong');
+  if (!isCorrect) {
+    const correctIdx = q.options.findIndex(o => o.isCorrect);
+    if (correctIdx >= 0) buttons[correctIdx].classList.add('correct');
+  }
+
+  // Reveal English meaning for katakana drill
+  if (state.drillType === 'katakana-reading') {
+    const engEl = document.querySelector('.katakana-english');
+    if (engEl) {
+      engEl.textContent = q.katakana.e;
+      // Force reflow so transition fires even if reduced-motion skips it
+      engEl.getBoundingClientRect();
+      engEl.classList.add('visible');
+    }
+  }
+
+  const delay = reducedMotion() ? 800 : 800;
+  setTimeout(() => {
+    state.currentIndex++;
+    state.answered = false;
+    if (state.currentIndex >= state.questions.length) {
+      state.screen = 'results';
+    }
+    render();
+  }, delay);
+}
+
+function tryAgain() {
+  state.questions    = buildQuestions();
+  state.currentIndex = 0;
+  state.score        = 0;
+  state.answered     = false;
+  state.screen       = 'quiz';
+  render();
+}
+
+function changeDrill() {
+  state.screen    = 'select';
+  state.drillType = null;
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  THEME
+// ═══════════════════════════════════════════════════════════════
+function toggleMode() {
+  const isLight = document.body.classList.toggle('light');
+  const sym = isLight ? '🌙' : '☀';
+  const btn = document.getElementById('btnMode');
+  if (btn) {
+    btn.textContent = sym;
+    btn.setAttribute('aria-pressed', String(isLight));
+  }
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', isLight ? '#f5efe3' : '#0e0d0b');
+  lsSet(LS_MODE, isLight ? 'light' : 'dark');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  KEYBOARD
+// ═══════════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (state.screen !== 'quiz') return;
+  const map = { 'a': 0, 'b': 1, 'c': 2, 'd': 3 };
+  const key = e.key.toLowerCase();
+  if (key in map) {
+    e.preventDefault();
+    if (!state.answered) handleAnswer(map[key]);
+  }
+  // Block arrow key navigation during quiz
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') e.preventDefault();
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════
+function init() {
+  const mode = lsGet(LS_MODE);
+  if (mode === 'light') {
+    document.body.classList.add('light');
+    const btn = document.getElementById('btnMode');
+    if (btn) { btn.textContent = '🌙'; btn.setAttribute('aria-pressed', 'true'); }
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', '#f5efe3');
+  }
+  const savedLen = parseInt(lsGet(LS_ROUND_LEN), 10);
+  if ([5, 10, 20].includes(savedLen)) state.roundLength = savedLen;
+  render();
+}
+
+init();
+</script>
+</body>
+</html>

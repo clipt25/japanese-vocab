@@ -1,0 +1,1972 @@
+<!DOCTYPE html>
+<html lang="ja" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="google" content="notranslate">
+<meta name="theme-color" content="#0e0d0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>日本語 — Vocabulary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: 'Crimson Pro', Georgia, serif;
+  background: #0e0d0b;
+  color: #e8e2d9;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overscroll-behavior-y: contain;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button { font-family: inherit; -webkit-appearance: none; appearance: none; }
+input, textarea { font-family: inherit; -webkit-appearance: none; appearance: none; }
+
+/* ── Layout ── */
+.app {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* ── Sidebar (desktop / tablet) ── */
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.02);
+  border-right: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  padding-left: env(safe-area-inset-left);
+}
+
+.sidebar-title {
+  padding: 24px 20px 16px;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6b5e45;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.sidebar-title strong {
+  display: block;
+  font-family: 'Noto Serif JP', serif;
+  font-size: 18px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #c8b99a;
+  margin-bottom: 4px;
+}
+
+/* ── Add-word input ── */
+.add-word-wrap {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.add-word-input {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(200,185,154,0.18);
+  border-radius: 3px;
+  color: #e8e2d9;
+  font-size: 16px; /* prevents iOS zoom */
+  padding: 9px 11px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.add-word-input::placeholder { color: #5a5040; font-style: italic; }
+.add-word-input:focus { outline: none; border-color: rgba(200,185,154,0.55); background: rgba(255,255,255,0.06); }
+.add-word-input:disabled { opacity: 0.5; }
+.add-word-hint {
+  font-size: 10px;
+  color: #5a5040;
+  margin-top: 6px;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+/* ── Word list ── */
+.word-list {
+  list-style: none;
+  overflow-y: auto;
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: #3a3228 transparent;
+  padding: 6px 0;
+}
+.word-list::-webkit-scrollbar { width: 6px; }
+.word-list::-webkit-scrollbar-thumb { background: #3a3228; border-radius: 3px; }
+.word-list li button {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 9px 16px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  color: #7a6f5e;
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 14px;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+  border-left: 2px solid transparent;
+  min-height: 44px;
+}
+.word-list li button:hover { background: rgba(255,255,255,0.03); color: #c8b99a; }
+.word-list li.active button {
+  color: #c8b99a;
+  border-left-color: #a89880;
+  background: rgba(168,152,128,0.08);
+}
+.wl-w { font-family: 'Noto Serif JP', serif; font-size: 16px; line-height: 1.2; }
+.wl-r { font-size: 11px; color: #4a4030; letter-spacing: 0.02em; }
+.word-list li.active .wl-r { color: #8a7860; }
+
+/* ── Sidebar footer (settings/export/import) ── */
+.sidebar-footer {
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom)) 12px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.sidebar-footer button {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 1px solid rgba(200,185,154,0.18);
+  color: #7a6f5e;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 6px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  min-height: 36px;
+}
+.sidebar-footer button:hover { border-color: rgba(200,185,154,0.5); color: #c8b99a; }
+
+/* ── Main ── */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 24px 64px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-right: max(24px, env(safe-area-inset-right));
+}
+
+/* ── Top bar ── */
+.top-bar {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+.site-label {
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #4a4030;
+}
+.top-bar-right { display: flex; align-items: center; gap: 10px; }
+.counter {
+  font-size: 13px;
+  color: #6b5e45;
+  letter-spacing: 0.05em;
+}
+.sync-status {
+  font-size: 11px;
+  color: #6b5e45;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+  min-width: 0;
+  padding: 2px 6px;
+  border-radius: 3px;
+  transition: color 0.2s, background 0.2s;
+}
+.sync-status:hover { color: #c8b99a; }
+.sync-status.syncing { color: #c8b99a; }
+.sync-status.ok { color: #6b8a5b; }
+.sync-status.error { color: #c47a5b; }
+.sync-status.off { color: transparent; pointer-events: none; }
+body.light .sync-status { color: #7a6040; }
+body.light .sync-status:hover { color: #3a1e00; }
+body.light .sync-status.ok { color: #4a6a3b; }
+body.light .sync-status.error { color: #a04020; }
+@keyframes sync-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+.sync-status.syncing { animation: sync-pulse 1.2s ease-in-out infinite; }
+
+/* ── Mobile-only header (hidden on desktop) ── */
+.mobile-header { display: none; }
+
+/* ── Card area (wraps .card / .loading-card / .empty-card) ── */
+#cardArea {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* ── Card ── */
+.card {
+  width: 100%;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 2px;
+  background: rgba(255,255,255,0.02);
+  container-type: inline-size;
+  padding: 32px 32px 28px;
+  user-select: text;
+}
+
+/* Deck/source badge */
+.chapter-badge {
+  display: inline-block;
+  background-color: rgba(168,152,128,0.15);
+  color: #6b5e45;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 2px;
+  margin-bottom: 24px;
+}
+
+/* Word */
+.word {
+  font-family: 'Noto Serif JP', serif;
+  font-size: min(12cqi, 5.5rem);
+  font-weight: 300;
+  color: #f0ebe0;
+  line-height: 1.15;
+  margin-bottom: 28px;
+  word-break: keep-all;
+}
+
+/* Reveal sections */
+.reveal-section {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.4s ease, opacity 0.35s ease;
+}
+.reveal-section.open {
+  max-height: 9999px;
+  opacity: 1;
+}
+
+/* Reading */
+.reading {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.55rem;
+  font-weight: 300;
+  color: #a89880;
+  letter-spacing: 0.02em;
+}
+
+/* Details section */
+.pos-label {
+  font-size: 11px;
+  color: #7a6f5e;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 6px;
+}
+.meaning {
+  font-size: 1.2rem;
+  color: #c8b99a;
+  font-weight: 300;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+.mj-label {
+  font-size: 10px;
+  color: #6b5e45;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  margin-bottom: 6px;
+}
+.mj {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.05rem;
+  color: #8a7f6e;
+  line-height: 2.1;
+  margin-bottom: 24px;
+}
+.mj ruby rt {
+  font-size: 0.52em;
+  color: #6b5e45;
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-style: normal;
+  letter-spacing: 0.02em;
+}
+body.light .mj ruby rt { color: #8a6040; }
+
+/* Examples */
+.examples-label {
+  font-size: 11px;
+  color: #6b5e45;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 12px;
+}
+.example-block {
+  border-left: 1px solid rgba(107,94,69,0.35);
+  padding-left: 12px;
+  margin-bottom: 16px;
+}
+.example-jp {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.5rem;
+  color: #a89880;
+  line-height: 2.4;
+  margin-bottom: 6px;
+}
+.example-jp ruby rt {
+  font-size: 0.55em;
+  color: #7a6f5e;
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-style: normal;
+  letter-spacing: 0.02em;
+}
+.example-jp .ex-word {
+  font-weight: 600;
+  color: #e8dcc8;
+}
+.example-en {
+  font-style: italic;
+  font-size: 1.1rem;
+  color: #7a6f5e;
+  line-height: 1.6;
+}
+
+/* Buttons area */
+.btn-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+/* Ghost button */
+.btn-ghost {
+  background: transparent;
+  border: 1px solid rgba(200,185,154,0.25);
+  color: #8a7f6e;
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 0.9rem;
+  padding: 9px 18px;
+  border-radius: 2px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: border-color 0.2s, color 0.2s;
+  min-height: 40px;
+}
+.btn-ghost:hover { border-color: rgba(200,185,154,0.5); color: #c8b99a; }
+.btn-ghost.active { border-color: rgba(168,152,128,0.5); color: #a89880; }
+
+/* Filled button (prev/next) */
+.btn-fill {
+  background: #c8b99a;
+  color: #0e0d0b;
+  border: none;
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 0.95rem;
+  font-weight: 400;
+  padding: 11px 22px;
+  border-radius: 2px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: background 0.2s;
+  min-height: 44px;
+  min-width: 90px;
+}
+.btn-fill:hover { background: #d8c9aa; }
+.btn-fill:disabled { background: #2a2820; color: #4a4030; cursor: default; }
+
+/* Card toolbar (edit/delete) */
+.card-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.btn-mini {
+  background: none;
+  border: 1px solid rgba(200,185,154,0.15);
+  color: #5a5040;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  min-height: 32px;
+}
+.btn-mini:hover { color: #c8b99a; border-color: rgba(200,185,154,0.4); }
+.btn-mini.danger:hover { color: #d4a0a0; border-color: rgba(212,160,160,0.4); }
+
+/* Nav row */
+.nav-row {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+}
+.nav-progress {
+  font-size: 13px;
+  color: #4a4030;
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: rgba(255,255,255,0.05);
+  margin: 18px 0;
+}
+
+/* ── Speaker button ── */
+.btn-speak {
+  background: none;
+  border: 1px solid rgba(200,185,154,0.25);
+  color: #6b5e45;
+  width: 40px;
+  height: 40px;
+  border-radius: 2px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  transition: border-color 0.2s, color 0.2s;
+  vertical-align: middle;
+}
+.btn-speak:hover { border-color: rgba(200,185,154,0.5); color: #c8b99a; }
+.btn-speak.speaking { border-color: #a89880; color: #a89880; animation: pulse 0.8s ease-in-out infinite alternate; }
+@keyframes pulse { from { opacity: 1; } to { opacity: 0.4; } }
+
+/* ── Mode toggle button ── */
+.btn-mode, .btn-gear, .btn-ham {
+  background: none;
+  border: 1px solid rgba(200,185,154,0.25);
+  color: #6b5e45;
+  font-size: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: border-color 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+.btn-mode:hover, .btn-gear:hover, .btn-ham:hover { border-color: rgba(200,185,154,0.5); color: #c8b99a; }
+
+/* ── Loading state ── */
+.loading-card {
+  width: 100%;
+  max-width: 520px;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 2px;
+  background: rgba(255,255,255,0.02);
+  padding: 60px 32px;
+  text-align: center;
+  color: #7a6f5e;
+  font-style: italic;
+  font-size: 1.1rem;
+}
+.loading-card .target-word {
+  font-family: 'Noto Serif JP', serif;
+  color: #c8b99a;
+  font-style: normal;
+}
+.loading-dots::after {
+  content: '';
+  display: inline-block;
+  width: 1em;
+  text-align: left;
+  animation: dots 1.4s steps(4, end) infinite;
+}
+@keyframes dots {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+}
+
+/* ── Empty state ── */
+.empty-card {
+  width: 100%;
+  max-width: 520px;
+  text-align: center;
+  padding: 60px 24px;
+  color: #6b5e45;
+  font-style: italic;
+}
+.empty-card strong {
+  display: block;
+  color: #a89880;
+  font-style: normal;
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+}
+
+/* ── Modal (settings, edit, import preview) ── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  padding-top: max(20px, env(safe-area-inset-top));
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 100;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: #14130f;
+  border: 1px solid rgba(200,185,154,0.2);
+  border-radius: 4px;
+  width: 100%;
+  max-width: 460px;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 28px;
+  color: #e8e2d9;
+}
+.modal h2 {
+  font-family: 'Noto Serif JP', serif;
+  font-weight: 400;
+  font-size: 1.3rem;
+  color: #c8b99a;
+  margin-bottom: 8px;
+}
+.modal p { color: #8a7f6e; font-size: 0.95rem; line-height: 1.55; margin-bottom: 18px; }
+.modal a { color: #c8b99a; text-decoration: underline; text-decoration-color: rgba(200,185,154,0.3); text-underline-offset: 3px; }
+.modal a:hover { color: #e8e2d9; }
+body.light .modal a { color: #8a6040; }
+body.light .modal a:hover { color: #3a1e00; }
+.modal .section-h {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 14px;
+  color: #a89880;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin: 28px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(200,185,154,0.15);
+  font-weight: 500;
+}
+.modal .section-h:first-of-type { margin-top: 8px; }
+.modal .section-sub { text-transform: none; letter-spacing: 0; font-size: 11px; color: #6b5e45; }
+body.light .modal .section-h { color: #7a5830; border-bottom-color: rgba(100,70,40,0.15); }
+body.light .modal .section-sub { color: #9a8060; }
+.modal .sync-info {
+  font-size: 12px;
+  color: #6b5e45;
+  margin-top: 10px;
+  line-height: 1.55;
+  font-style: italic;
+}
+body.light .modal .sync-info { color: #8a7050; }
+.modal label {
+  display: block;
+  font-size: 11px;
+  color: #6b5e45;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 6px;
+  margin-top: 14px;
+}
+.modal label .fg-hint {
+  text-transform: none;
+  letter-spacing: 0;
+  color: #5a5040;
+  font-size: 10px;
+  margin-left: 4px;
+  font-weight: normal;
+}
+.modal label .fg-hint code {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  background: rgba(200,185,154,0.08);
+  padding: 1px 4px;
+  border-radius: 2px;
+  color: #8a7f6e;
+}
+body.light .modal label .fg-hint { color: #a08060; }
+body.light .modal label .fg-hint code { background: rgba(80,60,40,0.06); color: #6b5032; }
+.modal input, .modal textarea, .modal select {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(200,185,154,0.2);
+  border-radius: 3px;
+  color: #e8e2d9;
+  font-size: 16px;
+  padding: 10px 12px;
+}
+.modal input:focus, .modal textarea:focus, .modal select:focus {
+  outline: none; border-color: rgba(200,185,154,0.55);
+}
+.modal textarea { min-height: 70px; resize: vertical; font-family: 'Noto Serif JP', serif; line-height: 1.5; }
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+.modal-actions .btn-fill, .modal-actions .btn-ghost { min-width: 100px; }
+
+/* ── Mobile drawer backdrop ── */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  z-index: 90;
+}
+.drawer-backdrop.open { display: block; }
+
+/* ── Light mode ── */
+body.light {
+  background: #f5efe3;
+  color: #2a1e0a;
+}
+body.light .sidebar {
+  background: #ece5d8;
+  border-right-color: rgba(0,0,0,0.08);
+}
+body.light .sidebar-title { color: #7a6040; border-bottom-color: rgba(0,0,0,0.08); }
+body.light .sidebar-title strong { color: #2a1e0a; }
+body.light .word-list li button { color: #6a5030; }
+body.light .word-list li button:hover { background: rgba(0,0,0,0.04); color: #2a1e0a; }
+body.light .word-list li.active button { color: #2a1a00; border-left-color: #8a6040; background: rgba(138,96,64,0.08); }
+body.light .wl-r { color: #b0906a; }
+body.light .word-list li.active .wl-r { color: #7a5030; }
+body.light .add-word-wrap { border-bottom-color: rgba(0,0,0,0.08); }
+body.light .add-word-input { background: #fff; border-color: rgba(100,70,40,0.3); color: #2a1e0a; }
+body.light .add-word-input::placeholder { color: #a08060; }
+body.light .add-word-hint { color: #9a8060; }
+body.light .sidebar-footer { border-top-color: rgba(0,0,0,0.08); }
+body.light .sidebar-footer button { border-color: rgba(100,70,40,0.3); color: #7a5830; }
+body.light .sidebar-footer button:hover { border-color: rgba(100,70,40,0.6); color: #3a1e00; }
+body.light .site-label { color: #9a8060; }
+body.light .counter { color: #7a6040; }
+body.light .card { border-color: rgba(0,0,0,0.1); background: rgba(0,0,0,0.02); }
+body.light .chapter-badge { background-color: rgba(100,70,40,0.1); color: #7a5030; }
+body.light .word { color: #1a0e00; }
+body.light .reading { color: #8a6040; }
+body.light .pos-label { color: #8a7050; }
+body.light .meaning { color: #4a3010; }
+body.light .mj-label { color: #8a6040; }
+body.light .mj { color: #6a5030; }
+body.light .examples-label { color: #8a6040; }
+body.light .example-block { border-left-color: rgba(100,70,40,0.25); }
+body.light .example-jp { color: #7a5530; }
+body.light .example-jp ruby rt { color: #a08060; }
+body.light .example-jp .ex-word { color: #1a0e00; }
+body.light .example-en { color: #8a6a40; }
+body.light .btn-ghost { border-color: rgba(100,70,40,0.3); color: #7a5830; }
+body.light .btn-ghost:hover { border-color: rgba(100,70,40,0.6); color: #3a1e00; }
+body.light .btn-ghost.active { border-color: rgba(100,70,40,0.7); color: #5a3a10; }
+body.light .btn-fill { background: #8a6040; color: #f5efe3; }
+body.light .btn-fill:hover { background: #7a5030; }
+body.light .btn-fill:disabled { background: #d8d0c0; color: #9a9080; }
+body.light .nav-progress { color: #9a8060; }
+body.light .divider { background: rgba(0,0,0,0.07); }
+body.light .btn-mode, body.light .btn-gear, body.light .btn-ham { border-color: rgba(100,70,40,0.3); color: #7a5830; }
+body.light .btn-mode:hover, body.light .btn-gear:hover, body.light .btn-ham:hover { border-color: rgba(100,70,40,0.6); color: #3a1e00; }
+body.light .btn-speak { border-color: rgba(100,70,40,0.3); color: #7a5830; }
+body.light .btn-speak:hover { border-color: rgba(100,70,40,0.6); color: #3a1e00; }
+body.light .btn-speak.speaking { border-color: #8a6040; color: #8a6040; }
+body.light .btn-mini { border-color: rgba(100,70,40,0.2); color: #9a8060; }
+body.light .btn-mini:hover { color: #3a1e00; border-color: rgba(100,70,40,0.5); }
+body.light .modal { background: #f5efe3; border-color: rgba(100,70,40,0.3); color: #2a1e0a; }
+body.light .modal h2 { color: #3a1e00; }
+body.light .modal p { color: #6a5030; }
+body.light .modal label { color: #8a6040; }
+body.light .modal input, body.light .modal textarea, body.light .modal select { background: #fff; border-color: rgba(100,70,40,0.3); color: #2a1e0a; }
+body.light .empty-card { color: #9a8060; }
+body.light .empty-card strong { color: #3a1e00; }
+body.light .loading-card { color: #8a7050; border-color: rgba(0,0,0,0.1); background: rgba(0,0,0,0.02); }
+body.light .loading-card .target-word { color: #3a1e00; }
+
+/* ── Tablet (700–1023px) ── */
+@media (max-width: 1023px) {
+  .sidebar { width: 220px; }
+}
+
+/* ── Phone (< 700px) ── */
+@media (max-width: 699px) {
+  .app { display: block; min-height: 100dvh; }
+
+  /* Hide desktop sidebar; turn it into a slide-in drawer */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 85vw;
+    max-width: 340px;
+    z-index: 95;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 0 0 30px rgba(0,0,0,0.6);
+    height: 100dvh;
+    /* Solid background so the card behind doesn't bleed through */
+    background: #171512;
+    border-right: 1px solid rgba(255,255,255,0.06);
+  }
+  body.light .sidebar { background: #ece5d8; }
+  .sidebar.open { transform: translateX(0); }
+
+  .mobile-header {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: #0e0d0b;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 8px 12px;
+    padding-top: max(8px, env(safe-area-inset-top));
+    align-items: center;
+    gap: 10px;
+  }
+  body.light .mobile-header { background: #f5efe3; border-bottom-color: rgba(0,0,0,0.08); }
+  .mobile-header .ham-wrap { flex-shrink: 0; }
+  .mobile-header .title {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #6b5e45;
+  }
+  body.light .mobile-header .title { color: #7a6040; }
+  .mobile-header .right { display: flex; gap: 8px; }
+
+  .main {
+    padding: 18px 14px 100px;
+    padding-right: max(14px, env(safe-area-inset-right));
+    padding-left: max(14px, env(safe-area-inset-left));
+  }
+  .top-bar { display: none; } /* mobile-header replaces it */
+
+  .card { padding: 22px 18px 22px; border-left: none; border-right: none; border-radius: 0; margin-left: -14px; margin-right: -14px; width: calc(100% + 28px); max-width: none; }
+  .word { font-size: min(14vw, 4.5rem); margin-bottom: 22px; }
+  .reading { font-size: 1.35rem; }
+  .meaning { font-size: 1.1rem; line-height: 1.55; }
+  .mj { font-size: 0.95rem; }
+  .example-jp { font-size: 1.35rem; line-height: 2.3; }
+  .example-en { font-size: 1rem; }
+  .example-jp ruby rt { font-size: 0.58em; }
+
+  .btn-ghost { font-size: 0.9rem; padding: 10px 14px; min-height: 44px; flex: 1; min-width: 130px; }
+
+  .nav-row {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #0e0d0b;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 10px 14px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    margin-top: 0;
+    max-width: none;
+    z-index: 40;
+  }
+  body.light .nav-row { background: #f5efe3; border-top-color: rgba(0,0,0,0.08); }
+  .btn-fill { padding: 12px 18px; min-width: 80px; flex-shrink: 0; }
+  .nav-progress { flex: 1; text-align: center; }
+
+  /* Sidebar in drawer mode: pad for status bar */
+  .sidebar { padding-top: env(safe-area-inset-top); }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .reveal-section { transition: none; }
+  .btn-speak.speaking { animation: none; }
+  .sidebar { transition: none; }
+}
+
+/* ── Focus ring (a11y) ── */
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: 2px solid #a89880;
+  outline-offset: 2px;
+}
+body.light button:focus-visible, body.light input:focus-visible, body.light textarea:focus-visible, body.light select:focus-visible {
+  outline-color: #8a6040;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Sidebar (becomes drawer on mobile) -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">
+      <strong>日本語</strong>
+      Vocabulary Review
+    </div>
+    <div class="add-word-wrap">
+      <input id="addWordInput" class="add-word-input" type="text" placeholder="+ add word (e.g. 花見)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <div class="add-word-hint" id="addHint">Press Enter to generate flashcard</div>
+    </div>
+    <ul class="word-list" id="wordList"></ul>
+    <div class="sidebar-footer">
+      <button onclick="openSettings()" title="API key & settings" aria-label="Settings">⚙ Settings</button>
+      <button onclick="exportJSON()" title="Download deck JSON" aria-label="Export">↓ Export</button>
+      <button onclick="document.getElementById('importFile').click()" title="Upload deck JSON" aria-label="Import">↑ Import</button>
+      <input id="importFile" type="file" accept="application/json,.json" style="display:none" onchange="importJSON(event)">
+    </div>
+  </aside>
+  <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Mobile header (only visible on phone) -->
+    <div class="mobile-header">
+      <div class="ham-wrap"><button class="btn-ham" onclick="openDrawer()" aria-label="Open word list">☰</button></div>
+      <div class="title">日本語 — Vocabulary</div>
+      <div class="right">
+        <span class="sync-status" id="syncStatusM" onclick="syncNow()" title="Sync status"></span>
+        <button class="btn-mode" id="btnModeM" onclick="toggleMode()" aria-label="Toggle theme">☀</button>
+      </div>
+    </div>
+
+    <!-- Desktop top bar -->
+    <div class="top-bar">
+      <span class="site-label">Vocabulary</span>
+      <div class="top-bar-right">
+        <span class="sync-status" id="syncStatus" onclick="syncNow()" title="Click to sync now"></span>
+        <button class="btn-mode" id="btnMode" onclick="toggleMode()" title="Toggle light/dark" aria-label="Toggle theme">☀</button>
+        <a href="./japanese-quiz.html" style="font-size:12px;letter-spacing:.06em;color:#6b5e45;text-decoration:none;white-space:nowrap;" title="Japanese Quiz">Quiz →</a>
+        <span class="counter" id="counter">1 of 3</span>
+      </div>
+    </div>
+
+    <!-- Card area -->
+    <div id="cardArea">
+      <!-- populated by render() -->
+    </div>
+
+    <!-- Nav -->
+    <div class="nav-row">
+      <button class="btn-fill" id="btnPrev" onclick="prevCard()">← prev</button>
+      <span class="nav-progress" id="navProgress">1 / 3</span>
+      <button class="btn-fill" id="btnNext" onclick="nextCard()">next →</button>
+    </div>
+  </main>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal" role="dialog" aria-labelledby="settingsTitle">
+    <h2 id="settingsTitle">Settings</h2>
+
+    <h3 class="section-h">Claude API</h3>
+    <p>To auto-generate flashcards from a word, paste your Anthropic API key. Stored only in this browser, sent only to <code>api.anthropic.com</code>.</p>
+    <label for="apiKeyInput">API key (sk-ant-…)</label>
+    <input id="apiKeyInput" type="password" placeholder="sk-ant-..." autocomplete="off">
+    <label for="modelSelect">Model</label>
+    <select id="modelSelect">
+      <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (recommended)</option>
+      <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (cheaper)</option>
+    </select>
+
+    <h3 class="section-h">Sync across devices <span class="section-sub">— optional</span></h3>
+    <p>Sync your deck between phone + laptop using a private GitHub Gist. Create a token with <strong>Gists</strong> scope: <a href="https://github.com/settings/tokens/new?scopes=gist&description=Japanese%20Vocab%20Review" target="_blank" rel="noopener">open GitHub token page ↗</a>. Set expiration to 1 year. Paste it below.</p>
+    <label for="ghTokenInput">GitHub token <span class="fg-hint">— stored only in this browser</span></label>
+    <input id="ghTokenInput" type="password" placeholder="ghp_... or github_pat_..." autocomplete="off">
+    <label for="ghGistInput">Gist ID <span class="fg-hint">— leave empty to auto-create on first sync; paste this device's ID on other devices to pair them</span></label>
+    <input id="ghGistInput" type="text" placeholder="auto-created after first sync" autocomplete="off">
+    <div id="syncInfo" class="sync-info"></div>
+
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeSettings()">cancel</button>
+      <button class="btn-fill" onclick="saveSettings()">save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit/Manual modal -->
+<div class="modal-backdrop" id="editModal">
+  <div class="modal" role="dialog" aria-labelledby="editTitle">
+    <h2 id="editTitle">Edit flashcard</h2>
+    <label for="ed_w">Word (kanji / kana)</label>
+    <input id="ed_w" type="text">
+    <label for="ed_r">Reading (hiragana)</label>
+    <input id="ed_r" type="text">
+    <label for="ed_pos">Part of speech</label>
+    <input id="ed_pos" type="text" placeholder="n. / v. / i-adj. / na-adj. / adv.">
+    <label for="ed_m">English meaning</label>
+    <input id="ed_m" type="text">
+    <label for="ed_ex1jp">Example 1 (JP) <span class="fg-hint">— use <code>[漢字|かんじ]</code> for furigana</span></label>
+    <input id="ed_ex1jp" type="text" placeholder="例: [週末|しゅうまつ]は[花見|はなみ]に[行|い]こう。">
+    <label for="ed_ex1en">Example 1 (EN)</label>
+    <input id="ed_ex1en" type="text">
+    <label for="ed_ex2jp">Example 2 (JP) <span class="fg-hint">— use <code>[漢字|かんじ]</code> for furigana</span></label>
+    <input id="ed_ex2jp" type="text" placeholder="例: [今年|ことし]の[花見|はなみ]は[上野|うえの][公園|こうえん]にしよう。">
+    <label for="ed_ex2en">Example 2 (EN)</label>
+    <input id="ed_ex2en" type="text">
+    <label for="ed_source">Source (optional)</label>
+    <input id="ed_source" type="text" placeholder="anime: ...">
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeEdit()">cancel</button>
+      <button class="btn-fill" onclick="saveEdit()">save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  STORAGE KEYS + safe helpers
+// ═══════════════════════════════════════════════════════════════
+const LS_DECK      = 'jp-vocab-deck';
+const LS_APIKEY    = 'jp-vocab-apikey';
+const LS_MODEL     = 'jp-vocab-model';
+const LS_MODE      = 'jp-vocab-mode';
+const LS_GH_TOKEN  = 'jp-vocab-gh-token';
+const LS_GH_GIST   = 'jp-vocab-gh-gist';
+const LS_LAST_SYNC = 'jp-vocab-last-sync';
+
+// Wrappers so the app never crashes from Safari private mode, opaque origins,
+// quota exceeded, or disabled storage.
+function lsGet(key) {
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+function lsSet(key, val) {
+  try { localStorage.setItem(key, val); return true; } catch (e) { return false; }
+}
+function lsDel(key) {
+  try { localStorage.removeItem(key); } catch (e) {}
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SEED WORDS (the 3 starter words)
+//  Furigana syntax in `mj` and `ex[].jp`:  [漢字|かんじ]
+//  ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+const SEED = [
+  {
+    id: 'seed_1', w: '発音', r: 'はつおん', pos: 'n.',
+    m: 'pronunciation',
+    mj: '[言葉|ことば]を[声|こえ]に[出|だ]して[言|い]うときの[音|おと]。',
+    ex: [
+      { jp: '[彼女|かのじょ]の[発音|はつおん]はとてもきれいだ。', en: "Her pronunciation is very clean." },
+      { jp: '[発音|はつおん]を[毎日|まいにち][練習|れんしゅう]しています。', en: "I practice pronunciation every day." }
+    ],
+    source: 'seed', createdAt: Date.now() - 3000, aiGenerated: false
+  },
+  {
+    id: 'seed_2', w: '緊張する', r: 'きんちょうする', pos: 'v. (suru)',
+    m: 'to be nervous, to feel tense',
+    mj: '[気持|きも]ちが[張|は]り[詰|つ]めて[落|お]ち[着|つ]かない[状態|じょうたい]になること。',
+    ex: [
+      { jp: '[面接|めんせつ]の[前|まえ]はいつも[緊張|きんちょう]する。', en: "I always get nervous before interviews." },
+      { jp: 'そんなに[緊張|きんちょう]しないで。', en: "Don't be so tense." }
+    ],
+    source: 'seed', createdAt: Date.now() - 2000, aiGenerated: false
+  },
+  {
+    id: 'seed_3', w: 'とにかく', r: 'とにかく', pos: 'adv.',
+    m: 'anyway, in any case, at any rate',
+    mj: '[事情|じじょう]はさておき、[結論|けつろん]として[言|い]えば。',
+    ex: [
+      { jp: 'とにかく[行|い]ってみよう。', en: "Let's go anyway." },
+      { jp: 'とにかく、[今日|きょう]は[本当|ほんとう]に[疲|つか]れた。', en: "In any case, today was really exhausting." }
+    ],
+    source: 'seed', createdAt: Date.now() - 1000, aiGenerated: false
+  }
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════
+let deck = loadDeck();
+let cardIdx = 0;
+let readingOpen = false;
+let detailsOpen = false;
+let isLoading = false;
+let loadingWord = '';
+let editingId = null;
+
+// Sync state (not persisted — rebuilt per page load)
+let syncInFlight = false;
+let syncPending = false;
+let syncDebounceTimer = null;
+
+function loadDeck() {
+  const raw = lsGet(LS_DECK);
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.words)) {
+        migrateDeck(parsed);
+        return parsed;
+      }
+    } catch (e) { /* malformed — fall through */ }
+  }
+  const now = Date.now();
+  const seeds = SEED.map(w => ({ ...w, updatedAt: w.createdAt || now }));
+  const fresh = { version: 3, words: seeds, tombstones: [], settings: {} };
+  lsSet(LS_DECK, JSON.stringify(fresh));
+  return fresh;
+}
+
+function migrateDeck(d) {
+  let changed = false;
+  // v1 → v2: replace seed records with latest annotated versions (furigana added)
+  if ((d.version || 1) < 2) {
+    for (let i = 0; i < d.words.length; i++) {
+      const w = d.words[i];
+      if (w.id && String(w.id).startsWith('seed_')) {
+        const replacement = SEED.find(s => s.id === w.id);
+        if (replacement) { d.words[i] = JSON.parse(JSON.stringify(replacement)); changed = true; }
+      }
+    }
+    d.version = 2;
+    changed = true;
+  }
+  // v2 → v3: add updatedAt on every word + tombstones array for sync
+  if ((d.version || 1) < 3) {
+    for (const w of d.words) {
+      if (!w.updatedAt) w.updatedAt = w.createdAt || Date.now();
+    }
+    if (!Array.isArray(d.tombstones)) d.tombstones = [];
+    d.version = 3;
+    changed = true;
+  }
+  if (changed) lsSet(LS_DECK, JSON.stringify(d));
+}
+
+function saveDeck(opts) {
+  lsSet(LS_DECK, JSON.stringify(deck));
+  // Kick off a debounced sync unless the caller explicitly opted out
+  // (e.g. we just pulled from remote and don't want to immediately push back)
+  if (!opts || !opts.skipSync) scheduleSync();
+}
+
+function currentWord() { return deck.words[cardIdx]; }
+
+// ═══════════════════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════════════════
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Parse [漢字|かんじ] annotations and render as <ruby> with furigana.
+// Plain characters between brackets are preserved. If `targetWord` is given,
+// occurrences (bracketed or not) are bolded via .ex-word.
+function renderRubies(text, targetWord) {
+  if (!text) return '';
+  const re = /\[([^\[\]|]+)\|([^\[\]|]+)\]/g;
+  let out = '';
+  let last = 0;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    out += highlightTarget(text.slice(last, m.index), targetWord);
+    const kanji = m[1];
+    const reading = m[2];
+    const isTarget = targetWord && kanji === targetWord;
+    const cls = isTarget ? ' class="ex-word"' : '';
+    out += `<ruby${cls}>${escapeHtml(kanji)}<rt>${escapeHtml(reading)}</rt></ruby>`;
+    last = re.lastIndex;
+  }
+  out += highlightTarget(text.slice(last), targetWord);
+  return out;
+}
+
+// Highlight plain-text occurrences of the target word (not already in ruby).
+function highlightTarget(chunk, targetWord) {
+  const safe = escapeHtml(chunk);
+  if (!targetWord) return safe;
+  const tEsc = escapeHtml(targetWord);
+  const idx = safe.indexOf(tEsc);
+  if (idx === -1) return safe;
+  return safe.slice(0, idx) + `<span class="ex-word">${tEsc}</span>` + safe.slice(idx + tEsc.length);
+}
+
+// Strip [漢字|かんじ] annotations for TTS — keep the kanji, drop the reading.
+function stripFurigana(text) {
+  if (!text) return '';
+  return text.replace(/\[([^\[\]|]+)\|[^\[\]|]+\]/g, '$1');
+}
+
+function renderWordList() {
+  const ul = document.getElementById('wordList');
+  ul.innerHTML = '';
+  if (deck.words.length === 0) {
+    ul.innerHTML = '<li style="padding: 16px; color:#5a5040; font-size:12px; font-style:italic;">No words yet</li>';
+    return;
+  }
+  deck.words.forEach((w, idx) => {
+    const li = document.createElement('li');
+    if (idx === cardIdx) li.classList.add('active');
+    const btn = document.createElement('button');
+    btn.innerHTML = `<span class="wl-w">${escapeHtml(w.w)}</span><span class="wl-r">${escapeHtml(w.r)}</span>`;
+    btn.title = w.m;
+    btn.onclick = () => { cardIdx = idx; closeDrawer(); render(); };
+    li.appendChild(btn);
+    ul.appendChild(li);
+  });
+  const active = ul.querySelector('li.active');
+  if (active && typeof active.scrollIntoView === 'function') {
+    active.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function renderCard() {
+  const area = document.getElementById('cardArea');
+
+  if (isLoading) {
+    area.innerHTML = `<div class="loading-card">Generating flashcard for <span class="target-word">${escapeHtml(loadingWord)}</span><span class="loading-dots"></span></div>`;
+    document.getElementById('btnPrev').disabled = true;
+    document.getElementById('btnNext').disabled = true;
+    return;
+  }
+
+  if (deck.words.length === 0) {
+    area.innerHTML = `<div class="empty-card"><strong>まだ単語がありません</strong>Type a word in the sidebar to add your first flashcard.</div>`;
+    document.getElementById('counter').textContent = '0 of 0';
+    document.getElementById('navProgress').textContent = '0 / 0';
+    document.getElementById('btnPrev').disabled = true;
+    document.getElementById('btnNext').disabled = true;
+    return;
+  }
+
+  if (cardIdx >= deck.words.length) cardIdx = deck.words.length - 1;
+  if (cardIdx < 0) cardIdx = 0;
+
+  const w = currentWord();
+  const total = deck.words.length;
+  document.getElementById('counter').textContent = `${cardIdx + 1} of ${total}`;
+  document.getElementById('navProgress').textContent = `${cardIdx + 1} / ${total}`;
+
+  const sourceLabel = w.source && w.source !== 'seed' ? w.source : 'Japanese Review';
+
+  const examplesHtml = (w.ex || []).map((ex, i) => `
+    <div class="example-block">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div class="example-jp" style="flex:1">${renderRubies(ex.jp, w.w)}</div>
+        <button class="btn-speak" onclick="speakText(${JSON.stringify(ex.jp).replace(/"/g, '&quot;')}, this)" title="Listen" aria-label="Listen to example">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+        </button>
+      </div>
+      <div class="example-en">${escapeHtml(ex.en)}</div>
+    </div>
+  `).join('');
+
+  area.innerHTML = `
+    <div class="card" id="card">
+      <div class="chapter-badge">${escapeHtml(sourceLabel)}</div>
+      <div class="word" id="word">${escapeHtml(w.w)}</div>
+
+      <div class="btn-row">
+        <button class="btn-ghost" id="btnReading" onclick="toggleReading()">show reading</button>
+        <button class="btn-ghost" id="btnDetails" onclick="toggleDetails()">show details</button>
+      </div>
+
+      <div class="reveal-section ${readingOpen ? 'open' : ''}" id="readingSection">
+        <div style="display:flex;align-items:center;gap:14px;margin-top:18px">
+          <div class="reading">${escapeHtml(w.r)}</div>
+          <button class="btn-speak" onclick="speakText(${JSON.stringify(w.w).replace(/"/g, '&quot;')}, this)" title="Listen to pronunciation" aria-label="Listen">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="reveal-section ${detailsOpen ? 'open' : ''}" id="detailsSection">
+        <div class="divider"></div>
+        <div class="pos-label">${escapeHtml(w.pos || '')}</div>
+        <div class="meaning">${escapeHtml(w.m || '')}</div>
+        ${w.ex && w.ex.length ? `<div class="examples-label">Examples</div>${examplesHtml}` : ''}
+      </div>
+
+      <div class="card-toolbar">
+        <button class="btn-mini" onclick="openEdit('${w.id}')">edit</button>
+        <button class="btn-mini danger" onclick="deleteWord('${w.id}')">delete</button>
+      </div>
+    </div>
+  `;
+
+  // Update active states for reveal buttons
+  document.getElementById('btnReading').classList.toggle('active', readingOpen);
+  document.getElementById('btnReading').textContent = readingOpen ? 'hide reading' : 'show reading';
+  document.getElementById('btnDetails').classList.toggle('active', detailsOpen);
+  document.getElementById('btnDetails').textContent = detailsOpen ? 'hide details' : 'show details';
+
+  document.getElementById('btnPrev').disabled = (cardIdx === 0);
+  document.getElementById('btnNext').disabled = (cardIdx === total - 1);
+
+  // Attach swipe handlers to the card
+  attachSwipe(document.getElementById('card'));
+}
+
+function render() {
+  renderWordList();
+  renderCard();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ACTIONS
+// ═══════════════════════════════════════════════════════════════
+function toggleReading() {
+  readingOpen = !readingOpen;
+  const sec = document.getElementById('readingSection');
+  const btn = document.getElementById('btnReading');
+  sec.classList.toggle('open', readingOpen);
+  btn.classList.toggle('active', readingOpen);
+  btn.textContent = readingOpen ? 'hide reading' : 'show reading';
+}
+
+function toggleDetails() {
+  detailsOpen = !detailsOpen;
+  const sec = document.getElementById('detailsSection');
+  const btn = document.getElementById('btnDetails');
+  sec.classList.toggle('open', detailsOpen);
+  btn.classList.toggle('active', detailsOpen);
+  btn.textContent = detailsOpen ? 'hide details' : 'show details';
+}
+
+function nextCard() {
+  if (cardIdx < deck.words.length - 1) {
+    cardIdx++;
+    readingOpen = false; detailsOpen = false;
+    render();
+  }
+}
+function prevCard() {
+  if (cardIdx > 0) {
+    cardIdx--;
+    readingOpen = false; detailsOpen = false;
+    render();
+  }
+}
+
+function deleteWord(id) {
+  const w = deck.words.find(x => x.id === id);
+  if (!w) return;
+  if (!confirm(`Delete「${w.w}」 from your deck?`)) return;
+  const idx = deck.words.findIndex(x => x.id === id);
+  deck.words.splice(idx, 1);
+  // Record a tombstone so the deletion propagates across devices via sync
+  if (!Array.isArray(deck.tombstones)) deck.tombstones = [];
+  deck.tombstones.push({ id, updatedAt: Date.now() });
+  if (cardIdx >= deck.words.length) cardIdx = Math.max(0, deck.words.length - 1);
+  saveDeck();
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  EDIT MODAL
+// ═══════════════════════════════════════════════════════════════
+function openEdit(id) {
+  const w = deck.words.find(x => x.id === id);
+  if (!w) return;
+  editingId = id;
+  document.getElementById('editTitle').textContent = `Edit「${w.w}」`;
+  document.getElementById('ed_w').value = w.w || '';
+  document.getElementById('ed_r').value = w.r || '';
+  document.getElementById('ed_pos').value = w.pos || '';
+  document.getElementById('ed_m').value = w.m || '';
+  document.getElementById('ed_ex1jp').value = w.ex?.[0]?.jp || '';
+  document.getElementById('ed_ex1en').value = w.ex?.[0]?.en || '';
+  document.getElementById('ed_ex2jp').value = w.ex?.[1]?.jp || '';
+  document.getElementById('ed_ex2en').value = w.ex?.[1]?.en || '';
+  document.getElementById('ed_source').value = (w.source && w.source !== 'seed') ? w.source : '';
+  document.getElementById('editModal').classList.add('open');
+}
+function closeEdit() {
+  document.getElementById('editModal').classList.remove('open');
+  editingId = null;
+}
+function saveEdit() {
+  if (!editingId) return;
+  const w = deck.words.find(x => x.id === editingId);
+  if (!w) return;
+  w.w = document.getElementById('ed_w').value.trim();
+  w.r = document.getElementById('ed_r').value.trim();
+  w.pos = document.getElementById('ed_pos').value.trim();
+  w.m = document.getElementById('ed_m').value.trim();
+  const ex1jp = document.getElementById('ed_ex1jp').value.trim();
+  const ex1en = document.getElementById('ed_ex1en').value.trim();
+  const ex2jp = document.getElementById('ed_ex2jp').value.trim();
+  const ex2en = document.getElementById('ed_ex2en').value.trim();
+  w.ex = [];
+  if (ex1jp || ex1en) w.ex.push({ jp: ex1jp, en: ex1en });
+  if (ex2jp || ex2en) w.ex.push({ jp: ex2jp, en: ex2en });
+  const src = document.getElementById('ed_source').value.trim();
+  if (src) w.source = src; else delete w.source;
+  w.updatedAt = Date.now();
+  saveDeck();
+  closeEdit();
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SETTINGS MODAL
+// ═══════════════════════════════════════════════════════════════
+function openSettings() {
+  document.getElementById('apiKeyInput').value = lsGet(LS_APIKEY) || '';
+  document.getElementById('modelSelect').value = lsGet(LS_MODEL) || 'claude-sonnet-4-6';
+  document.getElementById('ghTokenInput').value = lsGet(LS_GH_TOKEN) || '';
+  document.getElementById('ghGistInput').value = lsGet(LS_GH_GIST) || '';
+  updateSyncInfo();
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+function updateSyncInfo() {
+  const el = document.getElementById('syncInfo');
+  if (!el) return;
+  const hasToken = !!lsGet(LS_GH_TOKEN);
+  const hasGist = !!lsGet(LS_GH_GIST);
+  const last = lsGet(LS_LAST_SYNC);
+  const lastStr = last ? new Date(Number(last)).toLocaleString() : 'never';
+  if (!hasToken) {
+    el.innerHTML = 'Sync: <strong>off</strong>. Add a token above to enable.';
+  } else if (!hasGist) {
+    el.innerHTML = 'Sync: <strong>ready</strong>. First sync will create a new private gist automatically.';
+  } else {
+    el.innerHTML = `Sync: <strong>active</strong>. Last sync: ${escapeHtml(lastStr)}. Gist: <code>${escapeHtml(lsGet(LS_GH_GIST))}</code>`;
+  }
+}
+function saveSettings() {
+  const k = document.getElementById('apiKeyInput').value.trim();
+  const m = document.getElementById('modelSelect').value;
+  const t = document.getElementById('ghTokenInput').value.trim();
+  const g = document.getElementById('ghGistInput').value.trim();
+  if (k) lsSet(LS_APIKEY, k); else lsDel(LS_APIKEY);
+  lsSet(LS_MODEL, m);
+  const tokenChanged = (lsGet(LS_GH_TOKEN) || '') !== t;
+  const gistChanged  = (lsGet(LS_GH_GIST)  || '') !== g;
+  if (t) lsSet(LS_GH_TOKEN, t); else lsDel(LS_GH_TOKEN);
+  if (g) lsSet(LS_GH_GIST, g);  else if (gistChanged) lsDel(LS_GH_GIST);
+  closeSettings();
+  updateAddHint();
+  if (!t) setSyncStatus('off');
+  else if (tokenChanged || gistChanged) syncNow();
+}
+function updateAddHint() {
+  const has = !!lsGet(LS_APIKEY);
+  document.getElementById('addHint').textContent = has
+    ? 'Press Enter to generate flashcard'
+    : 'Set API key in Settings to enable AI generation';
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ADD WORD (Claude API)
+// ═══════════════════════════════════════════════════════════════
+const SYSTEM_PROMPT = `You are a Japanese vocabulary tutor helping an intermediate–advanced learner build flashcards. The learner speaks fluent English and has passed JLPT N3. They encounter new words while watching anime and Japanese dramas.
+
+For each word they submit, return ONLY a JSON object with this exact shape, no prose, no markdown fences:
+
+{
+  "w":   "<the word exactly as submitted, or the standard form if input was non-standard>",
+  "r":   "<full hiragana reading>",
+  "pos": "<n. | v. | i-adj. | na-adj. | adv. | phrase | particle | expr.>",
+  "m":   "<concise English meaning, comma-separated alternatives if helpful>",
+  "ex": [
+    { "jp": "<natural conversational example 1, with furigana on every kanji word using [漢字|かんじ] syntax>", "en": "<English translation>" },
+    { "jp": "<natural conversational example 2 showing different nuance, with furigana on every kanji word using [漢字|かんじ] syntax>", "en": "<English translation>" }
+  ]
+}
+
+Furigana (CRITICAL):
+- In every "ex[].jp", wrap each kanji compound or stand-alone kanji with [漢字|ひらがな] — the kanji first, a pipe character, then its full hiragana reading, enclosed in square brackets.
+- Example: 「週末は[花見|はなみ]に[行|い]こう。」 — note 花見 gets one annotation, 行 gets its own.
+- Annotate the target word the same way when it appears (e.g. if the submitted word is 花見, still write [花見|はなみ] inside the examples).
+- Do NOT annotate hiragana-only or katakana-only segments. Do NOT nest brackets. Do NOT put spaces inside brackets.
+- If a word contains okurigana (e.g. 食べる), annotate ONLY the kanji portion: [食|た]べる. Same pattern for 行く → [行|い]く, 見せる → [見|み]せる.
+
+Other rules:
+- Example sentences should sound like real spoken Japanese from anime/drama dialogue — not textbook stiff.
+- If the word is a する-verb, set pos to "v. (suru)". Note transitive/intransitive in m if relevant.
+- Never include romaji.
+- Never wrap the JSON in markdown fences.
+- The top-level "w" and "r" fields stay plain — no brackets there, only inside "ex[].jp".`;
+
+async function callClaude(word) {
+  const key = lsGet(LS_APIKEY);
+  if (!key) throw new Error('NO_KEY');
+  const model = lsGet(LS_MODEL) || 'claude-sonnet-4-6';
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 800,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: `Word: ${word}` }]
+    })
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    if (res.status === 401) throw new Error('BAD_KEY');
+    if (res.status === 429) throw new Error('RATE_LIMIT');
+    throw new Error('API_ERROR: ' + res.status + ' — ' + errText.slice(0, 200));
+  }
+  const data = await res.json();
+  let text = data.content?.[0]?.text || '';
+  // Strip stray markdown fences if Claude added them
+  text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+  let parsed;
+  try { parsed = JSON.parse(text); }
+  catch (e) { throw new Error('PARSE_ERROR: ' + text.slice(0, 300)); }
+  return parsed;
+}
+
+async function handleAddWord() {
+  const input = document.getElementById('addWordInput');
+  const word = input.value.trim();
+  if (!word) return;
+
+  // Duplicate check
+  const dup = deck.words.find(x => x.w === word);
+  if (dup) {
+    if (confirm(`「${word}」 is already in your deck. Jump to it?`)) {
+      cardIdx = deck.words.indexOf(dup);
+      readingOpen = false; detailsOpen = false;
+      input.value = '';
+      closeDrawer();
+      render();
+    }
+    return;
+  }
+
+  // No API key → open manual edit modal pre-filled with the word
+  if (!lsGet(LS_APIKEY)) {
+    const now = Date.now();
+    const newWord = {
+      id: 'w_' + now + '_' + Math.floor(Math.random() * 1000),
+      w: word, r: '', pos: '', m: '', mj: '', ex: [],
+      source: '', createdAt: now, updatedAt: now, aiGenerated: false
+    };
+    deck.words.unshift(newWord);
+    cardIdx = 0;
+    readingOpen = false; detailsOpen = false;
+    saveDeck();
+    input.value = '';
+    closeDrawer();
+    render();
+    openEdit(newWord.id);
+    return;
+  }
+
+  // AI generation
+  isLoading = true;
+  loadingWord = word;
+  input.value = '';
+  input.disabled = true;
+  closeDrawer();
+  renderCard();
+
+  try {
+    const data = await callClaude(word);
+    if (!data.w || !data.r) throw new Error('Missing required fields in response');
+    const now = Date.now();
+    const newWord = {
+      id: 'w_' + now + '_' + Math.floor(Math.random() * 1000),
+      w:   data.w   || word,
+      r:   data.r   || '',
+      pos: data.pos || '',
+      m:   data.m   || '',
+      mj:  data.mj  || '',
+      ex:  Array.isArray(data.ex) ? data.ex.slice(0, 2) : [],
+      source: '',
+      createdAt: now,
+      updatedAt: now,
+      aiGenerated: true
+    };
+    deck.words.unshift(newWord);
+    cardIdx = 0;
+    readingOpen = false; detailsOpen = false;
+    isLoading = false;
+    saveDeck();
+    render();
+  } catch (e) {
+    isLoading = false;
+    let msg = 'Could not generate flashcard.';
+    if (e.message === 'NO_KEY') msg = 'No API key set. Open Settings.';
+    else if (e.message === 'BAD_KEY') msg = 'API key was rejected. Open Settings to update.';
+    else if (e.message === 'RATE_LIMIT') msg = 'Rate-limited by Anthropic. Wait a minute and try again.';
+    else if (e.message.startsWith('PARSE_ERROR')) msg = 'Claude returned malformed data. Try again, or add manually.';
+    else msg = e.message;
+    alert(msg);
+    // Restore input value so user doesn't lose the word
+    input.value = word;
+    render();
+  } finally {
+    input.disabled = false;
+    input.focus();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  EXPORT / IMPORT
+// ═══════════════════════════════════════════════════════════════
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(deck, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `japanese-vocab-${date}.json`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+}
+
+function importJSON(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const incoming = JSON.parse(e.target.result);
+      if (!incoming.words || !Array.isArray(incoming.words)) throw new Error('Invalid deck file');
+      let added = 0, updated = 0;
+      const now = Date.now();
+      const map = new Map(deck.words.map(w => [w.id, w]));
+      for (const w of incoming.words) {
+        if (!w.id) w.id = 'w_' + now + '_' + Math.floor(Math.random() * 10000);
+        if (!w.updatedAt) w.updatedAt = w.createdAt || now;
+        if (map.has(w.id)) {
+          Object.assign(map.get(w.id), w);
+          updated++;
+        } else {
+          deck.words.push(w);
+          added++;
+        }
+      }
+      // Merge tombstones if the incoming file has any
+      if (Array.isArray(incoming.tombstones)) {
+        if (!Array.isArray(deck.tombstones)) deck.tombstones = [];
+        const seen = new Set(deck.tombstones.map(t => t.id));
+        for (const t of incoming.tombstones) {
+          if (!seen.has(t.id)) { deck.tombstones.push(t); seen.add(t.id); }
+        }
+      }
+      // Re-sort newest first
+      deck.words.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      saveDeck();
+      cardIdx = 0;
+      render();
+      alert(`Imported: ${added} new, ${updated} updated.`);
+    } catch (err) {
+      alert('Could not import: ' + err.message);
+    } finally {
+      ev.target.value = '';
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  GITHUB GIST SYNC
+//  Auto pull on load + push on change. Secret gist + personal token.
+// ═══════════════════════════════════════════════════════════════
+const GIST_FILENAME = 'japanese-deck.json';
+
+function ghHeaders() {
+  const token = lsGet(LS_GH_TOKEN);
+  return {
+    'Authorization': 'Bearer ' + token,
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+    'Content-Type': 'application/json'
+  };
+}
+
+async function ghCreateGist() {
+  const body = JSON.stringify({
+    description: 'Japanese Vocabulary Review — deck sync (do not edit manually)',
+    public: false,
+    files: { [GIST_FILENAME]: { content: JSON.stringify(deck, null, 2) } }
+  });
+  const res = await fetch('https://api.github.com/gists', {
+    method: 'POST', headers: ghHeaders(), body
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    if (res.status === 401) throw new Error('BAD_TOKEN');
+    throw new Error('GH_CREATE ' + res.status + ': ' + t.slice(0, 200));
+  }
+  const data = await res.json();
+  lsSet(LS_GH_GIST, data.id);
+  return data.id;
+}
+
+async function ghPull() {
+  const gistId = lsGet(LS_GH_GIST);
+  if (!gistId) return null;
+  const res = await fetch('https://api.github.com/gists/' + gistId, {
+    headers: ghHeaders()
+  });
+  if (res.status === 401) throw new Error('BAD_TOKEN');
+  if (res.status === 404) { lsDel(LS_GH_GIST); return null; } // gist was deleted; we'll recreate on push
+  if (!res.ok) throw new Error('GH_PULL ' + res.status);
+  const data = await res.json();
+  const file = data.files && data.files[GIST_FILENAME];
+  if (!file) return null;
+  let content;
+  if (file.truncated && file.raw_url) {
+    const r2 = await fetch(file.raw_url);
+    if (!r2.ok) throw new Error('GH_RAW ' + r2.status);
+    content = await r2.text();
+  } else {
+    content = file.content;
+  }
+  try { return JSON.parse(content); }
+  catch (e) { throw new Error('REMOTE_PARSE: ' + e.message); }
+}
+
+async function ghPush() {
+  let gistId = lsGet(LS_GH_GIST);
+  if (!gistId) return await ghCreateGist();
+  const body = JSON.stringify({
+    files: { [GIST_FILENAME]: { content: JSON.stringify(deck, null, 2) } }
+  });
+  const res = await fetch('https://api.github.com/gists/' + gistId, {
+    method: 'PATCH', headers: ghHeaders(), body
+  });
+  if (res.status === 401) throw new Error('BAD_TOKEN');
+  if (res.status === 404) {
+    lsDel(LS_GH_GIST);
+    return await ghCreateGist();
+  }
+  if (!res.ok) throw new Error('GH_PUSH ' + res.status);
+}
+
+// Merge local + remote decks. Newer updatedAt wins per word;
+// tombstones (deletes) propagate across devices.
+function mergeDecks(local, remote) {
+  if (!remote || !Array.isArray(remote.words)) return { deck: local, changed: false };
+  const tombs = {};
+  for (const t of (local.tombstones || [])) {
+    if (!tombs[t.id] || t.updatedAt > tombs[t.id]) tombs[t.id] = t.updatedAt;
+  }
+  for (const t of (remote.tombstones || [])) {
+    if (!tombs[t.id] || t.updatedAt > tombs[t.id]) tombs[t.id] = t.updatedAt;
+  }
+  const byId = {};
+  for (const w of local.words) byId[w.id] = w;
+  for (const w of remote.words) {
+    const existing = byId[w.id];
+    if (!existing) byId[w.id] = w;
+    else {
+      const lU = existing.updatedAt || existing.createdAt || 0;
+      const rU = w.updatedAt || w.createdAt || 0;
+      if (rU > lU) byId[w.id] = w;
+    }
+  }
+  const merged = [];
+  for (const w of Object.values(byId)) {
+    const tomb = tombs[w.id];
+    const wU = w.updatedAt || w.createdAt || 0;
+    if (tomb && tomb > wU) continue; // word deletion is newer than latest edit — drop it
+    merged.push(w);
+  }
+  merged.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const tombArr = Object.entries(tombs).map(([id, u]) => ({ id, updatedAt: Number(u) }));
+  const out = {
+    version: Math.max(local.version || 3, remote.version || 3, 3),
+    words: merged,
+    tombstones: tombArr,
+    settings: Object.assign({}, remote.settings || {}, local.settings || {})
+  };
+  // Canonical comparison: sort by id so re-ordering alone doesn't trigger a "changed" flag
+  const canon = arr => arr.slice().sort((a, b) => (a.id > b.id ? 1 : -1));
+  const sameWords = JSON.stringify(canon(out.words)) === JSON.stringify(canon(local.words || []));
+  const sameTombs = JSON.stringify(canon(out.tombstones)) === JSON.stringify(canon(local.tombstones || []));
+  return { deck: out, changed: !(sameWords && sameTombs) };
+}
+
+function setSyncStatus(state, extra) {
+  const ids = ['syncStatus', 'syncStatusM'];
+  for (const id of ids) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    el.classList.remove('syncing', 'error', 'off', 'ok');
+    if (state === 'syncing') { el.textContent = '⟳ syncing'; el.classList.add('syncing'); el.title = ''; }
+    else if (state === 'synced') { el.textContent = '✓ synced'; el.classList.add('ok'); el.title = new Date().toLocaleTimeString(); }
+    else if (state === 'error')  { el.textContent = '⚠ sync error'; el.classList.add('error'); el.title = extra || ''; }
+    else if (state === 'off')    { el.textContent = ''; el.classList.add('off'); el.title = 'Sync off — set a GitHub token in Settings'; }
+  }
+}
+
+function scheduleSync() {
+  if (!lsGet(LS_GH_TOKEN)) return;
+  if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
+  syncDebounceTimer = setTimeout(syncNow, 800);
+}
+
+async function syncNow() {
+  if (!lsGet(LS_GH_TOKEN)) { setSyncStatus('off'); return; }
+  if (syncInFlight) { syncPending = true; return; }
+  syncInFlight = true;
+  setSyncStatus('syncing');
+  try {
+    const remote = await ghPull();
+    if (remote) {
+      const { deck: merged, changed } = mergeDecks(deck, remote);
+      if (changed) {
+        const currentId = deck.words[cardIdx] && deck.words[cardIdx].id;
+        deck = merged;
+        // Keep the user on the same card if it still exists
+        const newIdx = currentId ? deck.words.findIndex(w => w.id === currentId) : -1;
+        cardIdx = newIdx >= 0 ? newIdx : 0;
+        if (cardIdx >= deck.words.length) cardIdx = Math.max(0, deck.words.length - 1);
+        saveDeck({ skipSync: true });
+        render();
+      }
+    }
+    await ghPush();
+    lsSet(LS_LAST_SYNC, String(Date.now()));
+    setSyncStatus('synced');
+  } catch (e) {
+    console.warn('Sync failed:', e);
+    setSyncStatus('error', String(e && e.message || e));
+  } finally {
+    syncInFlight = false;
+    if (syncPending) { syncPending = false; scheduleSync(); }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TEXT-TO-SPEECH (ja-JP)
+// ═══════════════════════════════════════════════════════════════
+function speakText(text, btn) {
+  if (!window.speechSynthesis || !text) return;
+  // Strip any furigana bracket annotations like [漢字|かんじ] → 漢字
+  const cleanText = stripFurigana(text);
+
+  function doSpeak() {
+    const utter = new SpeechSynthesisUtterance(cleanText);
+    utter.lang = 'ja-JP';
+    utter.rate = 0.85;
+    utter.pitch = 0.95;
+
+    const all = window.speechSynthesis.getVoices();
+    const jaVoices = all.filter(v => v.lang === 'ja-JP' || v.lang === 'ja' || v.lang.startsWith('ja'));
+
+    const priority = [
+      v => /otoya|ichiro/i.test(v.name) && (v.lang.startsWith('ja')),
+      v => /kyoko|haruka/i.test(v.name) && (v.lang.startsWith('ja')),
+      v => v.localService && v.lang.startsWith('ja'),
+      v => v.lang === 'ja-JP',
+      v => v.lang.startsWith('ja')
+    ];
+
+    let chosen = null;
+    for (const test of priority) {
+      chosen = jaVoices.find(test) || all.find(test);
+      if (chosen) break;
+    }
+    utter.voice = chosen || null;
+
+    utter.onstart = () => btn && btn.classList.add('speaking');
+    utter.onend = utter.onerror = () => btn && btn.classList.remove('speaking');
+
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utter);
+  }
+
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length > 0) {
+    doSpeak();
+  } else {
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.onvoiceschanged = null;
+      doSpeak();
+    };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  THEME TOGGLE
+// ═══════════════════════════════════════════════════════════════
+function toggleMode() {
+  const isLight = document.body.classList.toggle('light');
+  const sym = isLight ? '🌙' : '☀';
+  const btnD = document.getElementById('btnMode');
+  const btnM = document.getElementById('btnModeM');
+  if (btnD) btnD.textContent = sym;
+  if (btnM) btnM.textContent = sym;
+  // Update theme-color meta
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeMeta) themeMeta.setAttribute('content', isLight ? '#f5efe3' : '#0e0d0b');
+  lsSet(LS_MODE, isLight ? 'light' : 'dark');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DRAWER (mobile sidebar)
+// ═══════════════════════════════════════════════════════════════
+function openDrawer() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('drawerBackdrop').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('drawerBackdrop').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SWIPE GESTURES
+// ═══════════════════════════════════════════════════════════════
+function attachSwipe(el) {
+  if (!el) return;
+  let startX = 0, startY = 0, startT = 0;
+  el.addEventListener('touchstart', e => {
+    if (!e.touches[0]) return;
+    // Ignore swipes starting in the leftmost 24px (iOS back-swipe zone)
+    if (e.touches[0].clientX < 24) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    startT = Date.now();
+  }, { passive: true });
+  el.addEventListener('touchend', e => {
+    if (!startT) return;
+    const t = e.changedTouches[0];
+    if (!t) return;
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+    const elapsed = Date.now() - startT;
+    startT = 0;
+    if (elapsed > 600) return;
+    if (Math.abs(dx) < 60) return;
+    if (Math.abs(dy) > Math.abs(dx) * 0.6) return;
+    if (dx < 0) nextCard(); else prevCard();
+  }, { passive: true });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════════════════════
+document.addEventListener('keydown', (e) => {
+  // Ignore when typing in an input
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+    if (e.key === 'Enter' && e.target.id === 'addWordInput') {
+      e.preventDefault();
+      handleAddWord();
+    }
+    if (e.key === 'Escape') {
+      closeSettings(); closeEdit(); closeDrawer();
+    }
+    return;
+  }
+  if (document.querySelector('.modal-backdrop.open')) {
+    if (e.key === 'Escape') { closeSettings(); closeEdit(); }
+    return;
+  }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); nextCard(); }
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prevCard(); }
+  else if (e.key === 'r' || e.key === 'R') toggleReading();
+  else if (e.key === 'd' || e.key === 'D' || e.key === ' ') { e.preventDefault(); toggleDetails(); }
+  else if (e.key === '/') { e.preventDefault(); document.getElementById('addWordInput').focus(); }
+  else if (e.key === 'Escape') { closeDrawer(); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════
+function init() {
+  // Restore theme
+  if (lsGet(LS_MODE) === 'light') {
+    document.body.classList.add('light');
+    const sym = '🌙';
+    if (document.getElementById('btnMode')) document.getElementById('btnMode').textContent = sym;
+    if (document.getElementById('btnModeM')) document.getElementById('btnModeM').textContent = sym;
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) themeMeta.setAttribute('content', '#f5efe3');
+  }
+
+  updateAddHint();
+  render();
+
+  // Wire add-word input
+  const inp = document.getElementById('addWordInput');
+  // Form-less Enter handling already in keydown listener; this covers IME composition
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.isComposing) {
+      e.preventDefault();
+      handleAddWord();
+    }
+  });
+
+  // Close modals on backdrop tap
+  document.getElementById('settingsModal').addEventListener('click', e => {
+    if (e.target.id === 'settingsModal') closeSettings();
+  });
+  document.getElementById('editModal').addEventListener('click', e => {
+    if (e.target.id === 'editModal') closeEdit();
+  });
+
+  // Sync on page load (pulls any new words from other devices)
+  if (lsGet(LS_GH_TOKEN)) {
+    // Slight delay so the first paint happens before a potentially slow network call
+    setTimeout(syncNow, 50);
+  } else {
+    setSyncStatus('off');
+  }
+
+  // Sync on tab refocus — catches "phone left in pocket" case
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && lsGet(LS_GH_TOKEN)) scheduleSync();
+  });
+}
+
+init();
+</script>
+</body>
+</html>
