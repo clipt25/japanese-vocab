@@ -42,16 +42,49 @@ button { font-family: inherit; -webkit-appearance: none; appearance: none; }
   align-items: center;
   justify-content: space-between;
 }
-.top-title {
-  font-family: 'Crimson Pro', Georgia, serif;
-  font-size: 13px;
-  font-weight: 400;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #6b5e45;
+/* ── Mode switcher ── */
+.mode-switcher {
+  display: flex;
+  gap: 4px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 3px;
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
+}
+.mode-btn {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: background 150ms, color 150ms;
+  white-space: nowrap;
+  min-height: 30px;
+}
+.mode-btn.active {
+  background: #c8b99a;
+  color: #0e0d0b;
+}
+.mode-btn.inactive {
+  background: transparent;
+  color: #6b5e45;
+}
+.mode-btn.inactive:hover, .mode-btn.inactive:focus-visible {
+  color: #a89880;
+  background: rgba(255,255,255,0.04);
+  outline: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mode-btn { transition: none; }
 }
 .btn-mode {
   background: none;
@@ -74,19 +107,6 @@ button { font-family: inherit; -webkit-appearance: none; appearance: none; }
   color: #c8b99a;
   outline: none;
 }
-.back-link {
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  color: #6b5e45;
-  text-decoration: none;
-  white-space: nowrap;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  padding: 0 4px;
-  transition: color 0.15s;
-}
-.back-link:hover, .back-link:focus-visible { color: #c8b99a; outline: none; }
 
 /* ── Main ── */
 .main {
@@ -453,8 +473,10 @@ body.light .top-bar {
 body.light .top-title { color: #8a6040; }
 body.light .btn-mode { border-color: rgba(100,70,40,0.3); color: #7a5830; }
 body.light .btn-mode:hover, body.light .btn-mode:focus-visible { border-color: rgba(100,70,40,0.6); color: #3a1e00; }
-body.light .back-link { color: #8a6040; }
-body.light .back-link:hover { color: #3a1e00; }
+body.light .mode-switcher { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.08); }
+body.light .mode-btn.active { background: #8a6040; color: #f5efe3; }
+body.light .mode-btn.inactive { color: #b09070; }
+body.light .mode-btn.inactive:hover, body.light .mode-btn.inactive:focus-visible { color: #8a6040; background: rgba(0,0,0,0.04); }
 body.light .select-heading { color: #8a6040; }
 body.light .drill-card { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.1); }
 body.light .drill-card:hover, body.light .drill-card:focus-visible { background: rgba(0,0,0,0.04); border-color: rgba(100,70,40,0.3); }
@@ -502,14 +524,17 @@ body.light .select-divider { border-top-color: rgba(0,0,0,0.1); }
   .drill-card-desc { font-size: 12px; }
   .btn-option { padding: 12px 14px; font-size: 0.95rem; }
   .question-area { padding: 24px 16px 20px; }
+  .mode-btn { padding: 5px 10px; font-size: 11px; }
 }
 </style>
 </head>
 <body>
 <header class="top-bar">
   <button class="btn-mode" id="btnMode" onclick="toggleMode()" aria-label="Toggle theme" aria-pressed="false">☀</button>
-  <span class="top-title">Japanese Quiz</span>
-  <a class="back-link" href="./japanese-vocab.html">← Back to vocab</a>
+  <div class="mode-switcher" role="navigation" aria-label="Switch mode">
+    <a class="mode-btn inactive" href="./japanese-vocab.html">Flashcards</a>
+    <span class="mode-btn active" aria-current="page">Quiz</span>
+  </div>
 </header>
 <main class="main" id="main">
   <!-- rendered by render() -->
