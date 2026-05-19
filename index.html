@@ -188,6 +188,49 @@ input, textarea { font-family: inherit; -webkit-appearance: none; appearance: no
   color: #4a4030;
 }
 .top-bar-right { display: flex; align-items: center; gap: 10px; }
+
+/* ── Mode switcher ── */
+.mode-switcher {
+  display: flex;
+  gap: 4px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 3px;
+}
+.mode-btn {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: background 150ms, color 150ms;
+  white-space: nowrap;
+  min-height: 30px;
+}
+.mode-btn.active {
+  background: #c8b99a;
+  color: #0e0d0b;
+}
+.mode-btn.inactive {
+  background: transparent;
+  color: #6b5e45;
+}
+.mode-btn.inactive:hover, .mode-btn.inactive:focus-visible {
+  color: #a89880;
+  background: rgba(255,255,255,0.04);
+  outline: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mode-btn { transition: none; }
+}
+
 .counter {
   font-size: 13px;
   color: #6b5e45;
@@ -684,6 +727,10 @@ body.light .sidebar-footer button { border-color: rgba(100,70,40,0.3); color: #7
 body.light .sidebar-footer button:hover { border-color: rgba(100,70,40,0.6); color: #3a1e00; }
 body.light .site-label { color: #9a8060; }
 body.light .counter { color: #7a6040; }
+body.light .mode-switcher { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.08); }
+body.light .mode-btn.active { background: #8a6040; color: #f5efe3; }
+body.light .mode-btn.inactive { color: #b09070; }
+body.light .mode-btn.inactive:hover, body.light .mode-btn.inactive:focus-visible { color: #8a6040; background: rgba(0,0,0,0.04); }
 body.light .card { border-color: rgba(0,0,0,0.1); background: rgba(0,0,0,0.02); }
 body.light .chapter-badge { background-color: rgba(100,70,40,0.1); color: #7a5030; }
 body.light .word { color: #1a0e00; }
@@ -776,6 +823,8 @@ body.light .loading-card .target-word { color: #3a1e00; }
   }
   body.light .mobile-header .title { color: #7a6040; }
   .mobile-header .right { display: flex; gap: 8px; }
+  .mobile-header .mode-switcher { flex: 1; justify-content: center; }
+  .mode-btn { padding: 5px 10px; font-size: 11px; }
 
   .main {
     padding: 18px 14px 100px;
@@ -863,7 +912,10 @@ body.light button:focus-visible, body.light input:focus-visible, body.light text
     <!-- Mobile header (only visible on phone) -->
     <div class="mobile-header">
       <div class="ham-wrap"><button class="btn-ham" onclick="openDrawer()" aria-label="Open word list">☰</button></div>
-      <div class="title">日本語 — Vocabulary</div>
+      <div class="mode-switcher" role="navigation" aria-label="Switch mode">
+        <span class="mode-btn active" aria-current="page">Flashcards</span>
+        <a class="mode-btn inactive" href="./japanese-quiz.html">Quiz</a>
+      </div>
       <div class="right">
         <span class="sync-status" id="syncStatusM" onclick="syncNow()" title="Sync status"></span>
         <button class="btn-mode" id="btnModeM" onclick="toggleMode()" aria-label="Toggle theme">☀</button>
@@ -873,6 +925,10 @@ body.light button:focus-visible, body.light input:focus-visible, body.light text
     <!-- Desktop top bar -->
     <div class="top-bar">
       <span class="site-label">Vocabulary</span>
+      <div class="mode-switcher" role="navigation" aria-label="Switch mode">
+        <span class="mode-btn active" aria-current="page">Flashcards</span>
+        <a class="mode-btn inactive" href="./japanese-quiz.html">Quiz</a>
+      </div>
       <div class="top-bar-right">
         <span class="sync-status" id="syncStatus" onclick="syncNow()" title="Click to sync now"></span>
         <button class="btn-mode" id="btnMode" onclick="toggleMode()" title="Toggle light/dark" aria-label="Toggle theme">☀</button>
