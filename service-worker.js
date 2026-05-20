@@ -1,4 +1,4 @@
-const CACHE = 'jp-vocab-v1';
+const CACHE = 'jp-vocab-v2';
 const ASSETS = [
   './',
   './index.html',

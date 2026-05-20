@@ -880,6 +880,31 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 body.light button:focus-visible, body.light input:focus-visible, body.light textarea:focus-visible, body.light select:focus-visible {
   outline-color: #8a6040;
 }
+
+/* ── Streak chip ── */
+.streak-chip {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 15px;
+  line-height: 1;
+  cursor: default;
+  user-select: none;
+  transition: opacity 200ms;
+}
+.streak-chip.zero { opacity: 0.35; }
+.streak-flame { font-size: 16px; line-height: 1; }
+.streak-count { font-size: 15px; font-weight: 400; color: #c8b99a; min-width: 14px; }
+body.light .streak-count { color: #8a6040; }
+@keyframes streak-pulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .streak-chip.just-increased .streak-flame { animation: none; }
+}
 </style>
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icon.svg">
@@ -933,6 +958,10 @@ body.light button:focus-visible, body.light input:focus-visible, body.light text
       </div>
       <div class="top-bar-right">
         <span class="sync-status" id="syncStatus" onclick="syncNow()" title="Click to sync now"></span>
+        <div class="streak-chip zero" id="streakChip" title="Current streak">
+          <span class="streak-flame">🔥</span>
+          <span class="streak-count" id="streakCount">0</span>
+        </div>
         <button class="btn-mode" id="btnMode" onclick="toggleMode()" title="Toggle light/dark" aria-label="Toggle theme">☀</button>
         <span class="counter" id="counter">1 of 3</span>
       </div>
@@ -1015,13 +1044,16 @@ body.light button:focus-visible, body.light input:focus-visible, body.light text
 // ═══════════════════════════════════════════════════════════════
 //  STORAGE KEYS + safe helpers
 // ═══════════════════════════════════════════════════════════════
-const LS_DECK      = 'jp-vocab-deck';
-const LS_APIKEY    = 'jp-vocab-apikey';
-const LS_MODEL     = 'jp-vocab-model';
-const LS_MODE      = 'jp-vocab-mode';
-const LS_GH_TOKEN  = 'jp-vocab-gh-token';
-const LS_GH_GIST   = 'jp-vocab-gh-gist';
-const LS_LAST_SYNC = 'jp-vocab-last-sync';
+const LS_DECK           = 'jp-vocab-deck';
+const LS_APIKEY         = 'jp-vocab-apikey';
+const LS_MODEL          = 'jp-vocab-model';
+const LS_MODE           = 'jp-vocab-mode';
+const LS_GH_TOKEN       = 'jp-vocab-gh-token';
+const LS_GH_GIST        = 'jp-vocab-gh-gist';
+const LS_LAST_SYNC      = 'jp-vocab-last-sync';
+const LS_STREAK_CURRENT = 'jp-streak-current';
+const LS_STREAK_BEST    = 'jp-streak-best';
+const LS_STREAK_DATE    = 'jp-streak-date';
 
 // Wrappers so the app never crashes from Safari private mode, opaque origins,
 // quota exceeded, or disabled storage.
@@ -1033,6 +1065,24 @@ function lsSet(key, val) {
 }
 function lsDel(key) {
   try { localStorage.removeItem(key); } catch (e) {}
+}
+
+// ── Streak (read-only display — activity recorded in quiz app) ──
+function getStreak() {
+  return {
+    current: parseInt(lsGet(LS_STREAK_CURRENT) || '0', 10),
+    best:    parseInt(lsGet(LS_STREAK_BEST)    || '0', 10),
+    date:    lsGet(LS_STREAK_DATE) || null,
+  };
+}
+
+function renderStreakChip() {
+  const s = getStreak();
+  const chip  = document.getElementById('streakChip');
+  const count = document.getElementById('streakCount');
+  if (!chip || !count) return;
+  count.textContent = s.current;
+  chip.classList.toggle('zero', s.current === 0);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2021,6 +2071,8 @@ function init() {
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && lsGet(LS_GH_TOKEN)) scheduleSync();
   });
+
+  renderStreakChip();
 }
 
 init();

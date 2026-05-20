@@ -526,16 +526,61 @@ body.light .select-divider { border-top-color: rgba(0,0,0,0.1); }
   .question-area { padding: 24px 16px 20px; }
   .mode-btn { padding: 5px 10px; font-size: 11px; }
 }
+
+/* ── Streak chip ── */
+.streak-chip {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 15px;
+  line-height: 1;
+  cursor: default;
+  user-select: none;
+  transition: opacity 200ms;
+}
+.streak-chip.zero { opacity: 0.35; }
+.streak-flame { font-size: 16px; line-height: 1; }
+.streak-count { font-size: 15px; font-weight: 400; color: #c8b99a; min-width: 14px; }
+body.light .streak-count { color: #8a6040; }
+@keyframes streak-pulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+.streak-chip.just-increased .streak-flame { animation: streak-pulse 500ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .streak-chip.just-increased .streak-flame { animation: none; }
+}
+
+/* ── Results streak line ── */
+.results-streak {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 1rem;
+  color: #a89880;
+  margin-top: 6px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+.results-streak strong { color: #c8b99a; }
+body.light .results-streak { color: #8a6040; }
+body.light .results-streak strong { color: #6a3010; }
 </style>
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icon.svg">
 </head>
 <body>
 <header class="top-bar">
-  <button class="btn-mode" id="btnMode" onclick="toggleMode()" aria-label="Toggle theme" aria-pressed="false">☀</button>
   <div class="mode-switcher" role="navigation" aria-label="Switch mode">
     <a class="mode-btn inactive" href="./japanese-vocab.html">Flashcards</a>
     <span class="mode-btn active" aria-current="page">Quiz</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="streak-chip zero" id="streakChip" title="Current streak">
+      <span class="streak-flame">🔥</span>
+      <span class="streak-count" id="streakCount">0</span>
+    </div>
+    <button class="btn-mode" id="btnMode" onclick="toggleMode()" aria-label="Toggle theme" aria-pressed="false">☀</button>
   </div>
 </header>
 <main class="main" id="main">
@@ -907,9 +952,12 @@ const KATAKANA_BANK = [
 // ═══════════════════════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════════════════════
-const LS_MODE        = 'jp-vocab-mode';
-const LS_ROUND_LEN   = 'jp-quiz-round-length';
-const LS_VOCAB       = 'jp-vocab-deck';
+const LS_MODE           = 'jp-vocab-mode';
+const LS_ROUND_LEN      = 'jp-quiz-round-length';
+const LS_VOCAB          = 'jp-vocab-deck';
+const LS_STREAK_CURRENT = 'jp-streak-current';
+const LS_STREAK_BEST    = 'jp-streak-best';
+const LS_STREAK_DATE    = 'jp-streak-date';
 
 const state = {
   screen:       'select',
@@ -926,6 +974,52 @@ const state = {
 // ═══════════════════════════════════════════════════════════════
 function lsGet(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch(e) {} }
+
+// ── Streak helpers ──
+function todayStr() {
+  return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local time
+}
+
+function getStreak() {
+  return {
+    current: parseInt(lsGet(LS_STREAK_CURRENT) || '0', 10),
+    best:    parseInt(lsGet(LS_STREAK_BEST)    || '0', 10),
+    date:    lsGet(LS_STREAK_DATE) || null,
+  };
+}
+
+function recordActivity() {
+  const today = todayStr();
+  const s = getStreak();
+
+  if (s.date === today) return { current: s.current, best: s.best, increased: false };
+
+  let newCurrent;
+  if (s.date === null) {
+    newCurrent = 1;
+  } else {
+    const last = new Date(s.date);
+    const now  = new Date(today);
+    const diffDays = Math.round((now - last) / 86400000);
+    newCurrent = (diffDays === 1) ? s.current + 1 : 1;
+  }
+
+  const newBest = Math.max(newCurrent, s.best);
+  lsSet(LS_STREAK_CURRENT, String(newCurrent));
+  lsSet(LS_STREAK_BEST,    String(newBest));
+  lsSet(LS_STREAK_DATE,    today);
+
+  return { current: newCurrent, best: newBest, increased: newCurrent > s.current };
+}
+
+function renderStreakChip() {
+  const s = getStreak();
+  const chip  = document.getElementById('streakChip');
+  const count = document.getElementById('streakCount');
+  if (!chip || !count) return;
+  count.textContent = s.current;
+  chip.classList.toggle('zero', s.current === 0);
+}
 
 function shuffle(arr) {
   const a = arr.slice();
@@ -1127,10 +1221,12 @@ function renderResults() {
   const total = state.questions.length;
   const score = state.score;
   const pct = Math.round((score / total) * 100);
+  const s = getStreak();
   return `<div class="results-card">
     <p class="results-label">Results</p>
     <div class="results-score">${score} / ${total}</div>
     <div class="results-pct">${pct}% correct</div>
+    <p class="results-streak">🔥 <strong>${s.current}</strong> day streak &nbsp;·&nbsp; Best: <strong>${s.best}</strong></p>
     <div class="results-btns">
       <button class="btn-results" onclick="tryAgain()">Try again — same drill</button>
       <button class="btn-results" onclick="changeDrill()">Change drill</button>
@@ -1197,8 +1293,19 @@ function handleAnswer(optionIndex) {
     state.answered = false;
     if (state.currentIndex >= state.questions.length) {
       state.screen = 'results';
+      const result = recordActivity();
+      render();
+      if (result && result.increased) {
+        const chip = document.getElementById('streakChip');
+        if (chip) {
+          chip.classList.add('just-increased');
+          setTimeout(() => chip.classList.remove('just-increased'), 600);
+        }
+      }
+      renderStreakChip();
+    } else {
+      render();
     }
-    render();
   }, delay);
 }
 
@@ -1263,6 +1370,7 @@ function init() {
   const savedLen = parseInt(lsGet(LS_ROUND_LEN), 10);
   if ([5, 10, 20].includes(savedLen)) state.roundLength = savedLen;
   render();
+  renderStreakChip();
 }
 
 init();
