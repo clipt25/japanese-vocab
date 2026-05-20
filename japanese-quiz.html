@@ -527,6 +527,8 @@ body.light .select-divider { border-top-color: rgba(0,0,0,0.1); }
   .mode-btn { padding: 5px 10px; font-size: 11px; }
 }
 </style>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon.svg">
 </head>
 <body>
 <header class="top-bar">
@@ -1264,6 +1266,14 @@ function init() {
 }
 
 init();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
 </script>
 </body>
 </html>
