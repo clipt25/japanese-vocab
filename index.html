@@ -2028,8 +2028,14 @@ init();
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js')
-      .catch(err => console.warn('SW registration failed:', err));
+    navigator.serviceWorker.register('./service-worker.js', {
+      updateViaCache: 'none'
+    }).catch(err => console.warn('SW registration failed:', err));
+  });
+  navigator.serviceWorker.addEventListener('message', event => {
+    if (event.data && event.data.type === 'SW_UPDATED') {
+      window.location.reload();
+    }
   });
 }
 </script>
