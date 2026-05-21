@@ -409,6 +409,47 @@ button { font-family: inherit; -webkit-appearance: none; appearance: none; }
   .katakana-english { transition: none; }
 }
 
+/* ── Example sentence reveal (correct answer only) ── */
+.example-reveal {
+  opacity: 0;
+  transition: opacity 200ms ease;
+  padding: 0 4px;
+  min-height: 60px;
+}
+.example-reveal.visible { opacity: 1; }
+.example-divider {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  margin: 14px 0 12px;
+}
+body.light .example-divider { border-top-color: rgba(0,0,0,0.08); }
+.example-jp {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.1rem;
+  font-weight: 300;
+  color: #e8e2d9;
+  line-height: 1.8;
+  margin-bottom: 4px;
+  text-align: center;
+}
+.example-en {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-style: italic;
+  font-size: 0.95rem;
+  color: #a89880;
+  line-height: 1.5;
+  text-align: center;
+}
+body.light .example-jp { color: #2a1e0a; }
+body.light .example-en { color: #8a6040; }
+@media (prefers-reduced-motion: reduce) {
+  .example-reveal { transition: none; }
+}
+@media (max-width: 400px) {
+  .example-jp { font-size: 1rem; }
+  .example-en { font-size: 0.88rem; }
+}
+
 /* ── Results screen ── */
 .results-card {
   width: 100%;
@@ -1212,6 +1253,11 @@ function renderQuiz() {
       <div class="progress-bar-fill" style="width: ${pct}%"></div>
     </div>
     <div class="question-area">${questionHTML}</div>
+    <div class="example-reveal" id="exampleReveal">
+      <hr class="example-divider">
+      <p class="example-jp" id="exampleJp"></p>
+      <p class="example-en" id="exampleEn"></p>
+    </div>
     <ul class="options-list">${optionItems}</ul>
   </div>`;
 }
@@ -1284,6 +1330,20 @@ function handleAnswer(optionIndex) {
       // Force reflow so transition fires even if reduced-motion skips it
       engEl.getBoundingClientRect();
       engEl.classList.add('visible');
+    }
+  }
+
+  // Reveal example sentence on correct answer (kanji/reading drills only)
+  if (isCorrect && q.word && q.word.ex &&
+      (state.drillType === 'kanji-to-reading' || state.drillType === 'reading-to-kanji')) {
+    const revealEl = document.getElementById('exampleReveal');
+    const jpEl     = document.getElementById('exampleJp');
+    const enEl     = document.getElementById('exampleEn');
+    if (revealEl && jpEl && enEl) {
+      jpEl.textContent = q.word.ex;
+      enEl.textContent = q.word.exm || '';
+      revealEl.getBoundingClientRect();
+      revealEl.classList.add('visible');
     }
   }
 
