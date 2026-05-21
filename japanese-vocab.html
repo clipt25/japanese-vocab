@@ -667,6 +667,34 @@ body.light .modal .section-sub { color: #9a8060; }
   font-style: italic;
 }
 body.light .modal .sync-info { color: #8a7050; }
+
+.btn-copy-setup {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  padding: 5px 12px;
+  margin-top: 6px;
+  background: transparent;
+  border: 1px solid rgba(200,185,154,0.3);
+  border-radius: 5px;
+  color: #a89880;
+  cursor: pointer;
+  width: 100%;
+  transition: border-color 150ms, color 150ms;
+}
+.btn-copy-setup:hover { border-color: #c8b99a; color: #c8b99a; }
+.btn-copy-setup:disabled { opacity: 0.35; cursor: default; }
+.setup-link-hint {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-style: italic;
+  font-size: 0.82rem;
+  color: #a89880;
+  margin-top: 4px;
+  text-align: center;
+}
+body.light .btn-copy-setup { border-color: rgba(100,70,40,0.25); color: #8a6040; }
+body.light .btn-copy-setup:hover { border-color: #8a6040; color: #5a3010; }
+body.light .setup-link-hint { color: #8a6040; }
 .modal label {
   display: block;
   font-size: 11px;
@@ -1032,6 +1060,10 @@ body.light .streak-count { color: #8a6040; }
     <input id="ghTokenInput" type="password" placeholder="ghp_... or github_pat_..." autocomplete="off">
     <label for="ghGistInput">Gist ID <span class="fg-hint">— leave empty to auto-create on first sync; paste this device's ID on other devices to pair them</span></label>
     <input id="ghGistInput" type="text" placeholder="auto-created after first sync" autocomplete="off">
+    <button class="btn-copy-setup" id="btnCopySetup" onclick="copySetupLink()" title="Copy a link to share your Gist ID to another device">
+      ⎘ Copy setup link
+    </button>
+    <p class="setup-link-hint" id="setupLinkHint" hidden>Copied! Open this link on any device/browser to pre-fill your Gist ID.</p>
     <div id="syncInfo" class="sync-info"></div>
 
     <div class="modal-actions">
@@ -1546,6 +1578,31 @@ function updateAddHint() {
   document.getElementById('addHint').textContent = has
     ? 'Press Enter to generate flashcard'
     : 'Set API key in Settings to enable AI generation';
+}
+
+function copySetupLink() {
+  const inputEl = document.getElementById('ghGistInput');
+  const gistId = ((inputEl && inputEl.value) || lsGet(LS_GH_GIST) || '').trim();
+  if (!gistId) {
+    alert('Save a Gist ID first before copying the setup link.');
+    return;
+  }
+  const url = `https://clipt25.github.io/japanese-vocab/?gist=${encodeURIComponent(gistId)}`;
+  const showHint = (msg) => {
+    const hint = document.getElementById('setupLinkHint');
+    if (!hint) return;
+    hint.textContent = msg;
+    hint.hidden = false;
+    setTimeout(() => { hint.hidden = true; }, 3000);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(
+      () => showHint('Copied! Open this link on any device/browser to pre-fill your Gist ID.'),
+      () => { prompt('Copy this link and open it on any device:', url); }
+    );
+  } else {
+    prompt('Copy this link and open it on any device:', url);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2103,6 +2160,27 @@ function init() {
   document.getElementById('editModal').addEventListener('click', e => {
     if (e.target.id === 'editModal') closeEdit();
   });
+
+  // Auto-fill Gist ID from setup link (?gist=...). Pairs a new context to an existing Gist.
+  (function() {
+    const params = new URLSearchParams(window.location.search);
+    const gistParam = (params.get('gist') || '').trim();
+    if (!gistParam) return;
+    lsSet(LS_GH_GIST, gistParam);
+    // Clean URL so the param doesn't linger
+    window.history.replaceState({}, '', window.location.pathname);
+    // Open settings so the user just needs to paste their token
+    setTimeout(() => {
+      openSettings();
+      const inputGist = document.getElementById('ghGistInput');
+      if (inputGist) inputGist.value = gistParam;
+      const hint = document.getElementById('setupLinkHint');
+      if (hint) {
+        hint.textContent = 'Gist ID pre-filled! Just enter your GitHub token and save.';
+        hint.hidden = false;
+      }
+    }, 300);
+  })();
 
   // Sync on page load (pulls any new words from other devices).
   // Skip-if-fresh: if last sync < 5 min ago, restore the badge without hitting the API.
