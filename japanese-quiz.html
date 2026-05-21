@@ -1016,16 +1016,30 @@ const state = {
 function lsGet(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch(e) {} }
 
-// ── Streak helpers ──
+// ── Streak helpers (stored inside jp-vocab-deck for Gist sync) ──
+
+function getDeckRaw() {
+  try {
+    const raw = localStorage.getItem('jp-vocab-deck');
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+function saveDeckRaw(deck) {
+  try { localStorage.setItem('jp-vocab-deck', JSON.stringify(deck)); } catch(e) {}
+}
+
 function todayStr() {
   return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local time
 }
 
 function getStreak() {
+  const deck = getDeckRaw();
+  const s = (deck && deck.settings && deck.settings.streak) || {};
   return {
-    current: parseInt(lsGet(LS_STREAK_CURRENT) || '0', 10),
-    best:    parseInt(lsGet(LS_STREAK_BEST)    || '0', 10),
-    date:    lsGet(LS_STREAK_DATE) || null,
+    current: parseInt(s.current || '0', 10),
+    best:    parseInt(s.best    || '0', 10),
+    date:    s.date || null,
   };
 }
 
@@ -1036,19 +1050,26 @@ function recordActivity() {
   if (s.date === today) return { current: s.current, best: s.best, increased: false };
 
   let newCurrent;
-  if (s.date === null) {
+  if (!s.date) {
     newCurrent = 1;
   } else {
-    const last = new Date(s.date);
-    const now  = new Date(today);
-    const diffDays = Math.round((now - last) / 86400000);
+    const diffDays = Math.round((new Date(today) - new Date(s.date)) / 86400000);
     newCurrent = (diffDays === 1) ? s.current + 1 : 1;
   }
-
   const newBest = Math.max(newCurrent, s.best);
-  lsSet(LS_STREAK_CURRENT, String(newCurrent));
-  lsSet(LS_STREAK_BEST,    String(newBest));
-  lsSet(LS_STREAK_DATE,    today);
+
+  // Write streak back into deck.settings.streak so Gist sync picks it up
+  const deck = getDeckRaw() || { version: 3, words: [], tombstones: [], settings: {} };
+  if (!deck.settings) deck.settings = {};
+  deck.settings.streak = { current: newCurrent, best: newBest, date: today };
+  saveDeckRaw(deck);
+
+  // Also keep the old standalone keys as a fallback for the vocab app's read-only display
+  try {
+    localStorage.setItem('jp-streak-current', String(newCurrent));
+    localStorage.setItem('jp-streak-best',    String(newBest));
+    localStorage.setItem('jp-streak-date',    today);
+  } catch(e) {}
 
   return { current: newCurrent, best: newBest, increased: newCurrent > s.current };
 }
@@ -1334,16 +1355,21 @@ function handleAnswer(optionIndex) {
   }
 
   // Reveal example sentence on correct answer (kanji/reading drills only)
-  if (isCorrect && q.word && q.word.ex &&
+  if (isCorrect && q.word && Array.isArray(q.word.ex) && q.word.ex.length > 0 &&
       (state.drillType === 'kanji-to-reading' || state.drillType === 'reading-to-kanji')) {
     const revealEl = document.getElementById('exampleReveal');
     const jpEl     = document.getElementById('exampleJp');
     const enEl     = document.getElementById('exampleEn');
     if (revealEl && jpEl && enEl) {
-      jpEl.textContent = q.word.ex;
-      enEl.textContent = q.word.exm || '';
-      revealEl.getBoundingClientRect();
-      revealEl.classList.add('visible');
+      const firstEx = q.word.ex[0];
+      if (firstEx) {
+        jpEl.textContent = firstEx.jp || '';
+        enEl.textContent = firstEx.en || '';
+        revealEl.getBoundingClientRect();
+        revealEl.classList.add('visible');
+      } else {
+        revealEl.classList.remove('visible');
+      }
     }
   }
 
