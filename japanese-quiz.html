@@ -447,6 +447,14 @@ body.light .example-divider { border-top-color: rgba(0,0,0,0.08); }
 }
 body.light .example-jp { color: #2a1e0a; }
 body.light .example-en { color: #8a6040; }
+.example-jp ruby { ruby-align: center; }
+.example-jp ruby rt {
+  font-size: 0.55em;
+  font-family: 'Noto Serif JP', serif;
+  color: #a89880;
+  letter-spacing: 0.02em;
+}
+body.light .example-jp ruby rt { color: #8a6040; }
 @media (prefers-reduced-motion: reduce) {
   .example-reveal { transition: none; }
 }
@@ -1076,6 +1084,26 @@ let lastStreakResult = null;
 function lsGet(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch(e) {} }
 
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Parse [漢字|かんじ] annotations and render as <ruby> with furigana.
+function renderRubies(text) {
+  if (!text) return '';
+  const re = /\[([^\[\]|]+)\|([^\[\]|]+)\]/g;
+  let out = '';
+  let last = 0;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    out += escapeHtml(text.slice(last, m.index));
+    out += `<ruby>${escapeHtml(m[1])}<rt>${escapeHtml(m[2])}</rt></ruby>`;
+    last = re.lastIndex;
+  }
+  out += escapeHtml(text.slice(last));
+  return out;
+}
+
 // ── Streak helpers (stored inside jp-vocab-deck for Gist sync) ──
 
 function getDeckRaw() {
@@ -1544,7 +1572,7 @@ function handleAnswer(optionIndex) {
     if (revealEl && jpEl && enEl) {
       const firstEx = q.word.ex[0];
       if (firstEx) {
-        jpEl.textContent = firstEx.jp || '';
+        jpEl.innerHTML = renderRubies(firstEx.jp || '');
         enEl.textContent = firstEx.en || '';
         revealEl.getBoundingClientRect();
         revealEl.classList.add('visible');
