@@ -594,6 +594,21 @@ body.light .streak-count { color: #8a6040; }
   .streak-chip.just-increased .streak-flame { animation: none; }
 }
 
+/* ── Quiz sync status badge ── */
+.quiz-sync-badge {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: #a89880;
+  opacity: 0.8;
+  white-space: nowrap;
+  transition: opacity 600ms;
+}
+.quiz-sync-badge.synced { color: #a89880; }
+.quiz-sync-badge.failed { color: #c8964a; }
+body.light .quiz-sync-badge.synced { color: #8a6040; }
+body.light .quiz-sync-badge.failed { color: #b06020; }
+
 /* ── Results streak line ── */
 .results-streak {
   font-family: 'Crimson Pro', Georgia, serif;
@@ -621,6 +636,7 @@ body.light .results-streak strong { color: #6a3010; }
       <span class="streak-flame">🔥</span>
       <span class="streak-count" id="streakCount">0</span>
     </div>
+    <span class="quiz-sync-badge" id="quizSyncBadge" hidden></span>
     <button class="btn-mode" id="btnMode" onclick="toggleMode()" aria-label="Toggle theme" aria-pressed="false">☀</button>
   </div>
 </header>
@@ -1132,28 +1148,46 @@ async function ghPullDeck() {
 
 // On load, pull the streak from the Gist (read-only) and adopt it if better.
 async function syncStreakFromGist() {
+  const badge = document.getElementById('quizSyncBadge');
+  // Not configured — leave the badge hidden, show nothing.
   if (!lsGet(LS_GH_TOKEN) || !lsGet(LS_GH_GIST)) return;
+
+  const showBadge = (cls, text, autohide) => {
+    if (!badge) return;
+    badge.textContent = text;
+    badge.className = 'quiz-sync-badge ' + cls;
+    badge.hidden = false;
+    if (autohide) setTimeout(() => { badge.hidden = true; }, 4000);
+  };
+
   try {
     const remote = await Promise.race([
       ghPullDeck(),
       new Promise(r => setTimeout(() => r(null), 3000))
     ]);
-    const remoteStreak = remote && remote.settings && remote.settings.streak;
-    if (!remoteStreak) return;
-    const local = getDeckRaw() || { version: 3, words: [], tombstones: [], settings: {} };
-    if (!local.settings) local.settings = {};
-    const merged = mergeStreak(local.settings.streak, remoteStreak);
-    if (merged && JSON.stringify(merged) !== JSON.stringify(local.settings.streak || null)) {
-      local.settings.streak = merged;
-      saveDeckRaw(local);
-      if (merged.date) {
-        lsSet(LS_STREAK_CURRENT, String(merged.current || 0));
-        lsSet(LS_STREAK_BEST,    String(merged.best || 0));
-        lsSet(LS_STREAK_DATE,    merged.date);
+    // null = timed out or the pull failed/returned nothing.
+    if (!remote) { showBadge('failed', '⚠ Sync', false); return; }
+
+    const remoteStreak = remote.settings && remote.settings.streak;
+    if (remoteStreak) {
+      const local = getDeckRaw() || { version: 3, words: [], tombstones: [], settings: {} };
+      if (!local.settings) local.settings = {};
+      const merged = mergeStreak(local.settings.streak, remoteStreak);
+      if (merged && JSON.stringify(merged) !== JSON.stringify(local.settings.streak || null)) {
+        local.settings.streak = merged;
+        saveDeckRaw(local);
+        if (merged.date) {
+          lsSet(LS_STREAK_CURRENT, String(merged.current || 0));
+          lsSet(LS_STREAK_BEST,    String(merged.best || 0));
+          lsSet(LS_STREAK_DATE,    merged.date);
+        }
+        renderStreakChip();
       }
-      renderStreakChip();
     }
-  } catch (e) { /* offline or failure — keep the local streak */ }
+    showBadge('synced', '✓ Synced', true);
+  } catch (e) {
+    showBadge('failed', '⚠ Sync', false);
+  }
 }
 
 function shuffle(arr) {
