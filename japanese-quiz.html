@@ -42,6 +42,11 @@ button { font-family: inherit; -webkit-appearance: none; appearance: none; }
   align-items: center;
   justify-content: space-between;
 }
+.top-bar-left, .top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 /* ── Mode switcher ── */
 .mode-switcher {
   display: flex;
@@ -566,6 +571,7 @@ body.light .select-divider { border-top-color: rgba(0,0,0,0.1); }
   .btn-option { padding: 12px 14px; font-size: 0.95rem; }
   .question-area { padding: 24px 16px 20px; }
   .mode-btn { padding: 5px 10px; font-size: 11px; }
+  .qsb-label { display: none; }
 }
 
 /* ── Streak chip ── */
@@ -606,6 +612,7 @@ body.light .streak-count { color: #8a6040; }
 }
 .quiz-sync-badge.synced { color: #a89880; }
 .quiz-sync-badge.failed { color: #c8964a; }
+.qsb-label { margin-left: 3px; }
 body.light .quiz-sync-badge.synced { color: #8a6040; }
 body.light .quiz-sync-badge.failed { color: #b06020; }
 
@@ -621,6 +628,16 @@ body.light .quiz-sync-badge.failed { color: #b06020; }
 .results-streak strong { color: #c8b99a; }
 body.light .results-streak { color: #8a6040; }
 body.light .results-streak strong { color: #6a3010; }
+.results-sync-hint {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: #8a7f6e;
+  margin-top: -14px;
+  margin-bottom: 22px;
+  text-align: center;
+}
+body.light .results-sync-hint { color: #9a8060; }
 </style>
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icon.svg">
@@ -631,12 +648,14 @@ body.light .results-streak strong { color: #6a3010; }
     <a class="mode-btn inactive" href="./japanese-vocab.html">Flashcards</a>
     <span class="mode-btn active" aria-current="page">Quiz</span>
   </div>
-  <div style="display:flex;align-items:center;gap:10px">
+  <div class="top-bar-left">
     <div class="streak-chip zero" id="streakChip" title="Current streak">
       <span class="streak-flame">🔥</span>
       <span class="streak-count" id="streakCount">0</span>
     </div>
-    <span class="quiz-sync-badge" id="quizSyncBadge" hidden></span>
+    <span class="quiz-sync-badge" id="quizSyncBadge" hidden><span class="qsb-icon" id="quizSyncIcon"></span><span class="qsb-label" id="quizSyncLabel"></span></span>
+  </div>
+  <div class="top-bar-right">
     <button class="btn-mode" id="btnMode" onclick="toggleMode()" aria-label="Toggle theme" aria-pressed="false">☀</button>
   </div>
 </header>
@@ -1029,6 +1048,9 @@ const state = {
   answered:     false,
 };
 
+// Result of the most recent recordActivity() — drives the results-screen sync hint.
+let lastStreakResult = null;
+
 // ═══════════════════════════════════════════════════════════════
 //  UTILS
 // ═══════════════════════════════════════════════════════════════
@@ -1152,9 +1174,12 @@ async function syncStreakFromGist() {
   // Not configured — leave the badge hidden, show nothing.
   if (!lsGet(LS_GH_TOKEN) || !lsGet(LS_GH_GIST)) return;
 
-  const showBadge = (cls, text, autohide) => {
+  const showBadge = (cls, icon, label, autohide) => {
     if (!badge) return;
-    badge.textContent = text;
+    const iconEl = document.getElementById('quizSyncIcon');
+    const labelEl = document.getElementById('quizSyncLabel');
+    if (iconEl) iconEl.textContent = icon;
+    if (labelEl) labelEl.textContent = label;
     badge.className = 'quiz-sync-badge ' + cls;
     badge.hidden = false;
     if (autohide) setTimeout(() => { badge.hidden = true; }, 4000);
@@ -1166,7 +1191,7 @@ async function syncStreakFromGist() {
       new Promise(r => setTimeout(() => r(null), 3000))
     ]);
     // null = timed out or the pull failed/returned nothing.
-    if (!remote) { showBadge('failed', '⚠ Sync', false); return; }
+    if (!remote) { showBadge('failed', '⚠', 'Sync', false); return; }
 
     const remoteStreak = remote.settings && remote.settings.streak;
     if (remoteStreak) {
@@ -1181,12 +1206,13 @@ async function syncStreakFromGist() {
           lsSet(LS_STREAK_BEST,    String(merged.best || 0));
           lsSet(LS_STREAK_DATE,    merged.date);
         }
-        renderStreakChip();
       }
     }
-    showBadge('synced', '✓ Synced', true);
+    // Always reflect the post-pull localStorage value, even if nothing changed.
+    renderStreakChip();
+    showBadge('synced', '✓', 'Synced', true);
   } catch (e) {
-    showBadge('failed', '⚠ Sync', false);
+    showBadge('failed', '⚠', 'Sync', false);
   }
 }
 
@@ -1396,11 +1422,13 @@ function renderResults() {
   const score = state.score;
   const pct = Math.round((score / total) * 100);
   const s = getStreak();
+  const showSyncHint = !!(lastStreakResult && lastStreakResult.increased && lsGet(LS_GH_TOKEN));
   return `<div class="results-card">
     <p class="results-label">Results</p>
     <div class="results-score">${score} / ${total}</div>
     <div class="results-pct">${pct}% correct</div>
     <p class="results-streak">🔥 <strong>${s.current}</strong> day streak &nbsp;·&nbsp; Best: <strong>${s.best}</strong></p>
+    ${showSyncHint ? '<p class="results-sync-hint">Open the vocab app to sync your streak across devices</p>' : ''}
     <div class="results-btns">
       <button class="btn-results" onclick="tryAgain()">Try again — same drill</button>
       <button class="btn-results" onclick="changeDrill()">Change drill</button>
@@ -1487,6 +1515,7 @@ function handleAnswer(optionIndex) {
     if (state.currentIndex >= state.questions.length) {
       state.screen = 'results';
       const result = recordActivity();
+      lastStreakResult = result;
       render();
       if (result && result.increased) {
         const chip = document.getElementById('streakChip');
