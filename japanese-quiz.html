@@ -455,6 +455,27 @@ body.light .example-en { color: #8a6040; }
   .example-en { font-size: 0.88rem; }
 }
 
+/* ── Next button (correct answer) ── */
+.btn-next {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  padding: 12px 0;
+  margin: 20px auto 0;
+  width: calc(100% - 40px);
+  max-width: 420px;
+  background: transparent;
+  border: 1px solid rgba(200,185,154,0.35);
+  border-radius: 8px;
+  color: #c8b99a;
+  cursor: pointer;
+  display: block;
+  transition: border-color 150ms, color 150ms;
+}
+.btn-next:hover { border-color: #c8b99a; color: #e8d9ba; }
+body.light .btn-next { border-color: rgba(100,70,40,0.3); color: #8a6040; }
+body.light .btn-next:hover { border-color: #8a6040; color: #5a3010; }
+
 /* ── Results screen ── */
 .results-card {
   width: 100%;
@@ -1409,6 +1430,7 @@ function renderQuiz() {
       <p class="example-jp" id="exampleJp"></p>
       <p class="example-en" id="exampleEn"></p>
     </div>
+    <button class="btn-next" id="btnNext" hidden onclick="advanceFromNext()">Next →</button>
     <ul class="options-list">${optionItems}</ul>
   </div>`;
 }
@@ -1455,6 +1477,33 @@ function startQuiz() {
   state.answered     = false;
   state.screen       = 'quiz';
   render();
+}
+
+function advanceQuestion() {
+  state.currentIndex++;
+  state.answered = false;
+  if (state.currentIndex >= state.questions.length) {
+    state.screen = 'results';
+    const result = recordActivity();
+    lastStreakResult = result;
+    render();
+    if (result && result.increased) {
+      const chip = document.getElementById('streakChip');
+      if (chip) {
+        chip.classList.add('just-increased');
+        setTimeout(() => chip.classList.remove('just-increased'), 600);
+      }
+    }
+    renderStreakChip();
+  } else {
+    render();
+  }
+}
+
+function advanceFromNext() {
+  const btnNext = document.getElementById('btnNext');
+  if (btnNext) btnNext.hidden = true;
+  advanceQuestion();
 }
 
 function handleAnswer(optionIndex) {
@@ -1505,27 +1554,12 @@ function handleAnswer(optionIndex) {
     }
   }
 
-  const delay = reducedMotion() ? 800 : 800;
-  setTimeout(() => {
-    state.currentIndex++;
-    state.answered = false;
-    if (state.currentIndex >= state.questions.length) {
-      state.screen = 'results';
-      const result = recordActivity();
-      lastStreakResult = result;
-      render();
-      if (result && result.increased) {
-        const chip = document.getElementById('streakChip');
-        if (chip) {
-          chip.classList.add('just-increased');
-          setTimeout(() => chip.classList.remove('just-increased'), 600);
-        }
-      }
-      renderStreakChip();
-    } else {
-      render();
-    }
-  }, delay);
+  if (isCorrect) {
+    const btnNext = document.getElementById('btnNext');
+    if (btnNext) btnNext.hidden = false;
+  } else {
+    setTimeout(advanceQuestion, 800);
+  }
 }
 
 function tryAgain() {
@@ -1572,6 +1606,11 @@ document.addEventListener('keydown', e => {
   }
   // Block arrow key navigation during quiz
   if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') e.preventDefault();
+  // Advance via Next button with Enter/Space
+  if ((e.key === 'Enter' || e.key === ' ') && state.answered) {
+    const btnNext = document.getElementById('btnNext');
+    if (btnNext && !btnNext.hidden) { e.preventDefault(); advanceFromNext(); }
+  }
 });
 
 // ═══════════════════════════════════════════════════════════════
