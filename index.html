@@ -1210,6 +1210,17 @@ function migrateDeck(d) {
 }
 
 function saveDeck(opts) {
+  // Preserve settings.streak written by the quiz app (possibly in another tab):
+  // our in-memory deck may predate that write, so merge before overwriting storage.
+  try {
+    const persisted = JSON.parse(lsGet(LS_DECK) || 'null');
+    const persistedStreak = persisted && persisted.settings && persisted.settings.streak;
+    if (persistedStreak) {
+      if (!deck.settings) deck.settings = {};
+      const m = mergeStreak(deck.settings.streak, persistedStreak);
+      if (m) deck.settings.streak = m;
+    }
+  } catch (e) {}
   lsSet(LS_DECK, JSON.stringify(deck));
   // Kick off a debounced sync unless the caller explicitly opted out
   // (e.g. we just pulled from remote and don't want to immediately push back)
@@ -1845,6 +1856,23 @@ async function ghPush() {
   if (!res.ok) throw new Error('GH_PUSH ' + res.status);
 }
 
+// Merge two streak objects ({current, best, date}). A streak is a merge-by-best
+// value: current/date come from the entry with the later date; best is the max.
+function mergeStreak(a, b) {
+  a = a || {}; b = b || {};
+  if (!a.date && !b.date) return null;
+  let primary;
+  if (!a.date) primary = b;
+  else if (!b.date) primary = a;
+  else primary = (a.date >= b.date) ? a : b;
+  return {
+    current: parseInt(primary.current || 0, 10),
+    date:    primary.date,
+    best:    Math.max(parseInt(a.best || 0, 10), parseInt(b.best || 0, 10),
+                      parseInt(a.current || 0, 10), parseInt(b.current || 0, 10)),
+  };
+}
+
 // Merge local + remote decks. Newer updatedAt wins per word;
 // tombstones (deletes) propagate across devices.
 function mergeDecks(local, remote) {
@@ -1876,17 +1904,23 @@ function mergeDecks(local, remote) {
   }
   merged.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   const tombArr = Object.entries(tombs).map(([id, u]) => ({ id, updatedAt: Number(u) }));
+  const mergedSettings = Object.assign({}, remote.settings || {}, local.settings || {});
+  const mergedStreak = mergeStreak((local.settings || {}).streak, (remote.settings || {}).streak);
+  if (mergedStreak) mergedSettings.streak = mergedStreak;
+  else delete mergedSettings.streak;
   const out = {
     version: Math.max(local.version || 3, remote.version || 3, 3),
     words: merged,
     tombstones: tombArr,
-    settings: Object.assign({}, remote.settings || {}, local.settings || {})
+    settings: mergedSettings
   };
   // Canonical comparison: sort by id so re-ordering alone doesn't trigger a "changed" flag
   const canon = arr => arr.slice().sort((a, b) => (a.id > b.id ? 1 : -1));
   const sameWords = JSON.stringify(canon(out.words)) === JSON.stringify(canon(local.words || []));
   const sameTombs = JSON.stringify(canon(out.tombstones)) === JSON.stringify(canon(local.tombstones || []));
-  return { deck: out, changed: !(sameWords && sameTombs) };
+  const sameStreak = JSON.stringify((local.settings || {}).streak || null)
+                  === JSON.stringify(out.settings.streak || null);
+  return { deck: out, changed: !(sameWords && sameTombs && sameStreak) };
 }
 
 function setSyncStatus(state, extra) {

@@ -999,6 +999,9 @@ const LS_VOCAB          = 'jp-vocab-deck';
 const LS_STREAK_CURRENT = 'jp-streak-current';
 const LS_STREAK_BEST    = 'jp-streak-best';
 const LS_STREAK_DATE    = 'jp-streak-date';
+const LS_GH_TOKEN       = 'jp-vocab-gh-token';
+const LS_GH_GIST        = 'jp-vocab-gh-gist';
+const GIST_FILENAME     = 'japanese-deck.json';
 
 const state = {
   screen:       'select',
@@ -1081,6 +1084,76 @@ function renderStreakChip() {
   if (!chip || !count) return;
   count.textContent = s.current;
   chip.classList.toggle('zero', s.current === 0);
+}
+
+// ── Read-only Gist streak sync ──
+// Merge two streak objects: current/date from the later date, best is the max.
+function mergeStreak(a, b) {
+  a = a || {}; b = b || {};
+  if (!a.date && !b.date) return null;
+  let primary;
+  if (!a.date) primary = b;
+  else if (!b.date) primary = a;
+  else primary = (a.date >= b.date) ? a : b;
+  return {
+    current: parseInt(primary.current || 0, 10),
+    date:    primary.date,
+    best:    Math.max(parseInt(a.best || 0, 10), parseInt(b.best || 0, 10),
+                      parseInt(a.current || 0, 10), parseInt(b.current || 0, 10)),
+  };
+}
+
+function ghHeaders() {
+  return {
+    'Authorization': 'Bearer ' + lsGet(LS_GH_TOKEN),
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+    'Content-Type': 'application/json'
+  };
+}
+
+// GET-only fetch of the synced deck from the Gist. Never pushes.
+async function ghPullDeck() {
+  const token = lsGet(LS_GH_TOKEN), gistId = lsGet(LS_GH_GIST);
+  if (!token || !gistId) return null;
+  const res = await fetch('https://api.github.com/gists/' + gistId, { headers: ghHeaders() });
+  if (!res.ok) return null;
+  const data = await res.json();
+  const file = data.files && data.files[GIST_FILENAME];
+  if (!file) return null;
+  let content = file.content;
+  if (file.truncated && file.raw_url) {
+    const r2 = await fetch(file.raw_url);
+    if (!r2.ok) return null;
+    content = await r2.text();
+  }
+  try { return JSON.parse(content); } catch (e) { return null; }
+}
+
+// On load, pull the streak from the Gist (read-only) and adopt it if better.
+async function syncStreakFromGist() {
+  if (!lsGet(LS_GH_TOKEN) || !lsGet(LS_GH_GIST)) return;
+  try {
+    const remote = await Promise.race([
+      ghPullDeck(),
+      new Promise(r => setTimeout(() => r(null), 3000))
+    ]);
+    const remoteStreak = remote && remote.settings && remote.settings.streak;
+    if (!remoteStreak) return;
+    const local = getDeckRaw() || { version: 3, words: [], tombstones: [], settings: {} };
+    if (!local.settings) local.settings = {};
+    const merged = mergeStreak(local.settings.streak, remoteStreak);
+    if (merged && JSON.stringify(merged) !== JSON.stringify(local.settings.streak || null)) {
+      local.settings.streak = merged;
+      saveDeckRaw(local);
+      if (merged.date) {
+        lsSet(LS_STREAK_CURRENT, String(merged.current || 0));
+        lsSet(LS_STREAK_BEST,    String(merged.best || 0));
+        lsSet(LS_STREAK_DATE,    merged.date);
+      }
+      renderStreakChip();
+    }
+  } catch (e) { /* offline or failure — keep the local streak */ }
 }
 
 function shuffle(arr) {
@@ -1457,6 +1530,7 @@ function init() {
   if ([5, 10, 20].includes(savedLen)) state.roundLength = savedLen;
   render();
   renderStreakChip();
+  syncStreakFromGist();
 }
 
 init();
