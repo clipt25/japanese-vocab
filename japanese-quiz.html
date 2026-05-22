@@ -571,7 +571,6 @@ body.light .select-divider { border-top-color: rgba(0,0,0,0.1); }
   .btn-option { padding: 12px 14px; font-size: 0.95rem; }
   .question-area { padding: 24px 16px 20px; }
   .mode-btn { padding: 5px 10px; font-size: 11px; }
-  .qsb-label { display: none; }
 }
 
 /* ── Streak chip ── */
@@ -612,7 +611,6 @@ body.light .streak-count { color: #8a6040; }
 }
 .quiz-sync-badge.synced { color: #a89880; }
 .quiz-sync-badge.failed { color: #c8964a; }
-.qsb-label { margin-left: 3px; }
 body.light .quiz-sync-badge.synced { color: #8a6040; }
 body.light .quiz-sync-badge.failed { color: #b06020; }
 
@@ -653,7 +651,7 @@ body.light .results-sync-hint { color: #9a8060; }
       <span class="streak-flame">🔥</span>
       <span class="streak-count" id="streakCount">0</span>
     </div>
-    <span class="quiz-sync-badge" id="quizSyncBadge" hidden><span class="qsb-icon" id="quizSyncIcon"></span><span class="qsb-label" id="quizSyncLabel"></span></span>
+    <span class="quiz-sync-badge" id="quizSyncBadge" hidden></span>
   </div>
   <div class="top-bar-right">
     <button class="btn-mode" id="btnMode" onclick="toggleMode()" aria-label="Toggle theme" aria-pressed="false">☀</button>
@@ -1174,12 +1172,11 @@ async function syncStreakFromGist() {
   // Not configured — leave the badge hidden, show nothing.
   if (!lsGet(LS_GH_TOKEN) || !lsGet(LS_GH_GIST)) return;
 
-  const showBadge = (cls, icon, label, autohide) => {
+  // Glyph-only badge — no label text, so it can never overlap the mode switcher.
+  const showBadge = (cls, glyph, title, autohide) => {
     if (!badge) return;
-    const iconEl = document.getElementById('quizSyncIcon');
-    const labelEl = document.getElementById('quizSyncLabel');
-    if (iconEl) iconEl.textContent = icon;
-    if (labelEl) labelEl.textContent = label;
+    badge.textContent = glyph;
+    badge.title = title;
     badge.className = 'quiz-sync-badge ' + cls;
     badge.hidden = false;
     if (autohide) setTimeout(() => { badge.hidden = true; }, 4000);
@@ -1191,7 +1188,7 @@ async function syncStreakFromGist() {
       new Promise(r => setTimeout(() => r(null), 3000))
     ]);
     // null = timed out or the pull failed/returned nothing.
-    if (!remote) { showBadge('failed', '⚠', 'Sync', false); return; }
+    if (!remote) { showBadge('failed', '⚠', 'Sync failed — check your token', false); return; }
 
     const remoteStreak = remote.settings && remote.settings.streak;
     if (remoteStreak) {
@@ -1210,9 +1207,9 @@ async function syncStreakFromGist() {
     }
     // Always reflect the post-pull localStorage value, even if nothing changed.
     renderStreakChip();
-    showBadge('synced', '✓', 'Synced', true);
+    showBadge('synced', '✓', 'Synced with Gist', true);
   } catch (e) {
-    showBadge('failed', '⚠', 'Sync', false);
+    showBadge('failed', '⚠', 'Sync failed — check your token', false);
   }
 }
 
