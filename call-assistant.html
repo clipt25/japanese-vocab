@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="google" content="notranslate">
+<meta name="theme-color" content="#0e0d0b">
+<title>日山 — Call Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Crimson Pro',Georgia,serif;background:#0e0d0b;color:#e8e2d9;
+  min-height:100dvh;display:flex;flex-direction:column}
+button{font-family:inherit;-webkit-appearance:none;appearance:none;cursor:pointer;
+  background:none;border:none;color:inherit}
+h2,h3{font-weight:400}
+
+.card{display:flex;flex-wrap:wrap;gap:16px;align-items:center;padding:10px 18px;
+  border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02)}
+.card__fact{display:flex;flex-direction:column;line-height:1.25}
+.card__key{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#6b5e45}
+.card__val{font-size:14px}
+.card__val--jp{font-family:'Noto Serif JP',serif}
+.card__val--warn{color:#c9843f}
+.card__mic{margin-left:auto;display:flex;align-items:center;gap:8px}
+#mic-toggle,#print-btn{border:1px solid #6b5e45;border-radius:2px;padding:7px 14px;
+  font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+#mic-toggle[data-on="true"]{background:#6b5e45;color:#0e0d0b}
+#mic-toggle:disabled{opacity:.4;cursor:not-allowed}
+#mic-status{font-size:11px;color:#6b5e45;min-width:150px}
+
+.dial{padding:8px 18px;background:rgba(201,132,63,.08);
+  border-bottom:1px solid rgba(201,132,63,.2);font-size:13px;color:#c9843f}
+.dial strong{font-weight:400;color:#e8e2d9}
+
+main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:1px;background:rgba(255,255,255,.08);overflow:hidden}
+.panel{background:#0e0d0b;overflow-y:auto;padding:14px 18px 24px}
+.panel__label{font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+  color:#6b5e45;margin-bottom:12px}
+
+.stage{margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,.06)}
+.stage__label{width:100%;display:flex;justify-content:space-between;align-items:center;
+  padding:9px 0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8a7a5c}
+.stage__label:hover{color:#e8e2d9}
+.stage__count{font-size:10px;color:#6b5e45}
+.stage__body{display:none;padding-bottom:8px}
+.stage[data-open="true"] .stage__body{display:block}
+.stage[data-open="true"] .stage__label{color:#e8e2d9}
+
+.phrase{position:relative;padding:9px 38px 9px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.phrase__kanji{font-family:'Noto Serif JP',serif;font-size:18px;line-height:1.5}
+.phrase__kana{font-family:'Noto Serif JP',serif;font-size:12px;color:#9c8f78;margin-top:2px}
+.phrase__romaji{font-size:13px;font-style:italic;color:#c3b9a5;margin-top:2px}
+.phrase__en{font-size:13px;color:#8a7a5c;margin-top:3px}
+.phrase__note{font-size:11px;color:#c9843f;margin-top:5px;
+  border-left:2px solid #6b5e45;padding-left:7px}
+.phrase__speak{position:absolute;top:9px;right:0;width:28px;height:28px;
+  border:1px solid rgba(255,255,255,.14);border-radius:50%;font-size:10px;color:#6b5e45}
+.phrase__speak:hover{border-color:#6b5e45;color:#e8e2d9}
+
+.radar__sublabel{font-size:9px;letter-spacing:.18em;text-transform:uppercase;
+  color:#6b5e45;margin:12px 0 5px}
+.radar__heard{border-left:2px solid #6b5e45;padding-left:9px;margin-bottom:6px}
+.radar__transcript{font-family:'Noto Serif JP',serif;font-size:14px;color:#9c8f78}
+.radar__nomatch{font-size:13px;color:#c9843f;padding:12px 0}
+.radar__lowconf{font-size:11px;color:#6b5e45;font-style:italic;padding:6px 0}
+.radar__alt{font-family:'Noto Serif JP',serif;font-size:12px;color:#8a7a5c;padding:2px 0}
+.radar__replies .phrase{border-left:2px solid #6b5e45;padding-left:9px}
+.radar__fallback{border:1px solid #c9843f;border-radius:2px;padding:6px 11px;
+  font-size:12px;color:#c9843f;margin-top:6px}
+.radar__fallback:hover{background:#c9843f;color:#0e0d0b}
+
+#composer{border-top:1px solid rgba(255,255,255,.08);padding:8px 18px;display:flex;
+  flex-wrap:wrap;gap:8px;align-items:center;background:rgba(255,255,255,.02)}
+#composer-input{flex:1;min-width:200px;background:#0e0d0b;border:1px solid rgba(255,255,255,.14);
+  color:#e8e2d9;padding:7px 9px;font-size:13px;border-radius:2px}
+#composer-go,#key-set{border:1px solid #6b5e45;border-radius:2px;padding:7px 12px;font-size:12px}
+#composer-out{flex-basis:100%}
+#composer-out .phrase{border-left:2px solid #c9843f;padding-left:9px}
+
+#panic{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+  background:rgba(255,255,255,.08);border-top:1px solid rgba(255,255,255,.08)}
+.panic__btn{background:#141210;padding:8px 11px;text-align:left;display:flex;
+  flex-direction:column;gap:1px}
+.panic__btn:hover{background:#1d1a16}
+.panic__en{font-size:10px;color:#6b5e45;text-transform:uppercase;letter-spacing:.08em}
+.panic__kanji{font-family:'Noto Serif JP',serif;font-size:14px}
+.panic__romaji{font-size:11px;font-style:italic;color:#9c8f78}
+
+@media(max-width:900px){
+  main{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
+  #panic{grid-template-columns:repeat(2,1fr)}
+}
+
+/* The paper fallback. Dead battery, dead wifi, blank page — this still works. */
+@media print{
+  body{background:#fff;color:#000;display:block;font-size:11pt}
+  .card__mic,.dial,#composer,#mic-toggle,#print-btn,.phrase__speak,
+  #radar-panel,.panel__label{display:none!important}
+  main{display:block;overflow:visible}
+  .panel{overflow:visible;padding:0}
+  .card{border-bottom:1px solid #000;padding:0 0 8pt;margin-bottom:10pt}
+  .card__key{color:#555}
+  .stage__body{display:block!important}
+  .stage{break-inside:avoid;border-bottom:1px solid #ccc}
+  .stage__label{color:#000!important;font-weight:600}
+  .stage__count{display:none}
+  .phrase{border-bottom:1px dotted #ddd;padding-right:0;break-inside:avoid}
+  .phrase__kanji{font-size:13pt;color:#000}
+  .phrase__kana,.phrase__romaji,.phrase__en{color:#333}
+  .phrase__note{color:#000;border-left:2px solid #000}
+  #panic{display:block;border-top:2px solid #000;margin-top:10pt;padding-top:6pt}
+  .panic__btn{background:none;display:inline-block;width:48%;padding:3pt 0}
+  .panic__kanji{color:#000}
+}
+</style>
+</head>
+<body>
+
+<header class="card">
+  <div class="card__fact"><span class="card__key">Restaurant</span>
+    <span class="card__val card__val--jp">すき焼割烹 日山</span></div>
+  <div class="card__fact"><span class="card__key">Dial</span>
+    <span class="card__val">+81 3 3666 2901</span></div>
+  <div class="card__fact"><span class="card__key">Date</span>
+    <span class="card__val">Tue 3 Nov 2026</span></div>
+  <div class="card__fact"><span class="card__key">Time</span>
+    <span class="card__val">19:00</span></div>
+  <div class="card__fact"><span class="card__key">Party</span>
+    <span class="card__val">4 · tatami</span></div>
+  <div class="card__fact"><span class="card__key">Name</span>
+    <span class="card__val card__val--jp">ジェフリー</span></div>
+  <div class="card__fact"><span class="card__key">Your phone</span>
+    <span class="card__val">+62 812 8063 7730</span></div>
+  <div class="card__fact"><span class="card__key">Cancel fee</span>
+    <span class="card__val card__val--warn">100% from midnight</span></div>
+  <div class="card__mic">
+    <button id="print-btn" type="button">Print</button>
+    <button id="mic-toggle" type="button" data-on="false">Listen</button>
+    <span id="mic-status">idle</span>
+  </div>
+</header>
+
+<div class="dial">
+  <strong>Call between 12:00–14:00 Jakarta time</strong> (14:00–16:00 Tokyo) — the
+  afternoon lull. Avoid 15:00–19:30 WIB: that is their dinner service. They are
+  closed Sundays; 3 Nov is a holiday but they are open.
+</div>
+
+<main>
+  <section class="panel">
+    <p class="panel__label">Your script — tap a stage to open it</p>
+    <div id="script"></div>
+  </section>
+  <section class="panel" id="radar-panel">
+    <p class="panel__label">Radar — silent unless it is sure</p>
+    <div id="radar"></div>
+  </section>
+</main>
+
+<section id="composer">
+  <input id="composer-input" type="text" placeholder="Say something else — type English…">
+  <button id="composer-go" type="button">Translate</button>
+  <button id="key-set" type="button">API key</button>
+  <div id="composer-out"></div>
+</section>
+
+<footer id="panic"></footer>
+
+<script type="module">
+  import { renderScript, renderPanic, renderRadar, renderFallbackResult } from './call/ui.js';
+  import { initVoices, setSpeechGate } from './call/speak.js';
+  import { createListener, isSecureForMic } from './call/listen.js';
+  import { composeEnglish, translateJapanese, hasKey, setKey } from './call/fallback.js';
+
+  const radarRoot = document.getElementById('radar');
+  const toggle = document.getElementById('mic-toggle');
+  const status = document.getElementById('mic-status');
+  const out = document.getElementById('composer-out');
+  const input = document.getElementById('composer-input');
+  const setStatus = text => { status.textContent = text; };
+
+  initVoices();
+  renderScript(document.getElementById('script'));
+  renderPanic(document.getElementById('panic'));
+  document.getElementById('print-btn').addEventListener('click', () => window.print());
+
+  async function askClaude(japanese, into) {
+    if (!hasKey()) { into.append(note('Set an API key first.')); return; }
+    const pending = note('Asking Claude…');
+    into.append(pending);
+    try { renderFallbackResult(into, await translateJapanese(japanese)); }
+    catch (error) { pending.textContent = error.message; }
+  }
+
+  function note(text) {
+    const p = document.createElement('p');
+    p.className = 'radar__nomatch';
+    p.textContent = text;
+    return p;
+  }
+
+  const listener = createListener({
+    onMatch: (result, meta) =>
+      renderRadar(radarRoot, result, { ...meta, onFallback: askClaude }),
+    onStatus: setStatus,
+  });
+
+  // Without this the laptop transcribes its own rehearsal audio — and on
+  // speakerphone that audio also goes down the line to the restaurant.
+  if (listener) setSpeechGate({ before: () => listener.pause(), after: () => listener.resume() });
+
+  if (!isSecureForMic()) {
+    toggle.disabled = true;
+    setStatus('open via https or localhost, not file://');
+  } else if (!listener) {
+    toggle.disabled = true;
+    setStatus('speech recognition unsupported — use Chrome');
+  } else {
+    toggle.addEventListener('click', () => {
+      if (listener.running) { listener.stop(); toggle.dataset.on = 'false'; }
+      else { listener.start(); toggle.dataset.on = 'true'; }
+    });
+  }
+
+  document.getElementById('key-set').addEventListener('click', () => {
+    const entered = prompt('Anthropic API key (stored only in this browser):', '');
+    if (entered) setKey(entered);
+  });
+
+  async function runComposer() {
+    const english = input.value.trim();
+    if (!english) return;
+    if (!hasKey()) { out.replaceChildren(note('Set an API key first.')); return; }
+    out.replaceChildren(note('Translating…'));
+    try { renderFallbackResult(out, await composeEnglish(english)); }
+    catch (error) { out.replaceChildren(note(error.message)); }
+  }
+  document.getElementById('composer-go').addEventListener('click', runComposer);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') runComposer(); });
+</script>
+</body>
+</html>
