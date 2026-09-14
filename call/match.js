@@ -7,7 +7,12 @@ import { dice } from './dice.js';
 // suggested reply. Per 20-utterance call that was 7.0 wrong answers; this
 // configuration brings it to 0.2, at the cost of being silent more often.
 // Silence is safe: he glances left at the script.
-export const MATCH_THRESHOLD = 0.75;   // was 0.40
+// Tuned against 101 negatives and 387 corrupted true positives (9 corruption
+// modes x 43 staff phrases). At these values: 0/101 false positives, 92.8%
+// correct, 0 wrong matches. T=0.70/M=0.15 scores higher recall (96.4%) but sits
+// exactly on the zero-FP boundary; these keep a full step of headroom on both
+// knobs, because every widening of the negative corpus has raised the rate.
+export const MATCH_THRESHOLD = 0.70;   // was 0.40, then 0.75
 export const MATCH_MARGIN = 0.20;      // top1 must beat top2 by this
 export const REPLY_GATE = 0.85;        // showing a match informs; a reply chip instructs
 

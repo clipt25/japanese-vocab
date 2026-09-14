@@ -25,11 +25,17 @@ const STAFF_PHRASES = [
     romaji: 'Go-yoyaku deshō ka.', en: 'Is this for a reservation?',
     replies: ['self-open'] },
 
+  { id: 'staff-change-reservation', who: 'staff',
+    kanji: 'ご予約の変更やキャンセルでしょうか。',
+    kana: 'ごよやくのへんこうやきゃんせるでしょうか',
+    romaji: 'Go-yoyaku no henkō ya kyanseru deshō ka.',
+    en: 'Is this to change or cancel an existing booking?',
+    replies: ['self-new-booking'] },
+
   { id: 'staff-what-date', who: 'staff',
-    kanji: 'いつのご予約でしょうか。', kana: 'いつのごよやくでしょうか',
-    romaji: 'Itsu no go-yoyaku deshō ka.', en: 'What date would you like?',
-    replies: ['self-datetime'],
-    note: 'Was 何日のご予約 — it scored 1.000 against "Is this a reservation?" too.' },
+    kanji: 'ご希望のお日にちはお決まりでしょうか。', kana: 'ごきぼうのおひにちはおきまりでしょうか',
+    romaji: 'Go-kibō no o-hinichi wa o-kimari deshō ka.', en: 'Have you decided on a date?',
+    replies: ['self-datetime'] },
 
   { id: 'staff-what-time', who: 'staff',
     kanji: '何時からでしょうか。', kana: 'なんじからでしょうか',
@@ -65,7 +71,7 @@ const STAFF_PHRASES = [
   { id: 'staff-phone', who: 'staff',
     kanji: 'お電話番号をお願いいたします。', kana: 'おでんわばんごうをおねがいいたします',
     romaji: 'O-denwa bangō o onegai itashimasu.', en: 'Your phone number, please.',
-    replies: ['self-phone-intro', 'self-phone-digits'] },
+    replies: ['self-phone-intro', 'self-phone-digits', 'self-readback-please'] },
 
   { id: 'staff-japanese-phone', who: 'staff',
     kanji: '日本のお電話番号はございますか。', kana: 'にほんのおでんわばんごうはございますか',
@@ -107,8 +113,8 @@ const STAFF_PHRASES = [
     replies: ['self-zashiki-yes'] },
 
   { id: 'staff-rooms-full', who: 'staff', decoy: true,
-    kanji: '個室は満室でございます。', kana: 'こしつはまんしつでございます',
-    romaji: 'Koshitsu wa manshitsu de gozaimasu.', en: 'The private rooms are full.',
+    kanji: '個室は満席でございます。', kana: 'こしつはまんせきでございます',
+    romaji: 'Koshitsu wa manseki de gozaimasu.', en: 'The private rooms are all taken.',
     replies: ['self-table-ok'] },
 
   { id: 'staff-course', who: 'staff',
@@ -129,9 +135,9 @@ const STAFF_PHRASES = [
     en: 'What budget did you have in mind?', replies: ['self-budget'] },
 
   { id: 'staff-service-charge', who: 'staff', decoy: true,
-    kanji: '別途サービス料を10パーセント頂戴しております。',
-    kana: 'べっとさーびすりょうをじゅっぱーせんとちょうだいしております',
-    romaji: 'Bettō sābisu-ryō o juppāsento chōdai shite orimasu.',
+    kanji: 'サービス料を別途10パーセント頂戴しております。',
+    kana: 'さーびすりょうをべっとじゅっぱーせんとちょうだいしております',
+    romaji: 'Sābisu-ryō o bettō juppāsento chōdai shite orimasu.',
     en: 'A 10% service charge is added on top.', replies: ['self-understood'] },
 
   { id: 'staff-cancel-fee', who: 'staff', decoy: true,
@@ -146,9 +152,9 @@ const STAFF_PHRASES = [
     kanji: 'クレジットカードの番号をお伺いしてもよろしいでしょうか。',
     kana: 'くれじっとかーどのばんごうをおうかがいしてもよろしいでしょうか',
     romaji: 'Kurejitto kādo no bangō o o-ukagai shite mo yoroshii deshō ka.',
-    en: 'May I take your credit card number (to guarantee the booking)?',
-    replies: ['self-understood'],
-    note: 'A decoy: without this entry, the old scorer read this as "Non-smoking OK?" and told you to say YES.' },
+    en: 'May I take your credit card number?',
+    replies: ['self-card-not-here', 'self-repeat'],
+    note: 'Do NOT read out card digits on a line you cannot hear clearly. Deflect, then arrange email.' },
 
   { id: 'staff-time-limit', who: 'staff',
     kanji: 'お時間は2時間制となっておりますが、よろしいでしょうか。',
@@ -179,10 +185,12 @@ const STAFF_PHRASES = [
     romaji: 'Honjitsu wa teikyūbi de gozaimasu.', en: 'We are closed today.',
     replies: ['self-understood'] },
 
-  { id: 'staff-private-event', who: 'staff', decoy: true,
-    kanji: '本日は貸切でございます。', kana: 'ほんじつはかしきりでございます',
-    romaji: 'Honjitsu wa kashikiri de gozaimasu.',
-    en: 'We are closed for a private event today.', replies: ['self-understood'] },
+  { id: 'staff-group-booking', who: 'staff', decoy: true,
+    kanji: 'その日は団体様のご予約が入っております。',
+    kana: 'そのひはだんたいさまのごよやくがはいっております',
+    romaji: 'Sono hi wa dantai-sama no go-yoyaku ga haitte orimasu.',
+    en: 'We have a large group booked that day.',
+    replies: ['self-other-time', 'self-other-date'] },
 
   { id: 'staff-line-bad', who: 'staff',
     kanji: '恐れ入ります、お電話が少々遠いようですが。',
@@ -195,7 +203,8 @@ const STAFF_PHRASES = [
   { id: 'staff-callback', who: 'staff', decoy: true,
     kanji: '折り返しお電話させていただきます。', kana: 'おりかえしおでんわさせていただきます',
     romaji: 'Orikaeshi o-denwa sasete itadakimasu.', en: 'We will call you back.',
-    replies: ['self-understood'] },
+    replies: ['self-callback-deflect', 'self-email'],
+    note: 'A callback is the worst outcome — you have no Japanese number. Deflect to email.' },
 
   { id: 'staff-wait', who: 'staff',
     kanji: '少々お待ちください。', kana: 'しょうしょうおまちください',
@@ -233,6 +242,28 @@ const STAFF_PHRASES = [
     replies: ['self-thanks', 'self-goodbye'],
     note: '承りました is the word that means the booking exists. Write down the time and who you spoke to.' },
 
+  { id: 'staff-decide-on-day', who: 'staff',
+    kanji: '当日で結構でございます。', kana: 'とうじつでけっこうでございます',
+    romaji: 'Tōjitsu de kekkō de gozaimasu.', en: 'Deciding on the day is fine.',
+    replies: ['self-thanks'] },
+
+  { id: 'staff-who-calling', who: 'staff',
+    kanji: '失礼ですが、どちら様でしょうか。', kana: 'しつれいですが、どちらさまでしょうか',
+    romaji: 'Shitsurei desu ga, dochira-sama deshō ka.',
+    en: 'May I ask who is calling?', replies: ['self-name'] },
+
+  { id: 'staff-call-back-later', who: 'staff',
+    kanji: '恐れ入りますが、後ほどもう一度お電話いただけますでしょうか。',
+    kana: 'おそれいりますが、のちほどもういちどおでんわいただけますでしょうか',
+    romaji: 'Osore irimasu ga, nochihodo mō ichido o-denwa itadakemasu deshō ka.',
+    en: 'Could you call us back a little later?',
+    replies: ['self-understood', 'self-what-time-call'] },
+
+  { id: 'staff-occasion', who: 'staff',
+    kanji: '何かお祝いのお席でしょうか。', kana: 'なにかおいわいのおせきでしょうか',
+    romaji: 'Nanika o-iwai no o-seki deshō ka.',
+    en: 'Is this for a special occasion?', replies: ['self-no-occasion'] },
+
   { id: 'staff-no-english', who: 'staff',
     kanji: '申し訳ございません、英語が話せる者がおりません。',
     kana: 'もうしわけございません、えいごがはなせるものがおりません',
@@ -262,6 +293,12 @@ const SELF_PHRASES = [
     romaji: 'Osore irimasu, yoyaku o onegai shitai no desu ga.',
     en: "Excuse me — I'd like to make a reservation.",
     note: 'NOT もしもし. As the caller, もしもし reads as casual — save it for a line check.' },
+
+  { id: 'self-new-booking', who: 'self', stage: 'open',
+    kanji: 'いいえ、新しく予約をお願いしたいのですが。',
+    kana: 'いいえ、あたらしくよやくをおねがいしたいのですが',
+    romaji: 'Iie, atarashiku yoyaku o onegai shitai no desu ga.',
+    en: "No — I'd like to make a new reservation." },
 
   { id: 'self-level', who: 'self', stage: 'open',
     kanji: 'すみません、日本語があまり得意ではありません。ゆっくり話していただけますか。',
@@ -304,8 +341,8 @@ const SELF_PHRASES = [
     note: 'Beat it out in three if they ask again.' },
 
   { id: 'self-name-full', who: 'self', stage: 'name',
-    kanji: 'ジェフリー・ジェームスです。', kana: 'じぇふりー・じぇーむすです',
-    romaji: 'Jefurī Jēmusu desu.', en: 'Geoffrey James.' },
+    kanji: 'ジェフリー・ジェームズと申します。', kana: 'じぇふりー・じぇーむずともうします',
+    romaji: 'Jefurī Jēmuzu to mōshimasu.', en: 'My name is Geoffrey James.' },
 
   { id: 'self-phone-intro', who: 'self', stage: 'phone',
     kanji: '電話番号は海外の番号です。インドネシアです。',
@@ -341,14 +378,14 @@ const SELF_PHRASES = [
     note: 'g-e-o-f-f-r-e-j-a-m-e-s @ gmail.com — slowly, one letter at a time.' },
 
   { id: 'self-zashiki-yes', who: 'self', stage: 'seat',
-    kanji: 'できればお座敷でお願いします。', kana: 'できればおざしきでおねがいします',
-    romaji: 'Dekireba o-zashiki de onegai shimasu.',
-    en: 'A tatami room, if possible.',
+    kanji: 'お座敷でお願いします。', kana: 'おざしきでおねがいします',
+    romaji: 'O-zashiki de onegai shimasu.', en: 'A tatami room, please.',
     note: 'Hiyama has 9 tatami rooms and only 2 table rooms — this is the easy ask.' },
 
   { id: 'self-table-ok', who: 'self', stage: 'seat',
-    kanji: 'それで大丈夫です。', kana: 'それでだいじょうぶです',
-    romaji: 'Sore de daijōbu desu.', en: "That's fine." },
+    kanji: 'それで結構です。', kana: 'それでけっこうです',
+    romaji: 'Sore de kekkō desu.', en: "That's fine.",
+    note: 'NOT 大丈夫です — that also means "no thanks", and here you mean yes.' },
 
   { id: 'self-table-seat', who: 'self', stage: 'seat',
     kanji: 'テーブル席でお願いします。', kana: 'てーぶるせきでおねがいします',
@@ -387,9 +424,9 @@ const SELF_PHRASES = [
     note: 'For confirmations. "Yes please" is not an answer to "is that correct?"' },
 
   { id: 'self-understood', who: 'self', stage: 'close',
-    kanji: 'はい、承知しました。', kana: 'はい、しょうちしました',
-    romaji: 'Hai, shōchi shimashita.', en: 'Yes, understood.',
-    note: 'For acknowledging a policy — fees, time limits, late rules.' },
+    kanji: 'はい、分かりました。', kana: 'はい、わかりました',
+    romaji: 'Hai, wakarimashita.', en: 'Yes, understood.',
+    note: 'NOT 承知しました — that is what THEY say to YOU. For fees, time limits, late rules.' },
 
   { id: 'self-confirm', who: 'self', stage: 'close',
     kanji: '念のため確認させていただきます。11月3日、午後7時、4人ですね。',
@@ -398,8 +435,8 @@ const SELF_PHRASES = [
     en: 'Just to confirm — November 3rd, 7pm, four people.' },
 
   { id: 'self-booked-check', who: 'self', stage: 'close',
-    kanji: '予約は取れましたでしょうか。', kana: 'よやくはとれましたでしょうか',
-    romaji: 'Yoyaku wa toremashita deshō ka.', en: 'So the reservation is confirmed?' },
+    kanji: '予約は取れましたか。', kana: 'よやくはとれましたか',
+    romaji: 'Yoyaku wa toremashita ka.', en: 'So the reservation is confirmed?' },
 
   { id: 'self-thanks', who: 'self', stage: 'close',
     kanji: 'ありがとうございます。よろしくお願いします。',
@@ -413,6 +450,57 @@ const SELF_PHRASES = [
     romaji: 'Arigatō gozaimashita. Shitsurei itashimasu.',
     en: 'Thank you very much. Goodbye.',
     note: 'This is how you END the call. よろしくお願いします does not hang up a phone.' },
+
+  { id: 'self-card-not-here', who: 'self', stage: 'trouble',
+    kanji: '申し訳ありません、今カードが手元にございません。',
+    kana: 'もうしわけありません、いまかーどがてもとにございません',
+    romaji: 'Mōshiwake arimasen, ima kādo ga temoto ni gozaimasen.',
+    en: "Sorry — I don't have my card with me right now.",
+    note: 'Do NOT read card digits down a line you cannot hear. Ask them to email instead.' },
+
+  { id: 'self-callback-deflect', who: 'self', stage: 'phone',
+    kanji: '海外の番号なので、メールでご連絡いただけますか。',
+    kana: 'かいがいのばんごうなので、めーるでごれんらくいただけますか',
+    romaji: 'Kaigai no bangō na node, mēru de go-renraku itadakemasu ka.',
+    en: 'My number is overseas — could you contact me by email instead?' },
+
+  { id: 'self-readback-please', who: 'self', stage: 'trouble',
+    kanji: '恐れ入りますが、復唱していただけますか。',
+    kana: 'おそれいりますが、ふくしょうしていただけますか',
+    romaji: 'Osore irimasu ga, fukushō shite itadakemasu ka.',
+    en: 'Could you read that back to me?',
+    note: 'Use after the email AND the phone number. They will hear ジェフリー and write geoffrey@ — there is no y.' },
+
+  { id: 'self-what-time-call', who: 'self', stage: 'trouble',
+    kanji: '何時頃おかけ直しすればよろしいですか。',
+    kana: 'なんじごろおかけなおしすればよろしいですか',
+    romaji: 'Nan-ji goro o-kakenaoshi sureba yoroshii desu ka.',
+    en: 'What time should I call back?',
+    note: 'Tokyo is 2 hours ahead of Jakarta. Write the time down in BOTH.' },
+
+  { id: 'self-horigotatsu', who: 'self', stage: 'seat',
+    kanji: 'お座敷は掘り炬燵でしょうか。足を下ろせますか。',
+    kana: 'おざしきはほりごたつでしょうか。あしをおろせますか',
+    romaji: 'O-zashiki wa horigotatsu deshō ka. Ashi o orosemasu ka.',
+    en: 'Are the tatami rooms sunken-floor? Can we put our legs down?',
+    note: 'Unverified for Hiyama. Two hours of 正座 for four people is worth one question.' },
+
+  { id: 'self-no-occasion', who: 'self', stage: 'course',
+    kanji: 'いいえ、普通の食事です。', kana: 'いいえ、ふつうのしょくじです',
+    romaji: 'Iie, futsū no shokuji desu.', en: 'No, just dinner.' },
+
+  { id: 'self-email-confirm', who: 'self', stage: 'close',
+    kanji: '確認のメールを送っていただけますか。', kana: 'かくにんのめーるをおくっていただけますか',
+    romaji: 'Kakunin no mēru o okutte itadakemasu ka.',
+    en: 'Could you send me a confirmation email?',
+    note: 'You have no Japanese phone. Written confirmation is your only proof.' },
+
+  { id: 'self-staff-name', who: 'self', stage: 'close',
+    kanji: '恐れ入りますが、ご担当の方のお名前を伺ってもよろしいですか。',
+    kana: 'おそれいりますが、ごたんとうのかたのおなまえをうかがってもよろしいですか',
+    romaji: 'Osore irimasu ga, go-tantō no kata no o-namae o ukagatte mo yoroshii desu ka.',
+    en: 'May I ask who I am speaking with?',
+    note: 'Write it down. If the booking is missing on the night, this is your recourse.' },
 
   { id: 'self-other-date', who: 'self', stage: 'trouble',
     kanji: '他の日は空いていますか。', kana: 'ほかのひはあいていますか',
@@ -449,6 +537,12 @@ const SELF_PHRASES = [
   { id: 'panic-slower', who: 'self', stage: 'panic',
     kanji: 'もう少しゆっくりお願いします。', kana: 'もうすこしゆっくりおねがいします',
     romaji: 'Mō sukoshi yukkuri onegai shimasu.', en: 'A little more slowly, please.' },
+
+  { id: 'panic-louder', who: 'self', stage: 'panic',
+    kanji: 'もう少し大きな声でお願いできますか。',
+    kana: 'もうすこしおおきなこえでおねがいできますか',
+    romaji: 'Mō sukoshi ōkina koe de onegai dekimasu ka.',
+    en: 'Could you speak a little louder?' },
 
   { id: 'panic-dont-understand', who: 'self', stage: 'panic',
     kanji: 'すみません、よく分かりませんでした。', kana: 'すみません、よくわかりませんでした',

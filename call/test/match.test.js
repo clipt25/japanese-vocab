@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { match, scorePhrase, MATCH_THRESHOLD, MATCH_MARGIN, REPLY_GATE } from '../match.js';
 import { STAFF, byId } from '../phrases.js';
+import { NEGATIVES, corrupt } from './corpus.js';
 
 // ── True positives ──────────────────────────────────────────────────────────
 const TRUE_POSITIVES = [
@@ -27,45 +28,71 @@ for (const [input, expected] of TRUE_POSITIVES) {
 }
 
 // ── Negative corpus ─────────────────────────────────────────────────────────
-// Plausible Hiyama-staff speech with NO correct entry. The original design
-// (0.40 threshold + trigger bonuses) confidently matched 80.6% of these AND
-// attached a reply chip. This test is the guard against regressing to that.
-const NEGATIVES = [
-  'お飲み物は別料金でございます', 'お車でお越しでしょうか', '駐車場はございません',
-  '最寄り駅は人形町でございます', '領収書は必要でしょうか', 'お支払いは現金でしょうか',
-  '前日までにご連絡ください', '幹事様のお名前は', 'ご利用は初めてでしょうか',
-  '何かご要望はございますか', '誕生日のお祝いでしょうか', '苦手な食材はございますか',
-  'お席は2階でございます', '只今電話が混み合っております', '担当者に代わります',
-  '番号をお間違えではないでしょうか', 'ご予約の変更でしょうか', 'お履物はお脱ぎいただきます',
-  'コースは一万五千円からでございます', '和牛のすき焼きでございます',
-  '未成年の方はいらっしゃいますか', 'ペットの同伴はご遠慮いただいております',
-  '写真撮影はご遠慮ください', '少々お時間をいただきます',
-  'インターネットからもご予約いただけます', 'お待ち合わせでしょうか',
-  '領収書の宛名はいかがなさいますか', '今日はいい天気ですね',
-  'お荷物はお預かりいたします', 'エレベーターは奥にございます',
-];
+// 101 plausible Hiyama-staff utterances with NO correct entry, plus every staff
+// phrase pushed through 9 realistic recognition-corruption modes.
+//
+// The original design (0.40 threshold + trigger bonuses) confidently matched
+// 80.6% of the negatives AND attached a reply chip. These tests are the guard
+// against regressing to that.
 
-test('negative corpus: confident false-match rate stays under 10%', () => {
+test('negative corpus: confident false-match rate stays under 2%', () => {
   const wrong = NEGATIVES.filter(n => match(n, STAFF).confident);
   const rate = wrong.length / NEGATIVES.length;
   console.log(`    false positives: ${wrong.length}/${NEGATIVES.length} = ${(rate * 100).toFixed(1)}%`);
-  for (const w of wrong) {
-    console.log(`      ${w} -> ${match(w, STAFF).top.phrase.en}`);
-  }
-  assert.ok(rate < 0.10, `false-positive rate ${(rate * 100).toFixed(1)}% exceeds 10%`);
+  for (const w of wrong) console.log(`      ${w} -> ${match(w, STAFF).top.phrase.en}`);
+  assert.ok(rate < 0.02, `false-positive rate ${(rate * 100).toFixed(1)}% exceeds 2%`);
 });
 
-test('negative corpus: reply chips are rarer still', () => {
+test('negative corpus: no negative produces an actionable reply chip', () => {
   const chips = NEGATIVES.filter(n => match(n, STAFF).showReply);
-  console.log(`    reply chips on negatives: ${chips.length}/${NEGATIVES.length}`);
-  assert.ok(chips.length <= 1, `${chips.length} negatives produced an actionable reply chip`);
+  assert.equal(chips.length, 0, `${chips.length} negatives produced a reply chip`);
 });
 
-test('true-positive rate stays above 80%', () => {
+// THE load-bearing safety property. Recall can sag on bad audio and that is
+// survivable — he glances at the script. Matching the WRONG phrase is not.
+test('corrupted speech NEVER resolves to the wrong phrase', () => {
+  const cases = STAFF.flatMap(p => corrupt(p).map(c => ({ ...c, expect: p.id })));
+  const wrong = cases.filter(c => {
+    const r = match(c.text, STAFF);
+    return r.confident && r.top.phrase.id !== c.expect;
+  });
+  for (const w of wrong) console.log(`      ${w.label}: ${w.text} -> expected ${w.expect}`);
+  assert.equal(wrong.length, 0, `${wrong.length}/${cases.length} corrupted inputs matched the wrong phrase`);
+});
+
+test('recall on corrupted speech stays above 85%', () => {
+  const cases = STAFF.flatMap(p => corrupt(p).map(c => ({ ...c, expect: p.id })));
+  const right = cases.filter(c => match(c.text, STAFF).top?.phrase.id === c.expect);
+  const rate = right.length / cases.length;
+  console.log(`    recall on corrupted input: ${right.length}/${cases.length} = ${(rate * 100).toFixed(1)}%`);
+  assert.ok(rate > 0.85, `recall ${(rate * 100).toFixed(1)}% below 85%`);
+});
+
+test('true-positive rate on clean input stays above 90%', () => {
   const hits = TRUE_POSITIVES.filter(([i, e]) => match(i, STAFF).top?.phrase.id === e);
-  const rate = hits.length / TRUE_POSITIVES.length;
-  console.log(`    true positives: ${hits.length}/${TRUE_POSITIVES.length} = ${(rate * 100).toFixed(1)}%`);
-  assert.ok(rate > 0.80);
+  assert.ok(hits.length / TRUE_POSITIVES.length > 0.90);
+});
+
+// The most basic invariant of all — and the one I did not have. A margin gate
+// can refuse a PERFECT transcript when two entries sit too close together, which
+// is exactly what silently killed staff-what-date and staff-is-reservation:
+// both scored 1.000 on their own text and were still rejected, because the
+// runner-up trailed by only 0.158 against a 0.20 margin.
+test('every staff phrase matches its own exact text, in both forms', () => {
+  const failures = [];
+  for (const p of STAFF) {
+    for (const form of ['kanji', 'kana']) {
+      const r = match(p[form], STAFF);
+      if (!r.confident || r.top.phrase.id !== p.id) {
+        const c = r.candidates;
+        failures.push(`${p.id} (${form}): top ${c[0]?.phrase.id} ${c[0]?.score.toFixed(3)}, `
+          + `2nd ${c[1]?.phrase.id} ${c[1]?.score.toFixed(3)}, margin `
+          + `${(c[0].score - c[1].score).toFixed(3)}`);
+      }
+    }
+  }
+  for (const f of failures) console.log(`      ${f}`);
+  assert.equal(failures.length, 0, `${failures.length} phrases cannot identify themselves`);
 });
 
 // ── Safety properties ───────────────────────────────────────────────────────
@@ -96,7 +123,7 @@ test('a near-tie refuses to pick', () => {
 });
 
 test('thresholds are the documented safety values', () => {
-  assert.equal(MATCH_THRESHOLD, 0.75);
+  assert.equal(MATCH_THRESHOLD, 0.70);
   assert.equal(MATCH_MARGIN, 0.20);
   assert.equal(REPLY_GATE, 0.85);
 });
