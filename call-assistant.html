@@ -4,117 +4,260 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="google" content="notranslate">
-<meta name="theme-color" content="#0e0d0b">
+<meta name="theme-color" content="#FBF9F4">
 <title>日山 — Call Assistant</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<!-- Separate requests on purpose: css2 fails the WHOLE response if any one
+     family name is unknown, so one bad family must not take the others down. -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Crimson Pro',Georgia,serif;background:#0e0d0b;color:#e8e2d9;
-  min-height:100dvh;display:flex;flex-direction:column}
-button{font-family:inherit;-webkit-appearance:none;appearance:none;cursor:pointer;
-  background:none;border:none;color:inherit}
-h2,h3{font-weight:400}
+/* ==========================================================================
+   CALL ASSISTANT — cockpit type scale + AAA palette
+   Target: read in ~400ms under adrenaline. Not a document.
 
-.card{display:flex;flex-wrap:wrap;gap:16px;align-items:center;padding:10px 18px;
-  border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02)}
-.card__fact{display:flex;flex-direction:column;line-height:1.25}
-.card__key{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#6b5e45}
-.card__val{font-size:14px}
-.card__val--jp{font-family:'Noto Serif JP',serif}
-.card__val--warn{color:#c9843f}
-.card__mic{margin-left:auto;display:flex;align-items:center;gap:8px}
-#mic-toggle,#print-btn{border:1px solid #6b5e45;border-radius:2px;padding:7px 14px;
-  font-size:12px;letter-spacing:.1em;text-transform:uppercase}
-#mic-toggle[data-on="true"]{background:#6b5e45;color:#0e0d0b}
-#mic-toggle:disabled{opacity:.4;cursor:not-allowed}
-#mic-status{font-size:11px;color:#6b5e45;min-width:150px}
+   Two scales, because the two tasks invert:
+     .phrase--self   he must SPEAK it     -> romaji 32px leads
+     .phrase--staff  he must UNDERSTAND it -> english 28px leads
+   Both classes are already emitted by ui.js. No JS change required.
 
-.dial{padding:8px 18px;background:rgba(201,132,63,.08);
-  border-bottom:1px solid rgba(201,132,63,.2);font-size:13px;color:#c9843f}
-.dial strong{font-weight:400;color:#e8e2d9}
+   Hierarchy here is built from SIZE and WEIGHT, never from dimming.
+   Under a 7:1 floor, contrast is no longer available as a ranking device.
+   ========================================================================== */
 
-main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-  gap:1px;background:rgba(255,255,255,.08);overflow:hidden}
-.panel{background:#0e0d0b;overflow-y:auto;padding:14px 18px 24px}
-.panel__label{font-size:9px;letter-spacing:.2em;text-transform:uppercase;
-  color:#6b5e45;margin-bottom:12px}
+:root{
+  /* Positive polarity. Dense kanji halate badly as light-on-dark, and the
+     call window is 12:00-14:00 WIB - a daylight room. */
+  --ground:      #FBF9F4;
+  --surface:     #F1ECE0;   /* header, panic tiles, composer */
+  --surface-hot: #FBEFE6;   /* note tint, dial strip */
+  --hover:       #F4F0E6;
 
-.stage{margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,.06)}
-.stage__label{width:100%;display:flex;justify-content:space-between;align-items:center;
-  padding:9px 0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8a7a5c}
-.stage__label:hover{color:#e8e2d9}
-.stage__count{font-size:10px;color:#6b5e45}
-.stage__body{display:none;padding-bottom:8px}
-.stage[data-open="true"] .stage__body{display:block}
-.stage[data-open="true"] .stage__label{color:#e8e2d9}
+  --ink:   #16130E;  /* 17.61 ground | 15.72 tile | 16.28 hover */
+  --ink-2: #2E2820;  /* 13.85 ground | 12.37 tile */
+  --muted: #4A4236;  /*  9.40 ground |  8.69 hover */
+  --label: #554C3D;  /*  8.02 ground |  7.16 tile |  7.42 hover */
+  --alert: #8C2B10;  /*  8.09 ground |  7.53 note |  7.22 tile */
+  --live:  #15603A;  /*  7.22 ground | 7.22 reversed */
 
-.phrase{position:relative;padding:9px 38px 9px 0;border-bottom:1px solid rgba(255,255,255,.05)}
-.phrase__kanji{font-family:'Noto Serif JP',serif;font-size:18px;line-height:1.5}
-.phrase__kana{font-family:'Noto Serif JP',serif;font-size:12px;color:#9c8f78;margin-top:2px}
-.phrase__romaji{font-size:13px;font-style:italic;color:#c3b9a5;margin-top:2px}
-.phrase__en{font-size:13px;color:#8a7a5c;margin-top:3px}
-.phrase__note{font-size:11px;color:#c9843f;margin-top:5px;
-  border-left:2px solid #6b5e45;padding-left:7px}
-.phrase__speak{position:absolute;top:9px;right:0;width:28px;height:28px;
-  border:1px solid rgba(255,255,255,.14);border-radius:50%;font-size:10px;color:#6b5e45}
-.phrase__speak:hover{border-color:#6b5e45;color:#e8e2d9}
+  --rule:       #8A7B5E;  /* 3.93 ground | 3.51 tile - non-text, needs 3:1 */
+  --rule-faint: #D8D0BE;  /* decorative only; no text sits on it */
 
-.radar__sublabel{font-size:9px;letter-spacing:.18em;text-transform:uppercase;
-  color:#6b5e45;margin:12px 0 5px}
-.radar__heard{border-left:2px solid #6b5e45;padding-left:9px;margin-bottom:6px}
-.radar__transcript{font-family:'Noto Serif JP',serif;font-size:14px;color:#9c8f78}
-.radar__nomatch{font-size:13px;color:#c9843f;padding:12px 0}
-.radar__lowconf{font-size:11px;color:#6b5e45;font-style:italic;padding:6px 0}
-.radar__alt{font-family:'Noto Serif JP',serif;font-size:12px;color:#8a7a5c;padding:2px 0}
-.radar__replies .phrase{border-left:2px solid #6b5e45;padding-left:9px}
-.radar__fallback{border:1px solid #c9843f;border-radius:2px;padding:6px 11px;
-  font-size:12px;color:#c9843f;margin-top:6px}
-.radar__fallback:hover{background:#c9843f;color:#0e0d0b}
+  /* Latin steps ~1.2. JP runs 2-3px hotter for equal legibility. */
+  --t-utter: 32px;  --t-gloss: 28px;
+  --t-jp:    20px;  --t-note:  17px;  --t-body: 17px;
+  --t-ui:    16px;  --t-find:  15px;  --t-micro: 13px;  /* hard floor */
 
-#composer{border-top:1px solid rgba(255,255,255,.08);padding:8px 18px;display:flex;
-  flex-wrap:wrap;gap:8px;align-items:center;background:rgba(255,255,255,.02)}
-#composer-input{flex:1;min-width:200px;background:#0e0d0b;border:1px solid rgba(255,255,255,.14);
-  color:#e8e2d9;padding:7px 9px;font-size:13px;border-radius:2px}
-#composer-go,#key-set{border:1px solid #6b5e45;border-radius:2px;padding:7px 12px;font-size:12px}
-#composer-out{flex-basis:100%}
-#composer-out .phrase{border-left:2px solid #c9843f;padding-left:9px}
-
-#panic{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
-  background:rgba(255,255,255,.08);border-top:1px solid rgba(255,255,255,.08)}
-.panic__btn{background:#141210;padding:8px 11px;text-align:left;display:flex;
-  flex-direction:column;gap:1px}
-.panic__btn:hover{background:#1d1a16}
-.panic__en{font-size:10px;color:#6b5e45;text-transform:uppercase;letter-spacing:.08em}
-.panic__kanji{font-family:'Noto Serif JP',serif;font-size:14px}
-.panic__romaji{font-size:11px;font-style:italic;color:#9c8f78}
-
-@media(max-width:900px){
-  main{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
-  #panic{grid-template-columns:repeat(2,1fr)}
+  --sans:'Atkinson Hyperlegible Next','Atkinson Hyperlegible','Inter',
+         -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --jp:'Noto Sans JP','Hiragino Sans','Yu Gothic UI',sans-serif;
 }
 
-/* The paper fallback. Dead battery, dead wifi, blank page — this still works. */
+/* Night fallback: <html data-theme="dark">. Same 7:1 floor, all measured. */
+[data-theme="dark"]{
+  --ground:#111010; --surface:#1C1A17; --surface-hot:#241A14; --hover:#232019;
+  --ink:#F5F1E8;   /* 16.85 ground | 15.40 tile */
+  --ink-2:#D8D0C2; /* 12.41 ground */
+  --muted:#B6AB96; /*  8.37 ground |  7.65 tile */
+  --label:#B6AB96; /*  7.65 tile - no dimmer tier clears 7:1 on tiles */
+  --alert:#F5A868; /*  9.66 ground |  8.67 note */
+  --live:#6FD49A;  /* 10.46 ground */
+  --rule:#7A6E5C;  /*  3.81 */
+  --rule-faint:#33302A;
+  -webkit-font-smoothing:antialiased;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+body{font-family:var(--sans);font-size:var(--t-body);line-height:1.45;
+  background:var(--ground);color:var(--ink);height:100dvh;overflow:hidden;
+  display:flex;flex-direction:column;font-variant-numeric:tabular-nums}
+button{font-family:inherit;font-size:inherit;-webkit-appearance:none;appearance:none;
+  cursor:pointer;background:none;border:none;color:inherit}
+h2,h3{font-weight:600}
+
+/* Focus was entirely absent. He may be tabbing one-handed. */
+:where(a,button,input,[tabindex]):focus-visible{
+  outline:3px solid var(--live);outline-offset:2px;border-radius:2px}
+
+/* ---------------- header fact card ---------------- */
+.card{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center;padding:12px 18px;
+  border-bottom:2px solid var(--rule);background:var(--surface)}
+.card__fact{display:flex;flex-direction:column;line-height:1.2}
+.card__key{font-size:var(--t-micro);font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--label)}            /* was 9px @ 3.06:1 */
+.card__val{font-size:18px;font-weight:600;color:var(--ink)}
+.card__val--jp{font-family:var(--jp);font-size:20px;font-weight:500}
+.card__val--warn{color:var(--alert)}
+.card__mic{margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+
+#mic-toggle,#print-btn,#composer-go,#key-set{border:2px solid var(--rule);
+  border-radius:3px;padding:11px 18px;font-size:var(--t-ui);font-weight:600;
+  letter-spacing:.04em;color:var(--ink);min-height:44px}
+#mic-toggle[data-on="true"]{background:var(--live);border-color:var(--live);
+  color:var(--ground)}                                     /* 7.22:1 reversed */
+#mic-toggle:disabled{opacity:.55;cursor:not-allowed}
+#mic-status{font-size:var(--t-find);font-weight:600;color:var(--label);min-width:170px}
+
+/* ---------------- pre-call briefing ---------------- */
+.dial{padding:10px 18px;background:var(--surface-hot);
+  border-bottom:1px solid var(--rule-faint);font-size:var(--t-find);
+  line-height:1.4;color:var(--alert)}
+.dial strong{font-weight:700;color:var(--ink)}
+
+/* ---------------- panels ---------------- */
+main{flex:1;min-height:0;display:flex;flex-direction:column;
+  gap:2px;background:var(--rule)}
+.panel{background:var(--ground);padding:12px 18px}
+/* Reserved height. The radar is silent by design most of the time, and a box
+   that resized on every utterance would shift the script under his eyes. */
+#radar-panel{flex:0 0 auto;height:190px;overflow-y:auto}
+#script-panel{flex:1;min-height:0;overflow-y:auto;padding-bottom:24px}
+.panel__label{font-size:var(--t-micro);font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--label);margin-bottom:14px}
+
+body[data-mode="call"] .dial,
+body[data-mode="call"] #composer,
+body[data-mode="call"] #print-btn,
+body[data-mode="call"] #key-set{display:none}
+body[data-mode="call"] #start-call{background:var(--alert);color:var(--ground);
+  border-color:var(--alert)}
+
+/* ---------------- stage accordion (navigation) ---------------- */
+#stepper{flex:0 0 auto;display:flex;gap:2px;padding:6px 18px;align-items:center;
+  background:var(--surface);border-bottom:1px solid var(--rule)}
+.step{flex:1;min-width:0;padding:6px 4px;font-size:var(--t-micro);font-weight:600;
+  letter-spacing:.04em;text-transform:uppercase;color:var(--label);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;text-align:center;min-height:34px;
+  border-bottom:3px solid transparent}
+.step[data-current="true"]{color:var(--ink);border-bottom-color:var(--alert)}
+.step:hover{color:var(--ink)}
+#stepper-hint{font-size:var(--t-micro);color:var(--label);margin-left:12px;white-space:nowrap}
+
+.stage{margin-bottom:4px;border-bottom:1px solid var(--rule-faint)}
+.stage__label{width:100%;display:flex;justify-content:space-between;align-items:center;
+  gap:12px;padding:14px 0;min-height:44px;font-size:19px;font-weight:600;
+  color:var(--ink-2);text-align:left}                  /* was 9-12px @ 3.06:1 */
+.stage__label:hover{color:var(--ink)}
+.stage__count{font-size:14px;font-weight:400;color:var(--label)}
+.stage__body{display:none;padding-bottom:10px}
+.stage[data-open="true"] .stage__body{display:block}
+.stage[data-open="true"] .stage__label{color:var(--ink)}
+
+/* ================= phrase card: shared shell ================= */
+.phrase{position:relative;display:flex;flex-direction:column;
+  padding:14px 58px 16px 14px;border-bottom:1px solid var(--rule-faint);
+  border-left:4px solid transparent}
+.stage[data-open="true"] .phrase{border-left-color:var(--rule-faint)}
+.phrase:hover,.phrase:focus-within{border-left-color:var(--live);background:var(--hover)}
+
+.phrase__speak{position:absolute;top:12px;right:6px;width:44px;height:44px;
+  border:2px solid var(--rule);border-radius:50%;font-size:15px;color:var(--ink-2)}
+.phrase__speak:hover{border-color:var(--live);background:var(--live);color:var(--ground)}
+
+/* The note is the highest-value content in the project. Set it LARGER than the
+   gloss and the kanji, on its own tint. It was 11px. */
+.phrase__note{order:5;font-size:var(--t-note);font-weight:600;line-height:1.4;
+  color:var(--alert);background:var(--surface-hot);margin-top:10px;
+  border-left:4px solid var(--alert);padding:8px 10px}          /* 7.53:1 */
+
+/* ---- SPEAKING. DOM order is kanji,kana,romaji,en,note -> reordered here. ---- */
+.phrase--self .phrase__en{order:1;font-size:var(--t-find);font-weight:600;
+  line-height:1.3;color:var(--label);margin-bottom:5px}
+.phrase--self .phrase__romaji{order:2;font-size:var(--t-utter);font-weight:700;
+  font-style:normal;line-height:1.2;letter-spacing:.005em;color:var(--ink)}
+.phrase--self .phrase__kanji{order:3;font-family:var(--jp);font-size:var(--t-jp);
+  font-weight:500;line-height:1.5;color:var(--ink-2);margin-top:7px}
+.phrase--self .phrase__kana{order:4;font-family:var(--jp);font-size:var(--t-find);
+  font-weight:400;line-height:1.5;color:var(--muted);margin-top:2px}
+
+/* ---- LISTENING. Romaji and kana suppressed: he never speaks these. ---- */
+.phrase--staff .phrase__en{order:1;font-size:var(--t-gloss);font-weight:600;
+  line-height:1.25;color:var(--ink)}
+.phrase--staff .phrase__kanji{order:2;font-family:var(--jp);font-size:17px;
+  font-weight:400;line-height:1.5;color:var(--muted);margin-top:8px}
+.phrase--staff .phrase__romaji,
+.phrase--staff .phrase__kana{display:none}
+
+/* renderFallbackResult() hardcodes who:'staff', but a composer result is a line
+   HE says. Restore the speaking scale. (The real fix is one line in ui.js.) */
+#composer-out .phrase .phrase__romaji{display:block;order:2;font-size:var(--t-utter);
+  font-weight:700;font-style:normal;line-height:1.2;color:var(--ink)}
+#composer-out .phrase .phrase__kana{display:block;order:4;font-family:var(--jp);
+  font-size:var(--t-find);color:var(--muted)}
+#composer-out .phrase .phrase__en{order:1;font-size:var(--t-find);font-weight:600;
+  color:var(--label);margin-bottom:5px}
+#composer-out .phrase .phrase__kanji{order:3;font-size:var(--t-jp);
+  color:var(--ink-2);margin-top:7px}
+
+/* ---------------- radar ---------------- */
+.radar__sublabel{font-size:var(--t-micro);font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--label);margin:18px 0 6px}
+.radar__heard{border-left:4px solid var(--rule);padding-left:12px;margin-bottom:10px}
+.radar__transcript{font-family:var(--jp);font-size:22px;font-weight:500;
+  line-height:1.5;color:var(--ink-2)}
+.radar__idle{font-size:var(--t-find);color:var(--label)}
+.radar__nomatch{font-size:var(--t-note);font-weight:600;color:var(--alert);padding:14px 0}
+.radar__lowconf{font-size:var(--t-find);font-weight:500;font-style:normal;
+  color:var(--label);padding:8px 0}                       /* was 11px @ 3.06:1 */
+.radar__alt{font-family:var(--jp);font-size:18px;color:var(--muted);padding:4px 0}
+.radar__replies .phrase{border-left:4px solid var(--live);padding-left:12px}
+.radar__fallback{border:2px solid var(--alert);border-radius:3px;padding:11px 16px;
+  font-size:var(--t-ui);font-weight:600;color:var(--alert);margin-top:8px;min-height:44px}
+.radar__fallback:hover{background:var(--alert);color:var(--ground)}
+
+/* ---------------- composer ---------------- */
+#composer{border-top:2px solid var(--rule);padding:10px 18px;display:flex;
+  flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface)}
+#composer-input{flex:1;min-width:220px;background:var(--ground);border:2px solid var(--rule);
+  color:var(--ink);padding:11px 12px;font-size:var(--t-body);border-radius:3px;min-height:44px}
+#composer-input::placeholder{color:var(--label);opacity:1}
+#composer-out{flex-basis:100%}
+
+/* ---------------- panic bar: the most important control ---------------- */
+#panic{flex:0 0 auto;display:grid;grid-template-columns:repeat(5,1fr);
+  gap:2px;background:var(--rule);border-top:2px solid var(--rule)}
+.panic__btn{background:var(--surface);padding:10px 12px;text-align:left;
+  display:flex;flex-direction:column;gap:3px;min-height:44px;position:relative}
+.panic__btn:focus-visible{outline:3px solid var(--alert);outline-offset:-3px}
+.panic__key{position:absolute;top:8px;right:10px;font-size:var(--t-micro);
+  font-weight:700;color:var(--label)}
+.panic__btn:hover{background:var(--ground)}
+.panic__en{order:1;font-size:var(--t-find);font-weight:700;color:var(--label);
+  text-transform:uppercase;letter-spacing:.08em}         /* was 9px @ 2.95:1 */
+.panic__romaji{order:2;font-size:22px;font-weight:700;font-style:normal;color:var(--ink)}
+.panic__kanji{order:3;font-family:var(--jp);font-size:17px;font-weight:500;color:var(--ink-2)}
+
+@media(max-width:1100px){main{grid-template-columns:1fr;grid-template-rows:1fr 1fr}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------------- paper fallback; now matches the screen ---------------- */
 @media print{
+  :root{--ground:#fff;--surface:#fff;--surface-hot:#fff;--hover:#fff;--ink:#000;
+    --ink-2:#000;--muted:#333;--label:#444;--alert:#000;--rule:#000;--rule-faint:#bbb}
   body{background:#fff;color:#000;display:block;font-size:11pt}
   .card__mic,.dial,#composer,#mic-toggle,#print-btn,.phrase__speak,
   #radar-panel,.panel__label{display:none!important}
   main{display:block;overflow:visible}
   .panel{overflow:visible;padding:0}
-  .card{border-bottom:1px solid #000;padding:0 0 8pt;margin-bottom:10pt}
-  .card__key{color:#555}
+  .card{border-bottom:1.5pt solid #000;padding:0 0 8pt;margin-bottom:10pt;background:none}
+  .card__key{font-size:7.5pt;color:#444}
+  .card__val,.card__val--jp{font-size:11pt}
   .stage__body{display:block!important}
-  .stage{break-inside:avoid;border-bottom:1px solid #ccc}
-  .stage__label{color:#000!important;font-weight:600}
+  .stage{break-inside:avoid;border-bottom:1pt solid #bbb}
+  .stage__label{font-size:12pt;color:#000!important;font-weight:700;padding:6pt 0}
   .stage__count{display:none}
-  .phrase{border-bottom:1px dotted #ddd;padding-right:0;break-inside:avoid}
-  .phrase__kanji{font-size:13pt;color:#000}
-  .phrase__kana,.phrase__romaji,.phrase__en{color:#333}
-  .phrase__note{color:#000;border-left:2px solid #000}
-  #panic{display:block;border-top:2px solid #000;margin-top:10pt;padding-top:6pt}
-  .panic__btn{background:none;display:inline-block;width:48%;padding:3pt 0}
-  .panic__kanji{color:#000}
+  .phrase{border-bottom:.5pt dotted #bbb;padding:4pt 0;break-inside:avoid;border-left:none}
+  .phrase--self .phrase__en{font-size:9.5pt;font-weight:700}
+  .phrase--self .phrase__romaji{font-size:14pt;font-weight:700}
+  .phrase--self .phrase__kanji{font-size:12pt;margin-top:2pt}
+  .phrase--self .phrase__kana{font-size:9pt;color:#333}
+  .phrase__note{font-size:9.5pt;background:none;border-left:1.5pt solid #000;padding:2pt 0 2pt 6pt}
+  #panic{display:block;border-top:1.5pt solid #000;margin-top:10pt;padding-top:6pt;background:none}
+  .panic__btn{background:none;display:inline-block;width:48%;padding:3pt 0;vertical-align:top}
+  .panic__en{font-size:8pt}.panic__romaji{font-size:12pt}.panic__kanji{font-size:10pt}
 }
 </style>
 </head>
@@ -138,6 +281,7 @@ main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
   <div class="card__fact"><span class="card__key">Cancel fee</span>
     <span class="card__val card__val--warn">100% from midnight</span></div>
   <div class="card__mic">
+    <button id="start-call" type="button">Start call</button>
     <button id="print-btn" type="button">Print</button>
     <button id="mic-toggle" type="button" data-on="false">Listen</button>
     <span id="mic-status">idle</span>
@@ -151,13 +295,12 @@ main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
 </div>
 
 <main>
-  <section class="panel">
-    <p class="panel__label">Your script — tap a stage to open it</p>
-    <div id="script"></div>
-  </section>
   <section class="panel" id="radar-panel">
-    <p class="panel__label">Radar — silent unless it is sure</p>
     <div id="radar"></div>
+  </section>
+  <nav id="stepper"></nav>
+  <section class="panel" id="script-panel">
+    <div id="script"></div>
   </section>
 </main>
 
@@ -171,7 +314,8 @@ main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
 <footer id="panic"></footer>
 
 <script type="module">
-  import { renderScript, renderPanic, renderRadar, renderFallbackResult } from './call/ui.js';
+  import { renderScript, renderPanic, renderRadar, renderFallbackResult,
+           setStage, nextStage, prevStage, stageIndexOfPhrase, speakPanic } from './call/ui.js';
   import { initVoices, setSpeechGate } from './call/speak.js';
   import { createListener, isSecureForMic } from './call/listen.js';
   import { composeEnglish, translateJapanese, hasKey, setKey } from './call/fallback.js';
@@ -184,8 +328,9 @@ main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
   const setStatus = text => { status.textContent = text; };
 
   initVoices();
-  renderScript(document.getElementById('script'));
+  renderScript(document.getElementById('script'), document.getElementById('stepper'));
   renderPanic(document.getElementById('panic'));
+  renderRadar(radarRoot, { confident: false, candidates: [] }, { transcript: '', isFinal: false });
   document.getElementById('print-btn').addEventListener('click', () => window.print());
 
   async function askClaude(japanese, into) {
@@ -204,8 +349,15 @@ main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
   }
 
   const listener = createListener({
-    onMatch: (result, meta) =>
-      renderRadar(radarRoot, result, { ...meta, onFallback: askClaude }),
+    onMatch: (result, meta) => {
+      renderRadar(radarRoot, result, { ...meta, onFallback: askClaude });
+      // The matcher already knows where he is. Drive the script with it rather
+      // than making him hunt for the stage himself.
+      if (result.showReply && meta.isFinal) {
+        const stage = stageIndexOfPhrase(result.top.phrase.replies?.[0]);
+        if (stage >= 0) setStage(stage);
+      }
+    },
     onStatus: setStatus,
   });
 
@@ -236,9 +388,26 @@ main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
     if (!english) return;
     if (!hasKey()) { out.replaceChildren(note('Set an API key first.')); return; }
     out.replaceChildren(note('Translating…'));
-    try { renderFallbackResult(out, await composeEnglish(english)); }
+    try { renderFallbackResult(out, await composeEnglish(english), 'self'); }
     catch (error) { out.replaceChildren(note(error.message)); }
   }
+  document.addEventListener('keydown', event => {
+    if (event.target.tagName === 'INPUT' || event.metaKey || event.ctrlKey) return;
+    if (event.key === 'ArrowRight') { nextStage(); event.preventDefault(); }
+    else if (event.key === 'ArrowLeft') { prevStage(); event.preventDefault(); }
+    else if (/^[1-5]$/.test(event.key)) { speakPanic(Number(event.key) - 1); event.preventDefault(); }
+  });
+
+  const startBtn = document.getElementById('start-call');
+  startBtn.addEventListener('click', () => {
+    const inCall = document.body.dataset.mode === 'call';
+    document.body.dataset.mode = inCall ? 'prep' : 'call';
+    startBtn.textContent = inCall ? 'Start call' : 'End call';
+    if (!inCall && listener && !listener.running) {
+      listener.start(); toggle.dataset.on = 'true';
+    }
+  });
+
   document.getElementById('composer-go').addEventListener('click', runComposer);
   input.addEventListener('keydown', e => { if (e.key === 'Enter') runComposer(); });
 </script>
