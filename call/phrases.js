@@ -464,7 +464,7 @@ const SELF_PHRASES = [
     romaji: 'Kaigai no bangō na node, mēru de go-renraku itadakemasu ka.',
     en: 'My number is overseas — could you contact me by email instead?' },
 
-  { id: 'self-readback-please', who: 'self', stage: 'trouble',
+  { id: 'self-readback-please', who: 'self', stage: 'phone',
     kanji: '恐れ入りますが、復唱していただけますか。',
     kana: 'おそれいりますが、ふくしょうしていただけますか',
     romaji: 'Osore irimasu ga, fukushō shite itadakemasu ka.',

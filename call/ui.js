@@ -1,4 +1,4 @@
-import { PANIC, STAGES, byStage, byId } from './phrases.js';
+import { PANIC, STAGES, STAFF, byStage, byId } from './phrases.js';
 import { speak } from './speak.js';
 
 function el(tag, className, text) {
@@ -38,6 +38,7 @@ export function renderPhrase(phrase, { who = phrase.who } = {}) {
 // The accordion charged a full reflow for navigation the call never needs.
 let scriptRoot = null;
 let stepperRoot = null;
+let radarRoot = null;
 let currentStage = 0;
 
 export function stageIndexOfPhrase(phraseId) {
@@ -55,11 +56,17 @@ export function setStage(index) {
   for (const step of stepperRoot.querySelectorAll('.step')) {
     step.dataset.current = String(Number(step.dataset.index) === index);
   }
+  // The idle band names the stage he is standing in. When he walks the stepper
+  // himself nothing re-renders the radar, so the band would keep naming the
+  // stage he left - a cockpit instrument reading a stale value.
+  const standing = radarRoot?.querySelector('.radar__band-text--stage');
+  if (standing) standing.textContent = STAGES[index].label;
   scriptRoot.scrollTop = 0;
 }
 
 export function nextStage() { setStage(Math.min(currentStage + 1, STAGES.length - 1)); }
 export function prevStage() { setStage(Math.max(currentStage - 1, 0)); }
+export function currentStageLabel() { return STAGES[currentStage]?.label ?? ''; }
 
 export function renderScript(root, stepper) {
   scriptRoot = root; stepperRoot = stepper;
@@ -75,6 +82,10 @@ export function renderScript(root, stepper) {
 
     const section = el('section', 'stage');
     section.dataset.index = String(index);
+    // On screen the stepper is the heading. On paper there is no stepper, and
+    // an unlabelled run of 44 phrases is unusable - so every section carries a
+    // print-only heading.
+    section.append(el('h2', 'stage__heading print-only', stage.label));
     for (const line of byStage(stage.id)) section.append(renderPhrase(line));
     root.append(section);
   });
@@ -84,6 +95,16 @@ export function renderScript(root, stepper) {
   hint.id = 'stepper-hint';
   stepper.append(hint);
   setStage(0);
+}
+
+// ── Paper fallback ──────────────────────────────────────────────────────────
+// The script holds SELF phrases only, so the printout used to contain nothing
+// he might HEAR - exactly the half he cannot improvise. On paper he is reading
+// to understand, so these render with the .phrase--staff scale: English leads.
+export function renderStaffSheet(root) {
+  root.replaceChildren();
+  root.append(el('h2', 'sheet__heading', 'What they may say'));
+  for (const phrase of STAFF) root.append(renderPhrase(phrase));
 }
 
 // ── Panic bar ───────────────────────────────────────────────────────────────
@@ -107,29 +128,52 @@ export function speakPanic(index) {
 }
 
 // ── Radar ───────────────────────────────────────────────────────────────────
+// The radar's first child is always a one-line BAND, and the band is never
+// empty: with nothing heard it names the stage he is standing in. That is what
+// lets the reservation shrink to a fixed ~60px in call mode without ever
+// resizing - there is no "empty" state to collapse into, and no "full" state to
+// grow into. Everything richer than the band is detail, shown in prep mode and
+// suppressed on the live call, where the script below is the thing he needs.
 export function renderRadar(root, result, { transcript, isFinal, onFallback }) {
+  radarRoot = root;
   root.replaceChildren();
 
-  if (!transcript) {
-    root.append(el('p', 'radar__idle', 'Listening for the staff…'));
-    return;
-  }
+  const band = el('div', 'radar__band');
+  const label = el('span', 'radar__band-label');
+  const text = el('span', 'radar__band-text');
+  band.append(label, text);
+  root.append(band);
 
   if (!result.confident) {
-    root.append(el('p', 'radar__sublabel', isFinal ? 'Heard' : 'Hearing…'));
-    root.append(el('p', 'radar__transcript', transcript || '—'));
-    root.append(el('p', 'radar__nomatch', 'Not sure — use the script below'));
-    if (transcript && isFinal && onFallback) {
-      const ask = el('button', 'radar__fallback', 'Ask Claude what that meant');
-      ask.type = 'button';
-      ask.addEventListener('click', () => onFallback(transcript, root));
-      root.append(ask);
+    if (!transcript) {
+      band.classList.add('radar__band--idle');
+      label.textContent = 'Now';
+      text.classList.add('radar__band-text--stage');
+      text.textContent = currentStageLabel();
+      return;
     }
+
+    band.classList.add('radar__band--miss');
+    label.textContent = isFinal ? 'Heard' : 'Hearing';
+    text.classList.add('radar__band-text--jp');
+    text.textContent = transcript;
+    if (isFinal && onFallback) {
+      const ask = el('button', 'radar__fallback', 'Ask Claude');
+      ask.type = 'button';
+      ask.setAttribute('aria-label', 'Ask Claude what that meant');
+      ask.addEventListener('click', () => onFallback(transcript, root));
+      band.append(ask);
+    }
+    root.append(el('p', 'radar__nomatch', 'Not sure — use the script below'));
     // Deliberately NO "or possibly" list. Those are scores the matcher already
     // refused; showing them manufactures the false confidence the margin exists
     // to prevent.
     return;
   }
+
+  band.classList.add('radar__band--hit');
+  label.textContent = 'They said';
+  text.textContent = result.top.phrase.en;
 
   root.append(renderPhrase(result.top.phrase));
 

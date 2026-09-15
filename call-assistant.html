@@ -55,6 +55,14 @@
   --jp:'Noto Sans JP','Hiragino Sans','Yu Gothic UI',sans-serif;
 }
 
+/* A bookmarks bar costs ~100px and the page is the loser. Below 620px the type
+   steps down one notch — never below the 13px floor — and the ranking inside
+   each card is preserved: romaji still leads .phrase--self, English still
+   leads .phrase--staff. Everything else about the layout is unconditional. */
+@media(max-height:620px){
+  :root{ --t-utter:26px; --t-gloss:22px; --t-jp:18px; --t-note:15px; }
+}
+
 /* Night fallback: <html data-theme="dark">. Same 7:1 floor, all measured. */
 [data-theme="dark"]{
   --ground:#111010; --surface:#1C1A17; --surface-hot:#241A14; --hover:#232019;
@@ -83,101 +91,160 @@ h2,h3{font-weight:600}
   outline:3px solid var(--live);outline-offset:2px;border-radius:2px}
 
 /* ---------------- header fact card ---------------- */
-.card{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center;padding:12px 18px;
+/* Each fact was a 45px stack (key over value); eight of them wrapped to three
+   rows. Read inline as "KEY value" they are ~20px lines, and the whole card
+   is one strip. Nothing was deleted - see .card__fact--prep below. */
+.card{display:flex;flex-wrap:wrap;gap:0 16px;align-items:center;padding:3px 14px;
   border-bottom:2px solid var(--rule);background:var(--surface)}
-.card__fact{display:flex;flex-direction:column;line-height:1.2}
-.card__key{font-size:var(--t-micro);font-weight:600;letter-spacing:.1em;
+.card__fact{display:flex;align-items:baseline;gap:6px;line-height:1.3}
+.card__key{font-size:var(--t-micro);font-weight:600;letter-spacing:.07em;
   text-transform:uppercase;color:var(--label)}            /* was 9px @ 3.06:1 */
-.card__val{font-size:18px;font-weight:600;color:var(--ink)}
-.card__val--jp{font-family:var(--jp);font-size:20px;font-weight:500}
+.card__val{font-size:16px;font-weight:600;color:var(--ink)}
+.card__val--jp{font-family:var(--jp);font-size:16px;font-weight:500}
 .card__val--warn{color:var(--alert)}
-.card__mic{margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.card__mic{margin-left:auto;display:flex;align-items:center;gap:8px}
 
-#mic-toggle,#print-btn,#composer-go,#key-set{border:2px solid var(--rule);
-  border-radius:3px;padding:11px 18px;font-size:var(--t-ui);font-weight:600;
-  letter-spacing:.04em;color:var(--ink);min-height:44px}
+/* Three of the eight facts answer questions he cannot be asked once the line
+   is open: which restaurant he dialled, the number he dialled, and a fee that
+   only matters if he cancels later. On a short screen they yield the row.
+   They stay in the DOM, stay on the printout, and come back above 620px.
+
+   The five that remain drop their KEY labels there too, because the values are
+   self-describing -- "Tue 3 Nov 2026", "19:00", "+62 812 8063 7730" need no
+   caption - and the captions were ~80px apiece, which is what forced the card
+   onto a second 35px row. Hidden, not removed: still read aloud, still printed. */
+@media(max-height:620px){
+  .card__fact--prep{display:none}
+  .dial{display:none}
+  .card{gap:0 18px}
+  .card__key{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;
+    clip-path:inset(50%);white-space:nowrap}
+  #print-btn{display:none}
+}
+
+#mic-toggle,#print-btn,#composer-go,#key-set,#start-call,#composer-toggle{
+  border:2px solid var(--rule);border-radius:3px;padding:4px 11px;
+  font-size:var(--t-find);font-weight:600;letter-spacing:.03em;color:var(--ink);
+  min-height:28px}
+#start-call,#mic-toggle{min-height:29px;font-size:var(--t-ui);padding:3px 13px}
 #mic-toggle[data-on="true"]{background:var(--live);border-color:var(--live);
   color:var(--ground)}                                     /* 7.22:1 reversed */
 #mic-toggle:disabled{opacity:.55;cursor:not-allowed}
-#mic-status{font-size:var(--t-find);font-weight:600;color:var(--label);min-width:170px}
+#composer-toggle kbd{font:inherit;border:1px solid var(--rule);border-radius:2px;
+  padding:0 4px;margin-left:3px}
+#mic-status{font-size:var(--t-micro);font-weight:600;color:var(--label);
+  max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ---------------- pre-call briefing ---------------- */
-.dial{padding:10px 18px;background:var(--surface-hot);
+.dial{padding:5px 14px;background:var(--surface-hot);
   border-bottom:1px solid var(--rule-faint);font-size:var(--t-find);
-  line-height:1.4;color:var(--alert)}
+  line-height:1.35;color:var(--alert)}
 .dial strong{font-weight:700;color:var(--ink)}
 
 /* ---------------- panels ---------------- */
 main{flex:1;min-height:0;display:flex;flex-direction:column;
   gap:2px;background:var(--rule)}
-.panel{background:var(--ground);padding:12px 18px}
-/* Reserved height. The radar is silent by design most of the time, and a box
-   that resized on every utterance would shift the script under his eyes. */
-#radar-panel{flex:0 0 auto;height:190px;overflow-y:auto}
-#script-panel{flex:1;min-height:0;overflow-y:auto;padding-bottom:24px}
+.panel{background:var(--ground);padding:6px 14px}
+/* Reserved height, still. The radar is silent by design most of the time and a
+   box that resized on every utterance would shift the script under his eyes -
+   so its height is a pure function of the VIEWPORT and never of its contents.
+   What changed is the size of the reservation: 190px unconditionally (40% of a
+   short screen) became 18vh, floored at 84px and capped at 150px. It overflows
+   internally instead of pushing. */
+#radar-panel{flex:0 0 auto;height:clamp(84px,18vh,150px);overflow-y:auto;
+  overscroll-behavior:contain}
+#script-panel{flex:1;min-height:0;overflow-y:auto;padding-bottom:14px}
 .panel__label{font-size:var(--t-micro);font-weight:600;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--label);margin-bottom:14px}
+  text-transform:uppercase;color:var(--label);margin-bottom:6px}
 
+/* Screen-hidden, paper-visible. */
+.print-only{display:none}
+
+/* CALL MODE. Once the line is open the eight header facts are answering
+   questions he cannot be asked: date, time, party, name and phone are each
+   printed inside the very phrase card he reads them from (self-datetime,
+   self-party, self-name, self-phone-digits), and the restaurant and dial number
+   are behind him. What survives is the control cluster - End call, Listen, its
+   status, and the composer key - because those he still needs. */
 body[data-mode="call"] .dial,
-body[data-mode="call"] #composer,
-body[data-mode="call"] #print-btn,
-body[data-mode="call"] #key-set{display:none}
+body[data-mode="call"] .card__fact,
+body[data-mode="call"] #print-btn{display:none}
+body[data-mode="call"] .card{padding:2px 14px}
+
+/* The reservation narrows to the band. The detail underneath is prep-time
+   material; on the call the script below is what he acts on, and setStage()
+   has already walked it to the right stage. */
+body[data-mode="call"] #radar-panel{height:clamp(56px,12vh,84px);overflow:hidden}
+body[data-mode="call"] #radar > :not(.radar__band){display:none}
+
+/* The tiles were advertising a mechanism TTS already provides: he presses 1-5
+   and the laptop speaks it. On the call they collapse to a keymap - numeral
+   plus finder label, one line. The full tiles stay in PREP, where he learns
+   the mapping. */
+body[data-mode="call"] .panic__btn{flex-direction:row;align-items:center;gap:9px;
+  padding:4px 10px;min-height:30px}
+body[data-mode="call"] .panic__romaji{display:none}
+body[data-mode="call"] .panic__key{position:static;font-size:var(--t-ui);
+  font-weight:700;color:var(--ink)}
 body[data-mode="call"] #start-call{background:var(--alert);color:var(--ground);
   border-color:var(--alert)}
 
 /* ---------------- stage accordion (navigation) ---------------- */
-#stepper{flex:0 0 auto;display:flex;gap:2px;padding:6px 18px;align-items:center;
+#stepper{flex:0 0 auto;display:flex;gap:1px;padding:0 12px;align-items:stretch;
   background:var(--surface);border-bottom:1px solid var(--rule)}
-.step{flex:1;min-width:0;padding:6px 4px;font-size:var(--t-micro);font-weight:600;
-  letter-spacing:.04em;text-transform:uppercase;color:var(--label);white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis;text-align:center;min-height:34px;
+.step{flex:1;min-width:0;padding:3px;font-size:var(--t-micro);font-weight:600;
+  letter-spacing:.02em;text-transform:uppercase;color:var(--label);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;text-align:center;min-height:23px;
   border-bottom:3px solid transparent}
 .step[data-current="true"]{color:var(--ink);border-bottom-color:var(--alert)}
 .step:hover{color:var(--ink)}
-#stepper-hint{font-size:var(--t-micro);color:var(--label);margin-left:12px;white-space:nowrap}
+#stepper-hint{font-size:var(--t-micro);color:var(--label);margin-left:10px;
+  white-space:nowrap;align-self:center}
+@media(max-width:900px){#stepper-hint{display:none}}
 
-.stage{margin-bottom:4px;border-bottom:1px solid var(--rule-faint)}
-.stage__label{width:100%;display:flex;justify-content:space-between;align-items:center;
-  gap:12px;padding:14px 0;min-height:44px;font-size:19px;font-weight:600;
-  color:var(--ink-2);text-align:left}                  /* was 9-12px @ 3.06:1 */
-.stage__label:hover{color:var(--ink)}
-.stage__count{font-size:14px;font-weight:400;color:var(--label)}
-.stage__body{display:none;padding-bottom:10px}
-.stage[data-open="true"] .stage__body{display:block}
-.stage[data-open="true"] .stage__label{color:var(--ink)}
+/* The accordion is gone (setStage shows exactly one section); .stage__label,
+   .stage__count and .stage__body went with it, and their rules went too -
+   including the print rules that were still targeting them. */
+.stage{margin-bottom:0}
 
 /* ================= phrase card: shared shell ================= */
+/* Every millimetre here is a millimetre of script. The card keeps its full
+   ranking; only the dead air between the lines was spent. */
 .phrase{position:relative;display:flex;flex-direction:column;
-  padding:14px 58px 16px 14px;border-bottom:1px solid var(--rule-faint);
-  border-left:4px solid transparent}
-.stage[data-open="true"] .phrase{border-left-color:var(--rule-faint)}
+  padding:6px 46px 7px 12px;border-bottom:1px solid var(--rule-faint);
+  border-left:4px solid var(--rule-faint)}
 .phrase:hover,.phrase:focus-within{border-left-color:var(--live);background:var(--hover)}
 
-.phrase__speak{position:absolute;top:12px;right:6px;width:44px;height:44px;
-  border:2px solid var(--rule);border-radius:50%;font-size:15px;color:var(--ink-2)}
+.phrase__speak{position:absolute;top:6px;right:4px;width:36px;height:36px;
+  border:2px solid var(--rule);border-radius:50%;font-size:14px;color:var(--ink-2)}
 .phrase__speak:hover{border-color:var(--live);background:var(--live);color:var(--ground)}
 
 /* The note is the highest-value content in the project. Set it LARGER than the
    gloss and the kanji, on its own tint. It was 11px. */
-.phrase__note{order:5;font-size:var(--t-note);font-weight:600;line-height:1.4;
-  color:var(--alert);background:var(--surface-hot);margin-top:10px;
-  border-left:4px solid var(--alert);padding:8px 10px}          /* 7.53:1 */
+.phrase__note{order:5;font-size:var(--t-note);font-weight:600;line-height:1.3;
+  color:var(--alert);background:var(--surface-hot);margin-top:5px;
+  border-left:4px solid var(--alert);padding:4px 8px}           /* 7.53:1 */
 
 /* ---- SPEAKING. DOM order is kanji,kana,romaji,en,note -> reordered here. ---- */
 .phrase--self .phrase__en{order:1;font-size:var(--t-find);font-weight:600;
-  line-height:1.3;color:var(--label);margin-bottom:5px}
+  line-height:1.15;color:var(--label);margin-bottom:1px}
 .phrase--self .phrase__romaji{order:2;font-size:var(--t-utter);font-weight:700;
-  font-style:normal;line-height:1.2;letter-spacing:.005em;color:var(--ink)}
+  font-style:normal;line-height:1.12;letter-spacing:.005em;color:var(--ink)}
 .phrase--self .phrase__kanji{order:3;font-family:var(--jp);font-size:var(--t-jp);
-  font-weight:500;line-height:1.5;color:var(--ink-2);margin-top:7px}
+  font-weight:500;line-height:1.3;color:var(--ink-2);margin-top:2px}
 .phrase--self .phrase__kana{order:4;font-family:var(--jp);font-size:var(--t-find);
-  font-weight:400;line-height:1.5;color:var(--muted);margin-top:2px}
+  font-weight:400;line-height:1.35;color:var(--muted);margin-top:1px}
+/* Kana is the one line in the card with no reader: he says the romaji, the
+   play button speaks the kana, and the kanji is what the staff would see.
+   It is the first thing to go when the screen is short. It survives on a tall
+   screen and on paper. */
+@media(max-height:620px){ #script-panel .phrase__kana{display:none} }
 
 /* ---- LISTENING. Romaji and kana suppressed: he never speaks these. ---- */
 .phrase--staff .phrase__en{order:1;font-size:var(--t-gloss);font-weight:600;
-  line-height:1.25;color:var(--ink)}
+  line-height:1.15;color:var(--ink)}
 .phrase--staff .phrase__kanji{order:2;font-family:var(--jp);font-size:17px;
-  font-weight:400;line-height:1.5;color:var(--muted);margin-top:8px}
+  font-weight:400;line-height:1.35;color:var(--muted);margin-top:4px}
 .phrase--staff .phrase__romaji,
 .phrase--staff .phrase__kana{display:none}
 
@@ -194,43 +261,78 @@ body[data-mode="call"] #start-call{background:var(--alert);color:var(--ground);
 
 /* ---------------- radar ---------------- */
 .radar__sublabel{font-size:var(--t-micro);font-weight:600;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--label);margin:18px 0 6px}
-.radar__heard{border-left:4px solid var(--rule);padding-left:12px;margin-bottom:10px}
-.radar__transcript{font-family:var(--jp);font-size:22px;font-weight:500;
-  line-height:1.5;color:var(--ink-2)}
+  text-transform:uppercase;color:var(--label);margin:0 0 2px}
+.radar__heard{border-left:4px solid var(--rule);padding-left:12px;margin-bottom:6px}
+.radar__transcript{font-family:var(--jp);font-size:19px;font-weight:500;
+  line-height:1.3;color:var(--ink-2)}
 .radar__idle{font-size:var(--t-find);color:var(--label)}
-.radar__nomatch{font-size:var(--t-note);font-weight:600;color:var(--alert);padding:14px 0}
+.radar__nomatch{font-size:var(--t-note);font-weight:600;color:var(--alert);padding:4px 0}
 .radar__lowconf{font-size:var(--t-find);font-weight:500;font-style:normal;
-  color:var(--label);padding:8px 0}                       /* was 11px @ 3.06:1 */
+  color:var(--label);padding:3px 0}                       /* was 11px @ 3.06:1 */
 .radar__alt{font-family:var(--jp);font-size:18px;color:var(--muted);padding:4px 0}
 .radar__replies .phrase{border-left:4px solid var(--live);padding-left:12px}
-.radar__fallback{border:2px solid var(--alert);border-radius:3px;padding:11px 16px;
-  font-size:var(--t-ui);font-weight:600;color:var(--alert);margin-top:8px;min-height:44px}
+.radar__fallback{border:2px solid var(--alert);border-radius:3px;padding:5px 12px;
+  font-size:var(--t-find);font-weight:600;color:var(--alert);margin-top:4px;min-height:30px}
 .radar__fallback:hover{background:var(--alert);color:var(--ground)}
 
+/* The band: one row, always populated, sized by the viewport and never by its
+   contents. The label carries the state as colour as well as words. */
+.radar__band{display:flex;align-items:baseline;gap:10px}
+.radar__band-label{flex:0 0 auto;font-size:var(--t-micro);font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--label)}
+.radar__band--hit .radar__band-label{color:var(--live)}   /* 7.22:1 */
+.radar__band--miss .radar__band-label{color:var(--alert)} /* 8.09:1 */
+.radar__band-text{min-width:0;font-size:var(--t-gloss);font-weight:600;
+  line-height:1.2;color:var(--ink);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.radar__band-text--jp{font-family:var(--jp);font-size:18px;font-weight:500;color:var(--ink-2)}
+.radar__band-text--stage{font-size:var(--t-ui);font-weight:600;color:var(--label)}
+.radar__band .radar__fallback{flex:0 0 auto;margin:0 0 0 auto;align-self:center}
+
+/* Cards inside the reservation are tighter than cards in the script, because
+   the reservation cannot grow. The staff line's English still leads. */
+#radar-panel .phrase{padding:0 40px 2px 10px;border-bottom:none;border-left-width:0}
+#radar-panel .phrase__speak{top:0;right:2px;width:32px;height:32px}
+@media(max-height:620px){
+  #radar-panel .phrase--staff .phrase__kanji{display:none}
+  #radar-panel .phrase__kana{display:none}
+}
+
 /* ---------------- composer ---------------- */
-#composer{border-top:2px solid var(--rule);padding:10px 18px;display:flex;
-  flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface)}
+/* The composer is a tool he reaches for, not an instrument he monitors, so it
+   costs zero rows until he asks for it (button, or "t"). As an overlay it is
+   now available DURING the call too, which the old flow layout made impossible. */
+#composer{position:fixed;left:0;right:0;bottom:0;z-index:20;display:none;
+  border-top:2px solid var(--rule);padding:10px 14px;
+  flex-wrap:wrap;gap:8px;align-items:center;background:var(--surface);
+  box-shadow:0 -10px 30px rgba(0,0,0,.20)}
+body[data-composer="open"] #composer{display:flex}
 #composer-input{flex:1;min-width:220px;background:var(--ground);border:2px solid var(--rule);
-  color:var(--ink);padding:11px 12px;font-size:var(--t-body);border-radius:3px;min-height:44px}
+  color:var(--ink);padding:8px 12px;font-size:var(--t-body);border-radius:3px;min-height:38px}
 #composer-input::placeholder{color:var(--label);opacity:1}
-#composer-out{flex-basis:100%}
+#composer-out{flex-basis:100%;max-height:38vh;overflow-y:auto}
 
 /* ---------------- panic bar: the most important control ---------------- */
+/* Each tile stacked English + romaji + kanji in a 1/5-width column and wrapped,
+   which is how five buttons became 230px. The kanji goes (he is not reading it
+   to say it - he presses 1-5 and the laptop speaks the kana, or he reads the
+   romaji); English drops to the finder line; romaji is clamped to two lines.
+   Five tiles, one row, ~62px. Kanji returns on the printout. */
 #panic{flex:0 0 auto;display:grid;grid-template-columns:repeat(5,1fr);
-  gap:2px;background:var(--rule);border-top:2px solid var(--rule)}
-.panic__btn{background:var(--surface);padding:10px 12px;text-align:left;
-  display:flex;flex-direction:column;gap:3px;min-height:44px;position:relative}
+  gap:1px;background:var(--rule);border-top:2px solid var(--rule)}
+.panic__btn{background:var(--surface);min-width:0;padding:3px 26px 4px 10px;
+  text-align:left;display:flex;flex-direction:column;gap:0;position:relative}
 .panic__btn:focus-visible{outline:3px solid var(--alert);outline-offset:-3px}
-.panic__key{position:absolute;top:8px;right:10px;font-size:var(--t-micro);
+.panic__key{position:absolute;top:4px;right:8px;font-size:var(--t-micro);
   font-weight:700;color:var(--label)}
 .panic__btn:hover{background:var(--ground)}
-.panic__en{order:1;font-size:var(--t-find);font-weight:700;color:var(--label);
-  text-transform:uppercase;letter-spacing:.08em}         /* was 9px @ 2.95:1 */
-.panic__romaji{order:2;font-size:22px;font-weight:700;font-style:normal;color:var(--ink)}
-.panic__kanji{order:3;font-family:var(--jp);font-size:17px;font-weight:500;color:var(--ink-2)}
-
-@media(max-width:1100px){main{grid-template-columns:1fr;grid-template-rows:1fr 1fr}}
+.panic__en{order:1;min-width:0;font-size:var(--t-micro);font-weight:700;
+  color:var(--label);line-height:1.2;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}                                /* was 9px @ 2.95:1 */
+.panic__romaji{order:2;font-size:var(--t-find);font-weight:700;font-style:normal;
+  line-height:1.2;color:var(--ink);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.panic__kanji{display:none}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
 /* ---------------- paper fallback; now matches the screen ---------------- */
@@ -239,16 +341,35 @@ body[data-mode="call"] #start-call{background:var(--alert);color:var(--ground);
     --ink-2:#000;--muted:#333;--label:#444;--alert:#000;--rule:#000;--rule-faint:#bbb}
   body{background:#fff;color:#000;display:block;font-size:11pt}
   .card__mic,.dial,#composer,#mic-toggle,#print-btn,.phrase__speak,
-  #radar-panel,.panel__label{display:none!important}
+  #radar-panel,#stepper,.panel__label{display:none!important}
   main{display:block;overflow:visible}
-  .panel{overflow:visible;padding:0}
+  .panel{overflow:visible;padding:0;height:auto!important}
+  /* Screen hides eight of nine stages (setStage sets [hidden]) and hides the
+     prep facts and kana on a short screen. Paper wants all of it. */
+  .stage[hidden]{display:block!important}
+  .card__fact--prep{display:flex!important}
+  /* Paper is never a "short screen": undo the short-viewport suppressions
+     explicitly rather than relying on the print page box being over 620px. */
+  .card__key{position:static!important;width:auto!important;height:auto!important;
+    clip-path:none!important}
+  .phrase__kana{display:block!important}
+  /* Staff lines on paper: English still leads (11.5pt vs 10pt kanji), but the
+     romaji comes back, because on paper the job is matching a sound he just
+     heard to a line, and he cannot do that from kanji. */
+  .phrase--staff .phrase__en{font-size:11.5pt;font-weight:700;color:#000}
+  .phrase--staff .phrase__kanji{display:block!important;order:2;font-size:10pt;margin-top:1pt}
+  .phrase--staff .phrase__romaji{display:block!important;order:3;font-size:9.5pt;
+    font-style:normal;font-weight:400;color:#333}
+  .phrase--staff .phrase__kana{order:4;font-size:8.5pt;color:#333}
   .card{border-bottom:1.5pt solid #000;padding:0 0 8pt;margin-bottom:10pt;background:none}
   .card__key{font-size:7.5pt;color:#444}
   .card__val,.card__val--jp{font-size:11pt}
-  .stage__body{display:block!important}
-  .stage{break-inside:avoid;border-bottom:1pt solid #bbb}
-  .stage__label{font-size:12pt;color:#000!important;font-weight:700;padding:6pt 0}
-  .stage__count{display:none}
+  .print-only{display:block}
+  .stage{border-bottom:1pt solid #bbb;margin-bottom:6pt}
+  .stage__heading,.sheet__heading{font-size:12.5pt;font-weight:700;color:#000;
+    padding:8pt 0 3pt;break-after:avoid}
+  .sheet__heading{font-size:14pt;border-top:1.5pt solid #000;margin-top:14pt;
+    break-before:page}
   .phrase{border-bottom:.5pt dotted #bbb;padding:4pt 0;break-inside:avoid;border-left:none}
   .phrase--self .phrase__en{font-size:9.5pt;font-weight:700}
   .phrase--self .phrase__romaji{font-size:14pt;font-weight:700}
@@ -257,16 +378,26 @@ body[data-mode="call"] #start-call{background:var(--alert);color:var(--ground);
   .phrase__note{font-size:9.5pt;background:none;border-left:1.5pt solid #000;padding:2pt 0 2pt 6pt}
   #panic{display:block;border-top:1.5pt solid #000;margin-top:10pt;padding-top:6pt;background:none}
   .panic__btn{background:none;display:inline-block;width:48%;padding:3pt 0;vertical-align:top}
-  .panic__en{font-size:8pt}.panic__romaji{font-size:12pt}.panic__kanji{font-size:10pt}
+  .panic__en{font-size:8pt;white-space:normal}
+  .panic__romaji{font-size:12pt;display:block;-webkit-line-clamp:none;overflow:visible}
+  .panic__kanji{display:block!important;font-size:10pt}
+
+  /* Three notes in the library tell him to write something down - the staff
+     member's name, the confirmation mail, the callback - and there was nowhere
+     to write it. Ruled blanks, because this sheet is next to the phone. */
+  #writedown{break-inside:avoid;margin-top:14pt}
+  .blank{display:flex;align-items:baseline;gap:8pt;padding:7pt 0 2pt}
+  .blank dt{flex:0 0 130pt;font-size:9.5pt;font-weight:700}
+  .blank dd{flex:1;border-bottom:.75pt solid #000;min-height:15pt}
 }
 </style>
 </head>
 <body>
 
 <header class="card">
-  <div class="card__fact"><span class="card__key">Restaurant</span>
+  <div class="card__fact card__fact--prep"><span class="card__key">Restaurant</span>
     <span class="card__val card__val--jp">すき焼割烹 日山</span></div>
-  <div class="card__fact"><span class="card__key">Dial</span>
+  <div class="card__fact card__fact--prep"><span class="card__key">Dial</span>
     <span class="card__val">+81 3 3666 2901</span></div>
   <div class="card__fact"><span class="card__key">Date</span>
     <span class="card__val">Tue 3 Nov 2026</span></div>
@@ -278,10 +409,12 @@ body[data-mode="call"] #start-call{background:var(--alert);color:var(--ground);
     <span class="card__val card__val--jp">ジェフリー</span></div>
   <div class="card__fact"><span class="card__key">Your phone</span>
     <span class="card__val">+62 812 8063 7730</span></div>
-  <div class="card__fact"><span class="card__key">Cancel fee</span>
+  <div class="card__fact card__fact--prep"><span class="card__key">Cancel fee</span>
     <span class="card__val card__val--warn">100% from midnight</span></div>
   <div class="card__mic">
     <button id="start-call" type="button">Start call</button>
+    <button id="composer-toggle" type="button" aria-expanded="false"
+            aria-controls="composer">Ask Claude <kbd>/</kbd></button>
     <button id="print-btn" type="button">Print</button>
     <button id="mic-toggle" type="button" data-on="false">Listen</button>
     <span id="mic-status">idle</span>
@@ -313,9 +446,23 @@ body[data-mode="call"] #start-call{background:var(--alert);color:var(--ground);
 
 <footer id="panic"></footer>
 
+<!-- Paper only. The screen never lays these out; they cost nothing until Cmd-P. -->
+<section id="staff-sheet" class="print-only"></section>
+
+<section id="writedown" class="print-only">
+  <h2 class="sheet__heading">Write it down</h2>
+  <dl>
+    <div class="blank"><dt>Who you spoke to</dt><dd></dd></div>
+    <div class="blank"><dt>Time confirmed</dt><dd></dd></div>
+    <div class="blank"><dt>Email read back as</dt><dd></dd></div>
+    <div class="blank"><dt>Call back at (WIB / Tokyo)</dt><dd></dd></div>
+  </dl>
+</section>
+
 <script type="module">
   import { renderScript, renderPanic, renderRadar, renderFallbackResult,
-           setStage, nextStage, prevStage, stageIndexOfPhrase, speakPanic } from './call/ui.js';
+           renderStaffSheet, setStage, nextStage, prevStage, stageIndexOfPhrase,
+           speakPanic } from './call/ui.js';
   import { initVoices, setSpeechGate } from './call/speak.js';
   import { createListener, isSecureForMic } from './call/listen.js';
   import { composeEnglish, translateJapanese, hasKey, setKey } from './call/fallback.js';
@@ -331,7 +478,21 @@ body[data-mode="call"] #start-call{background:var(--alert);color:var(--ground);
   renderScript(document.getElementById('script'), document.getElementById('stepper'));
   renderPanic(document.getElementById('panic'));
   renderRadar(radarRoot, { confident: false, candidates: [] }, { transcript: '', isFinal: false });
+  renderStaffSheet(document.getElementById('staff-sheet'));
   document.getElementById('print-btn').addEventListener('click', () => window.print());
+
+  // The composer is an overlay now, so it costs no vertical space until asked
+  // for -- and it is reachable during the call, which the old flow layout
+  // could not do (it was display:none in call mode).
+  const composerToggle = document.getElementById('composer-toggle');
+  function setComposer(open) {
+    document.body.dataset.composer = open ? 'open' : 'closed';
+    composerToggle.setAttribute('aria-expanded', String(open));
+    if (open) input.focus(); else composerToggle.focus();
+  }
+  composerToggle.addEventListener('click', () => {
+    setComposer(document.body.dataset.composer !== 'open');
+  });
 
   async function askClaude(japanese, into) {
     if (!hasKey()) { into.append(note('Set an API key first.')); return; }
@@ -392,8 +553,12 @@ body[data-mode="call"] #start-call{background:var(--alert);color:var(--ground);
     catch (error) { out.replaceChildren(note(error.message)); }
   }
   document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && document.body.dataset.composer === 'open') {
+      setComposer(false); event.preventDefault(); return;
+    }
     if (event.target.tagName === 'INPUT' || event.metaKey || event.ctrlKey) return;
-    if (event.key === 'ArrowRight') { nextStage(); event.preventDefault(); }
+    if (event.key === '/') { setComposer(true); event.preventDefault(); }
+    else if (event.key === 'ArrowRight') { nextStage(); event.preventDefault(); }
     else if (event.key === 'ArrowLeft') { prevStage(); event.preventDefault(); }
     else if (/^[1-5]$/.test(event.key)) { speakPanic(Number(event.key) - 1); event.preventDefault(); }
   });
