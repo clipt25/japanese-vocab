@@ -108,7 +108,7 @@ export function renderStaffSheet(root) {
 }
 
 // ── Panic bar ───────────────────────────────────────────────────────────────
-export function renderPanic(root) {
+export function renderPanic(root, { onPick } = {}) {
   root.replaceChildren();
   PANIC.forEach((phrase, index) => {
     const button = el('button', 'panic__btn');
@@ -117,7 +117,7 @@ export function renderPanic(root) {
     button.append(el('span', 'panic__en', phrase.en));
     button.append(el('span', 'panic__romaji', phrase.romaji));
     button.append(el('span', 'panic__kanji', phrase.kanji));
-    button.addEventListener('click', () => speak(phrase));
+    button.addEventListener('click', () => (onPick ? onPick(index) : speak(phrase)));
     root.append(button);
   });
 }
@@ -194,4 +194,36 @@ export function renderFallbackResult(root, forms, who = 'staff') {
     kanji: forms.kanji, kana: forms.kana,
     romaji: forms.romaji, en: forms.english,
   }, { who }));
+}
+
+// ── Rehearsal debrief ───────────────────────────────────────────────────────
+// The whole call with translations, plus what the radar did with each staff
+// line. Nothing here is shown during the call — only after, like a real debrief.
+export function renderDebrief(root, turns, report) {
+  root.replaceChildren();
+  root.append(el('h2', 'debrief__title', 'Rehearsal debrief'));
+
+  const pct = report.total ? Math.round((report.caught / report.total) * 100) : 0;
+  root.append(el('p', 'debrief__summary',
+    `Radar caught ${report.caught} of ${report.total} staff lines (${pct}%). `
+    + 'It heard them perfectly here — on the real phone line, expect fewer.'));
+
+  const list = el('ol', 'debrief__list');
+  let staffIndex = 0;
+  for (const turn of turns) {
+    const item = el('li', `debrief__turn debrief__turn--${turn.who}`);
+    if (turn.who === 'staff') {
+      const row = report.rows[staffIndex++];
+      item.append(el('span', 'debrief__who', 'Staff'));
+      item.append(el('p', 'debrief__ja', turn.ja));
+      item.append(el('p', 'debrief__en', turn.en));
+      item.append(el('p', `debrief__radar debrief__radar--${row?.caught ? 'hit' : 'miss'}`,
+        row?.caught ? `Radar: “${row.matchedAs}”` : 'Radar: silent'));
+    } else {
+      item.append(el('span', 'debrief__who', 'You'));
+      item.append(el('p', 'debrief__ja', turn.text));
+    }
+    list.append(item);
+  }
+  root.append(list);
 }

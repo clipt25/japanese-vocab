@@ -390,6 +390,51 @@ body[data-composer="open"] #composer{display:flex}
   .blank dt{flex:0 0 130pt;font-size:9.5pt;font-weight:700}
   .blank dd{flex:1;border-bottom:.75pt solid #000;min-height:15pt}
 }
+
+/* ---------------- rehearsal ---------------- */
+#rehearse-bar{display:none;flex:0 0 auto;align-items:center;gap:8px;padding:6px 14px;
+  background:var(--surface);border-bottom:1px solid var(--rule)}
+body[data-rehearse="on"] #rehearse-bar{display:flex}
+body[data-rehearse="on"] #start-call,
+body[data-rehearse="on"] #rehearse-btn,
+body[data-rehearse="on"] #mic-toggle,
+body[data-rehearse="on"] #mic-status{display:none}
+.rh__status{flex:0 0 auto;min-width:9.5em;text-align:center;font-size:var(--t-micro);
+  font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:8px 10px;
+  border-radius:3px;color:var(--label);border:1px solid var(--rule)}
+.rh__status[data-state="you"]{color:var(--ground);background:var(--live);border-color:var(--live)}
+.rh__status[data-state="staff"]{color:var(--ground);background:var(--ink-2);border-color:var(--ink-2)}
+#rh-input{flex:1;min-width:120px;min-height:44px;font-family:var(--jp);font-size:18px;
+  padding:6px 10px;background:var(--ground);color:var(--ink);
+  border:1px solid var(--rule);border-radius:3px}
+#rehearse-bar button{min-height:44px;padding:6px 12px;border:1px solid var(--rule);
+  border-radius:3px;font-size:var(--t-ui);font-weight:600;color:var(--ink);
+  background:var(--ground);white-space:nowrap}
+#rehearse-bar kbd{font-family:inherit;font-size:var(--t-micro);color:var(--label)}
+.rh__toggle{display:flex;align-items:center;gap:6px;font-size:var(--t-micro);
+  color:var(--label);white-space:nowrap;min-height:44px}
+body[data-rehearse="on"][data-radar="hidden"] #radar{visibility:hidden}
+
+#debrief{display:none;position:fixed;inset:0;z-index:30;background:var(--ground);
+  overflow-y:auto;padding:24px clamp(16px,6vw,72px)}
+body[data-debrief="open"] #debrief{display:block}
+.debrief__title{font-size:26px;margin-bottom:6px;color:var(--ink)}
+.debrief__summary{font-size:var(--t-body);color:var(--ink-2);margin-bottom:18px}
+.debrief__list{list-style:none;display:flex;flex-direction:column;gap:10px;max-width:60rem}
+.debrief__turn{padding:10px 14px;border-left:4px solid var(--rule);background:var(--surface)}
+.debrief__turn--you{border-left-color:var(--live);background:var(--ground)}
+.debrief__who{font-size:var(--t-micro);font-weight:700;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--label)}
+.debrief__ja{font-family:var(--jp);font-size:20px;color:var(--ink);margin-top:2px}
+.debrief__en{font-size:var(--t-body);color:var(--ink-2);margin-top:2px}
+.debrief__radar{font-size:var(--t-micro);font-weight:700;margin-top:4px}
+.debrief__radar--hit{color:var(--live)}
+.debrief__radar--miss{color:var(--alert)}
+.debrief__actions{display:flex;gap:10px;margin-top:20px}
+.debrief__actions button{min-height:44px;padding:8px 18px;border:1px solid var(--rule);
+  border-radius:3px;font-size:var(--t-ui);font-weight:600}
+#debrief-again{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+@media print{#rehearse-bar,#debrief{display:none!important}}
 </style>
 </head>
 <body>
@@ -413,6 +458,7 @@ body[data-composer="open"] #composer{display:flex}
     <span class="card__val card__val--warn">100% from midnight</span></div>
   <div class="card__mic">
     <button id="start-call" type="button">Start call</button>
+    <button id="rehearse-btn" type="button">Rehearse</button>
     <button id="composer-toggle" type="button" aria-expanded="false"
             aria-controls="composer">Ask Claude <kbd>/</kbd></button>
     <button id="print-btn" type="button">Print</button>
@@ -420,6 +466,19 @@ body[data-composer="open"] #composer{display:flex}
     <span id="mic-status">idle</span>
   </div>
 </header>
+
+<!-- Rehearsal only: Claude plays the staff, speaks each line aloud, and listens
+     for the reply. Hidden unless body[data-rehearse="on"]. -->
+<section id="rehearse-bar" aria-live="polite">
+  <span id="rh-status" class="rh__status" data-state="idle">—</span>
+  <input id="rh-input" type="text" autocomplete="off" spellcheck="false"
+         placeholder="Speak your reply — or type it">
+  <button id="rh-send" type="button">Send <kbd>↵</kbd></button>
+  <button id="rh-repeat" type="button">Repeat</button>
+  <button id="rh-slow" type="button">Slower</button>
+  <label class="rh__toggle"><input id="rh-hide-radar" type="checkbox"> Hide radar</label>
+  <button id="rh-end" type="button">End</button>
+</section>
 
 <div class="dial">
   <strong>Call between 12:00–14:00 Jakarta time</strong> (14:00–16:00 Tokyo) — the
@@ -459,13 +518,25 @@ body[data-composer="open"] #composer{display:flex}
   </dl>
 </section>
 
+<section id="debrief" role="dialog" aria-modal="true" aria-label="Rehearsal debrief">
+  <div id="debrief-body"></div>
+  <div class="debrief__actions">
+    <button id="debrief-again" type="button">Rehearse again</button>
+    <button id="debrief-close" type="button">Close</button>
+  </div>
+</section>
+
 <script type="module">
   import { renderScript, renderPanic, renderRadar, renderFallbackResult,
            renderStaffSheet, setStage, nextStage, prevStage, stageIndexOfPhrase,
-           speakPanic } from './call/ui.js';
-  import { initVoices, setSpeechGate } from './call/speak.js';
+           speakPanic, renderDebrief } from './call/ui.js';
+  import { createStaffSim, scoreRadar } from './call/staff-sim.js';
+  import { createRehearsal } from './call/rehearse.js';
+  import { match } from './call/match.js';
+  import { PANIC, STAFF } from './call/phrases.js';
+  import { initVoices, setSpeechGate, speak } from './call/speak.js';
   import { createListener, isSecureForMic } from './call/listen.js';
-  import { composeEnglish, translateJapanese, hasKey, setKey } from './call/fallback.js';
+  import { composeEnglish, translateJapanese, hasKey, setKey, callClaude } from './call/fallback.js';
 
   const radarRoot = document.getElementById('radar');
   const toggle = document.getElementById('mic-toggle');
@@ -476,7 +547,7 @@ body[data-composer="open"] #composer{display:flex}
 
   initVoices();
   renderScript(document.getElementById('script'), document.getElementById('stepper'));
-  renderPanic(document.getElementById('panic'));
+  renderPanic(document.getElementById('panic'), { onPick: index => sayPanic(index) });
   renderRadar(radarRoot, { confident: false, candidates: [] }, { transcript: '', isFinal: false });
   renderStaffSheet(document.getElementById('staff-sheet'));
   document.getElementById('print-btn').addEventListener('click', () => window.print());
@@ -560,7 +631,7 @@ body[data-composer="open"] #composer{display:flex}
     if (event.key === '/') { setComposer(true); event.preventDefault(); }
     else if (event.key === 'ArrowRight') { nextStage(); event.preventDefault(); }
     else if (event.key === 'ArrowLeft') { prevStage(); event.preventDefault(); }
-    else if (/^[1-5]$/.test(event.key)) { speakPanic(Number(event.key) - 1); event.preventDefault(); }
+    else if (/^[1-5]$/.test(event.key)) { sayPanic(Number(event.key) - 1); event.preventDefault(); }
   });
 
   const startBtn = document.getElementById('start-call');
@@ -571,6 +642,102 @@ body[data-composer="open"] #composer{display:flex}
     if (!inCall && listener && !listener.running) {
       listener.start(); toggle.dataset.on = 'true';
     }
+  });
+
+  // ── Rehearsal ────────────────────────────────────────────────────────────
+  const rhStatus = document.getElementById('rh-status');
+  const rhInput = document.getElementById('rh-input');
+  const STATUS_TEXT = { idle: '—', staff: 'Staff speaking', you: 'Your turn',
+                        thinking: 'Staff thinking…', ended: 'Ended' };
+  const hasMic = isSecureForMic() && Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition);
+  const listenerGate = listener
+    ? { before: () => listener.pause(), after: () => listener.resume() }
+    : { before() {}, after() {} };
+  let rehearsal = null;
+
+  // During a rehearsal a panic phrase is a line he SAYS: play it, then send it
+  // to the staff as his turn. Outside a rehearsal it just plays.
+  function sayPanic(index) {
+    const phrase = PANIC[index];
+    if (!phrase) return;
+    if (rehearsal?.state === 'you') {
+      rehearsal.hold();
+      speak(phrase, { onEnd: () => rehearsal?.submit(phrase.kanji) });
+    } else {
+      speakPanic(index);
+    }
+  }
+
+  // The radar gets each staff line exactly as the real call's radar would, and
+  // drives the script the same way.
+  function showStaffOnRadar(turn) {
+    rhInput.value = '';
+    const result = match(turn.ja, STAFF);
+    renderRadar(radarRoot, result, { transcript: turn.ja, isFinal: true, onFallback: askClaude });
+    if (result.showReply) {
+      const stage = stageIndexOfPhrase(result.top.phrase.replies?.[0]);
+      if (stage >= 0) setStage(stage);
+    }
+  }
+
+  function startRehearsal() {
+    if (!hasKey()) {
+      const entered = prompt('The staff in the rehearsal is played by Claude.\nAnthropic API key (stored only in this browser):', '');
+      if (!entered) return;
+      setKey(entered);
+    }
+    if (listener?.running) { listener.stop(); toggle.dataset.on = 'false'; }
+    document.body.dataset.debrief = 'closed';
+    document.body.dataset.mode = 'call';
+    document.body.dataset.rehearse = 'on';
+    rhInput.value = '';
+    rhInput.placeholder = hasMic ? 'Speak your reply — or type it' : 'No microphone here — type your reply';
+    setStage(0);
+
+    rehearsal = createRehearsal({
+      sim: createStaffSim({ callClaude }),
+      onStaff: showStaffOnRadar,
+      onYou: ({ text }) => { if (document.activeElement !== rhInput) rhInput.value = text; },
+      onStatus: state => { rhStatus.dataset.state = state; rhStatus.textContent = STATUS_TEXT[state] ?? state; },
+      onEnd: finishRehearsal,
+      // Errors go in the input's placeholder, never over the status pill — the
+      // pill is the only thing that says whose turn it is.
+      onError: message => { rhInput.placeholder = message; },
+    });
+    setSpeechGate({ before: () => rehearsal?.hold(), after: () => rehearsal?.resume() });
+    rehearsal.start();
+  }
+
+  function finishRehearsal(turns) {
+    const staffTurns = turns.filter(t => t.who === 'staff');
+    renderDebrief(document.getElementById('debrief-body'), turns, scoreRadar(staffTurns));
+    setSpeechGate(listenerGate);
+    rehearsal = null;
+    document.body.dataset.rehearse = 'off';
+    document.body.dataset.mode = 'prep';
+    document.body.dataset.debrief = 'open';
+  }
+
+  function sendTyped() {
+    const text = rhInput.value.trim();
+    if (text && rehearsal) rehearsal.submit(text);
+  }
+
+  document.getElementById('rehearse-btn').addEventListener('click', startRehearsal);
+  document.getElementById('rh-send').addEventListener('click', sendTyped);
+  document.getElementById('rh-repeat').addEventListener('click', () => rehearsal?.repeat());
+  document.getElementById('rh-slow').addEventListener('click', () => rehearsal?.repeatSlowly());
+  document.getElementById('rh-end').addEventListener('click', () => rehearsal?.end());
+  document.getElementById('rh-hide-radar').addEventListener('change', e => {
+    document.body.dataset.radar = e.target.checked ? 'hidden' : 'shown';
+  });
+  // Typing closes the mic, so the laptop does not also transcribe the room.
+  rhInput.addEventListener('focus', () => rehearsal?.hold());
+  rhInput.addEventListener('blur', () => rehearsal?.resume());
+  rhInput.addEventListener('keydown', e => { if (e.key === 'Enter') { sendTyped(); e.preventDefault(); } });
+  document.getElementById('debrief-again').addEventListener('click', startRehearsal);
+  document.getElementById('debrief-close').addEventListener('click', () => {
+    document.body.dataset.debrief = 'closed';
   });
 
   document.getElementById('composer-go').addEventListener('click', runComposer);

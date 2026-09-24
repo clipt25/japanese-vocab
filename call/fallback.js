@@ -21,7 +21,10 @@ const SYSTEM = [
   'romaji uses macrons. Keep replies short and phone-appropriate, polite register.',
 ].join(' ');
 
-async function ask(userContent) {
+// Shared transport. Both the fallback translator and the rehearsal staff
+// simulator go through here, so the two known traps are handled once:
+// thinking blocks can precede the text block, and the reply may arrive fenced.
+export async function callClaude({ system, messages, maxTokens = 1024 }) {
   const key = getKey();
   if (!key) throw new Error('No API key saved');
 
@@ -33,12 +36,7 @@ async function ask(userContent) {
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true',
     },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 1024,
-      system: SYSTEM,
-      messages: [{ role: 'user', content: userContent }],
-    }),
+    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages }),
   });
 
   if (!response.ok) throw new Error(`API error ${response.status}`);
@@ -54,12 +52,25 @@ async function ask(userContent) {
     .join('')
     .trim();
   if (!text) throw new Error('Empty reply from Claude');
+  return text;
+}
 
+export function parseJsonReply(text) {
+  const unfenced = text.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
   try {
-    return JSON.parse(text.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, ''));
+    return JSON.parse(unfenced);
   } catch {
+    // Models occasionally wrap the object in a sentence; take the outermost braces.
+    const first = unfenced.indexOf('{');
+    const last = unfenced.lastIndexOf('}');
+    if (first >= 0 && last > first) return JSON.parse(unfenced.slice(first, last + 1));
     throw new Error('Could not read the reply');
   }
+}
+
+async function ask(userContent) {
+  const text = await callClaude({ system: SYSTEM, messages: [{ role: 'user', content: userContent }] });
+  return parseJsonReply(text);
 }
 
 export function translateJapanese(japanese) {
