@@ -1,0 +1,17 @@
+#!/bin/sh
+# Restamps call-assistant.html's import map when a commit touches call/*.js,
+# so a deploy can never ship modules under a stale ?v= (see stamp-modules.js).
+# Enable once per clone:  git config core.hooksPath .githooks
+
+git diff --cached --name-only --diff-filter=ACDMR | grep -q '^call/[^/]*\.js$' || exit 0
+
+# The hash is computed from the working tree, so it only matches the commit
+# when what's on disk is what's staged.
+if ! git diff --quiet -- 'call/*.js' call-assistant.html; then
+  echo "pre-commit: call/*.js or call-assistant.html has unstaged changes, so the" >&2
+  echo "import map can't be stamped to match this commit. Stage or stash them." >&2
+  exit 1
+fi
+
+node stamp-modules.js || exit 1
+git add call-assistant.html

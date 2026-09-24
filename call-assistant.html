@@ -526,6 +526,26 @@ body[data-debrief="open"] #debrief{display:block}
   </div>
 </section>
 
+<!-- Pins every call/*.js to one deploy's version, so a module cached from the
+     last deploy (Pages sends max-age=600) is never linked against a newer one.
+     Generated: edit call/, then run `node stamp-modules.js`. Must precede any
+     module script. -->
+<script type="importmap">
+{
+  "imports": {
+    "./call/dice.js": "./call/dice.js?v=0291b1f185",
+    "./call/fallback.js": "./call/fallback.js?v=0291b1f185",
+    "./call/listen.js": "./call/listen.js?v=0291b1f185",
+    "./call/match.js": "./call/match.js?v=0291b1f185",
+    "./call/normalize.js": "./call/normalize.js?v=0291b1f185",
+    "./call/phrases.js": "./call/phrases.js?v=0291b1f185",
+    "./call/rehearse.js": "./call/rehearse.js?v=0291b1f185",
+    "./call/speak.js": "./call/speak.js?v=0291b1f185",
+    "./call/staff-sim.js": "./call/staff-sim.js?v=0291b1f185",
+    "./call/ui.js": "./call/ui.js?v=0291b1f185"
+  }
+}
+</script>
 <script type="module">
   import { renderScript, renderPanic, renderRadar, renderFallbackResult,
            renderStaffSheet, setStage, nextStage, prevStage, stageIndexOfPhrase,
