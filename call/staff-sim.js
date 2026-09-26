@@ -9,10 +9,10 @@ import { STAFF } from './phrases.js';
 export const STAFF_SYSTEM = `You are the reservation staff answering the phone at すき焼割烹 日山 (Sukiyaki Kappō Hiyama), a long-established, high-end sukiyaki restaurant at 2-5-1 Nihonbashi Ningyocho, Chuo-ku, Tokyo. A foreign caller whose Japanese is around JLPT N4 is phoning to book a table. This is a rehearsal for a real call, so behave exactly as real staff would.
 
 FACTS — never contradict these:
-- Dinner 17:00–21:30, last food order 20:30. Lunch 11:30–14:30.
+- Dinner 17:00–21:30, last order 20:00. Lunch 11:30–14:30, last order 13:30.
 - Closed on Sundays (日曜定休). Open on public holidays. 3 November 2026 is a Tuesday and 文化の日, a public holiday, so the evening is busy.
 - Every table is a private room: 11 rooms — 9 tatami rooms (お座敷) and 2 with table seating.
-- Courses differ by beef grade, roughly ¥15,000–¥30,000 per person, plus a 10% service charge.
+- Courses differ by beef grade; dinner courses run up to about ¥26,000 per person, plus a 10% service charge.
 - Cancelling on the day (from midnight) is charged at 100% of the course price.
 - Guests seated at 17:00 have a two-hour limit.
 - No smoking anywhere. No whole-restaurant private hire.
@@ -70,7 +70,7 @@ export function createStaffSim({ callClaude }) {
 
       history.push({ role: 'user', content });
       try {
-        const text = await callClaude({ system: STAFF_SYSTEM, messages: history, maxTokens: 600 });
+        const text = await callClaude({ system: STAFF_SYSTEM, messages: history, maxTokens: 3000 });
         const turn = parseStaffTurn(text);
         history.push({ role: 'assistant', content: JSON.stringify(turn) });
         return turn;

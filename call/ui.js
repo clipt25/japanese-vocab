@@ -39,6 +39,7 @@ export function renderPhrase(phrase, { who = phrase.who } = {}) {
 let scriptRoot = null;
 let stepperRoot = null;
 let radarRoot = null;
+let panicRoot = null;
 let currentStage = 0;
 
 export function stageIndexOfPhrase(phraseId) {
@@ -109,6 +110,7 @@ export function renderStaffSheet(root) {
 
 // ── Panic bar ───────────────────────────────────────────────────────────────
 export function renderPanic(root, { onPick } = {}) {
+  panicRoot = root;
   root.replaceChildren();
   PANIC.forEach((phrase, index) => {
     const button = el('button', 'panic__btn');
@@ -187,6 +189,49 @@ export function renderRadar(root, result, { transcript, isFinal, onFallback }) {
   }
 }
 
+// ── Interpreter ─────────────────────────────────────────────────────────────
+// The band is the same one-row instrument the radar uses; the interpreter just
+// fills it with English instead of a library match.
+export function renderBand(root, { label, text, tone = 'hit', jp = false }) {
+  radarRoot = root;
+  root.replaceChildren();
+  const band = el('div', `radar__band radar__band--${tone}`);
+  band.append(el('span', 'radar__band-label', label),
+              el('span', `radar__band-text${jp ? ' radar__band-text--jp' : ''}`, text));
+  root.append(band);
+}
+
+// Walks the script to the card he should say next and marks it, or marks the
+// panic key if the answer is one of those. Nothing is marked when unsure.
+export function markSuggested(phraseId, custom = null) {
+  for (const node of document.querySelectorAll('[data-suggested]')) delete node.dataset.suggested;
+  for (const node of document.querySelectorAll('#script .phrase--custom')) node.remove();
+  if (custom) {
+    // No card in his script fits, so Claude wrote one. It goes at the top of
+    // the stage he is standing in, marked like any other suggestion.
+    const card = renderPhrase(custom, { who: 'self' });
+    card.classList.add('phrase--custom');
+    card.dataset.suggested = 'true';
+    const stage = scriptRoot?.querySelector('.stage:not([hidden])');
+    stage?.insertBefore(card, stage.querySelector('.phrase'));
+    if (scriptRoot) scriptRoot.scrollTop = 0;
+    return;
+  }
+  if (!phraseId) return;
+  const panicIndex = PANIC.findIndex(p => p.id === phraseId);
+  if (panicIndex >= 0) {
+    if (panicRoot?.children[panicIndex]) panicRoot.children[panicIndex].dataset.suggested = 'true';
+    return;
+  }
+  const stage = stageIndexOfPhrase(phraseId);
+  if (stage < 0) return;
+  setStage(stage);
+  const card = scriptRoot?.querySelector(`.phrase[data-id="${phraseId}"]`);
+  if (!card) return;
+  card.dataset.suggested = 'true';
+  card.scrollIntoView({ block: 'nearest' });
+}
+
 export function renderFallbackResult(root, forms, who = 'staff') {
   root.replaceChildren();
   root.append(renderPhrase({
@@ -199,14 +244,18 @@ export function renderFallbackResult(root, forms, who = 'staff') {
 // ── Rehearsal debrief ───────────────────────────────────────────────────────
 // The whole call with translations, plus what the radar did with each staff
 // line. Nothing here is shown during the call — only after, like a real debrief.
-export function renderDebrief(root, turns, report) {
+export function renderDebrief(root, turns, report, interpreted = new Map()) {
   root.replaceChildren();
   root.append(el('h2', 'debrief__title', 'Rehearsal debrief'));
 
   const pct = report.total ? Math.round((report.caught / report.total) * 100) : 0;
-  root.append(el('p', 'debrief__summary',
-    `Radar caught ${report.caught} of ${report.total} staff lines (${pct}%). `
-    + 'It heard them perfectly here — on the real phone line, expect fewer.'));
+  const suggested = turns.filter(t => t.who === 'staff'
+    && (interpreted.get(t.ja)?.replyId || interpreted.get(t.ja)?.custom)).length;
+  root.append(el('p', 'debrief__summary', interpreted.size
+    ? `Interpreter suggested a reply for ${suggested} of ${report.total} staff lines. `
+      + 'Check each suggestion against what you actually said.'
+    : `Radar caught ${report.caught} of ${report.total} staff lines (${pct}%). `
+      + 'It heard them perfectly here — on the real phone line, expect fewer.'));
 
   const list = el('ol', 'debrief__list');
   let staffIndex = 0;
@@ -217,8 +266,15 @@ export function renderDebrief(root, turns, report) {
       item.append(el('span', 'debrief__who', 'Staff'));
       item.append(el('p', 'debrief__ja', turn.ja));
       item.append(el('p', 'debrief__en', turn.en));
-      item.append(el('p', `debrief__radar debrief__radar--${row?.caught ? 'hit' : 'miss'}`,
-        row?.caught ? `Radar: “${row.matchedAs}”` : 'Radar: silent'));
+      const read = interpreted.get(turn.ja);
+      if (read) {
+        const reply = read.replyId ? byId(read.replyId) : read.custom;
+        item.append(el('p', `debrief__radar debrief__radar--${reply ? 'hit' : 'miss'}`,
+          `Interpreter: “${read.english}” → ${reply ? `say “${reply.romaji}”` : 'no suggestion'}`));
+      } else {
+        item.append(el('p', `debrief__radar debrief__radar--${row?.caught ? 'hit' : 'miss'}`,
+          row?.caught ? `Radar: “${row.matchedAs}”` : 'Radar: silent'));
+      }
     } else {
       item.append(el('span', 'debrief__who', 'You'));
       item.append(el('p', 'debrief__ja', turn.text));

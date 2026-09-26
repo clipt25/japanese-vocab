@@ -98,7 +98,8 @@ test('scoreRadar reports what the radar would have shown for each staff line', (
 });
 
 test('the system prompt carries the facts the rehearsal must not contradict', () => {
-  for (const fact of ['日曜', '座敷', '15,000', '10%', '100%', '20:30', '文化の日']) {
+  // Checked against hiyama-gr.com/sukiyaki/honten on 2026-09-26.
+  for (const fact of ['日曜', '座敷', '26,000', '10%', '100%', '20:00', '文化の日']) {
     assert.ok(STAFF_SYSTEM.includes(fact), `system prompt is missing: ${fact}`);
   }
 });

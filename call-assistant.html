@@ -214,6 +214,16 @@ body[data-mode="call"] #start-call{background:var(--alert);color:var(--ground);
   padding:6px 46px 7px 12px;border-bottom:1px solid var(--rule-faint);
   border-left:4px solid var(--rule-faint)}
 .phrase:hover,.phrase:focus-within{border-left-color:var(--live);background:var(--hover)}
+/* The interpreter's pick for what he says next. Colour AND weight, so it reads
+   at a glance without relying on hue alone. */
+.phrase[data-suggested="true"]{border-left:8px solid var(--live);background:var(--hover);
+  outline:2px solid var(--live);outline-offset:-2px}
+.panic__btn[data-suggested="true"]{outline:3px solid var(--live);outline-offset:-3px}
+/* Written by Claude for a moment his script does not cover. Say so on the card:
+   it has not been through the same hand audit as the rest of the script. */
+.phrase--custom::before{content:'Written for you by Claude — not in your script';order:0;
+  font-size:var(--t-micro);font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--live);margin-bottom:2px}
 
 .phrase__speak{position:absolute;top:6px;right:4px;width:36px;height:36px;
   border:2px solid var(--rule);border-radius:50%;font-size:14px;color:var(--ink-2)}
@@ -533,23 +543,25 @@ body[data-debrief="open"] #debrief{display:block}
 <script type="importmap">
 {
   "imports": {
-    "./call/dice.js": "./call/dice.js?v=5c3f639d92",
-    "./call/fallback.js": "./call/fallback.js?v=5c3f639d92",
-    "./call/listen.js": "./call/listen.js?v=5c3f639d92",
-    "./call/match.js": "./call/match.js?v=5c3f639d92",
-    "./call/normalize.js": "./call/normalize.js?v=5c3f639d92",
-    "./call/phrases.js": "./call/phrases.js?v=5c3f639d92",
-    "./call/rehearse.js": "./call/rehearse.js?v=5c3f639d92",
-    "./call/speak.js": "./call/speak.js?v=5c3f639d92",
-    "./call/staff-sim.js": "./call/staff-sim.js?v=5c3f639d92",
-    "./call/ui.js": "./call/ui.js?v=5c3f639d92"
+    "./call/dice.js": "./call/dice.js?v=0792d4ef8a",
+    "./call/fallback.js": "./call/fallback.js?v=0792d4ef8a",
+    "./call/interpret.js": "./call/interpret.js?v=0792d4ef8a",
+    "./call/listen.js": "./call/listen.js?v=0792d4ef8a",
+    "./call/match.js": "./call/match.js?v=0792d4ef8a",
+    "./call/normalize.js": "./call/normalize.js?v=0792d4ef8a",
+    "./call/phrases.js": "./call/phrases.js?v=0792d4ef8a",
+    "./call/rehearse.js": "./call/rehearse.js?v=0792d4ef8a",
+    "./call/speak.js": "./call/speak.js?v=0792d4ef8a",
+    "./call/staff-sim.js": "./call/staff-sim.js?v=0792d4ef8a",
+    "./call/ui.js": "./call/ui.js?v=0792d4ef8a"
   }
 }
 </script>
 <script type="module">
   import { renderScript, renderPanic, renderRadar, renderFallbackResult,
            renderStaffSheet, setStage, nextStage, prevStage, stageIndexOfPhrase,
-           speakPanic, renderDebrief } from './call/ui.js';
+           speakPanic, renderDebrief, renderBand, markSuggested } from './call/ui.js';
+  import { interpret, isOwnLine, repliesWithItself } from './call/interpret.js';
   import { createStaffSim, scoreRadar } from './call/staff-sim.js';
   import { createRehearsal } from './call/rehearse.js';
   import { match } from './call/match.js';
@@ -600,8 +612,94 @@ body[data-debrief="open"] #debrief{display:block}
     return p;
   }
 
+  // ── Live interpreter ───────────────────────────────────────────────────────
+  // Every final transcript goes to Claude (call/interpret.js): English in the
+  // band from Sonnet in ~1s, a first card from Opus 5 in ~1.5s, and Opus 5.5's
+  // final verdict in ~3s. Without a key the library radar below still runs,
+  // exactly as before.
+  const recent = [];                 // the call so far: { who, ja, english, finalized }
+  const interpreted = new Map();     // transcript -> { english, replyId }, for the debrief
+
+  function showIdleBand() {
+    renderRadar(radarRoot, { confident: false, candidates: [] }, { transcript: '', isFinal: false });
+  }
+  function latestStaff() {
+    for (let i = recent.length - 1; i >= 0; i -= 1) {
+      if (recent[i].who === 'staff' && recent[i].english) return recent[i];
+    }
+    return null;
+  }
+  function showStaff(entry) {
+    if (entry?.english) renderBand(radarRoot, { label: 'They said', text: entry.english });
+    else if (entry) renderBand(radarRoot, { label: 'Heard', text: entry.ja, tone: 'miss', jp: true });
+    else showIdleBand();
+  }
+  // Still the line he is answering? Only a newer STAFF line supersedes it: his
+  // own voice, or a line not yet judged, does not.
+  function isCurrent(entry) {
+    return recent.slice(recent.indexOf(entry) + 1).every(e => e.who !== 'staff');
+  }
+
+  function heardFinal(transcript) {
+    if (isOwnLine(transcript)) {                 // one of his cards, read aloud
+      recent.push({ who: 'you', ja: transcript, english: '', finalized: true });
+      return;
+    }
+    // The WHOLE call, not a window: with only the last six lines, an agreement
+    // to 17:00 made early on fell out of view, and at the read-back Opus
+    // "corrected" him back to the 19:00 the staff had already refused.
+    const context = recent.slice(-80).map(({ who, ja }) => ({ who, ja }));
+    const entry = { who: 'pending', ja: transcript, english: '', finalized: false };
+    recent.push(entry);
+
+    interpret(transcript, {
+      recent: context,
+      onEnglish: reading => {
+        if (reading.self || !reading.english || entry.who === 'you') return;
+        entry.english = reading.english;
+        if (isCurrent(entry)) showStaff(entry);
+      },
+      onVerdict: (reading, { final }) => {
+        if (entry.finalized) return;
+        if (repliesWithItself(transcript, reading.replyId)) reading = { ...reading, self: true, replyId: null };
+        // A quick "staff, nothing to suggest" is the verdict it gets wrong on
+        // his own echoed lines, and acting on it only clears his card. Let the
+        // final verdict make that call.
+        if (!final && !reading.self && !reading.replyId && !reading.custom) return;
+        entry.finalized = final;
+        if (reading.self) {
+          // His own voice. If the quick verdict had taken it for staff, put
+          // back the staff line he is answering, card and all.
+          entry.who = 'you';
+          interpreted.delete(transcript);
+          const staff = latestStaff();
+          showStaff(staff);
+          if (staff) markSuggested(staff.replyId, staff.custom);
+          return;
+        }
+        entry.who = 'staff';
+        entry.replyId = reading.replyId;
+        entry.custom = reading.custom;
+        interpreted.set(transcript, { english: entry.english, replyId: reading.replyId, custom: reading.custom });
+        if (!isCurrent(entry)) return;
+        showStaff(entry);
+        markSuggested(reading.replyId, reading.custom);
+      },
+      onError: (lane, error) => {
+        setStatus(`interpreter (${lane}): ${error.message}`);
+        if (lane === 'english' && entry.who !== 'you' && isCurrent(entry)) showStaff(entry);
+      },
+    });
+  }
+
   const listener = createListener({
     onMatch: (result, meta) => {
+      if (hasKey()) {
+        // Interim results would repaint the band mid-sentence, and on
+        // speakerphone they are often his own voice. Only finals are read.
+        if (meta.isFinal && meta.transcript.trim()) heardFinal(meta.transcript.trim());
+        return;
+      }
       renderRadar(radarRoot, result, { ...meta, onFallback: askClaude });
       // The matcher already knows where he is. Drive the script with it rather
       // than making him hunt for the stage himself.
@@ -660,6 +758,7 @@ body[data-debrief="open"] #debrief{display:block}
   startBtn.addEventListener('click', () => {
     const inCall = document.body.dataset.mode === 'call';
     document.body.dataset.mode = inCall ? 'prep' : 'call';
+    if (!inCall) { recent.length = 0; markSuggested(null); showIdleBand(); }
     startBtn.textContent = inCall ? 'Start call' : 'End call';
     if (!inCall && listener && !listener.running) {
       listener.start(); toggle.dataset.on = 'true';
@@ -694,6 +793,7 @@ body[data-debrief="open"] #debrief{display:block}
   // drives the script the same way.
   function showStaffOnRadar(turn) {
     rhInput.value = '';
+    if (hasKey()) { heardFinal(turn.ja); return; }
     const result = match(turn.ja, STAFF);
     renderRadar(radarRoot, result, { transcript: turn.ja, isFinal: true, onFallback: askClaude });
     if (result.showReply) {
@@ -713,13 +813,17 @@ body[data-debrief="open"] #debrief{display:block}
     document.body.dataset.mode = 'call';
     document.body.dataset.rehearse = 'on';
     rhInput.value = '';
+    recent.length = 0; interpreted.clear(); markSuggested(null);
     rhInput.placeholder = hasMic ? 'Speak your reply — or type it' : 'No microphone here — type your reply';
     setStage(0);
 
     rehearsal = createRehearsal({
       sim: createStaffSim({ callClaude }),
       onStaff: showStaffOnRadar,
-      onYou: ({ text }) => { if (document.activeElement !== rhInput) rhInput.value = text; },
+      onYou: ({ text, final }) => {
+        if (final) recent.push({ who: 'you', ja: text, english: '', finalized: true });
+        if (document.activeElement !== rhInput) rhInput.value = text;
+      },
       onStatus: state => { rhStatus.dataset.state = state; rhStatus.textContent = STATUS_TEXT[state] ?? state; },
       onEnd: finishRehearsal,
       // Errors go in the input's placeholder, never over the status pill — the
@@ -732,7 +836,7 @@ body[data-debrief="open"] #debrief{display:block}
 
   function finishRehearsal(turns) {
     const staffTurns = turns.filter(t => t.who === 'staff');
-    renderDebrief(document.getElementById('debrief-body'), turns, scoreRadar(staffTurns));
+    renderDebrief(document.getElementById('debrief-body'), turns, scoreRadar(staffTurns), interpreted);
     setSpeechGate(listenerGate);
     rehearsal = null;
     document.body.dataset.rehearse = 'off';

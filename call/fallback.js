@@ -3,7 +3,12 @@
 
 const KEY_STORAGE = 'jp-vocab-apikey';   // shared with the vocab app: same origin
 const ENDPOINT = 'https://api.anthropic.com/v1/messages';
-const MODEL = 'claude-haiku-4-5';        // fast and cheap; no adaptive thinking
+// Opus 5.5 at low effort. Haiku 4.5 was faster, but on the call accuracy is
+// what matters: measured against real staff phrasing it picked wrong replies.
+// Opus 5.5 always thinks, so every max_tokens below leaves room for that -
+// otherwise thinking can use the whole budget and the reply comes back empty.
+const MODEL = 'claude-opus-5-5';
+const EFFORT = 'low';
 
 export function getKey() {
   try { return localStorage.getItem(KEY_STORAGE) ?? ''; } catch { return ''; }
@@ -24,7 +29,7 @@ const SYSTEM = [
 // Shared transport. Both the fallback translator and the rehearsal staff
 // simulator go through here, so the two known traps are handled once:
 // thinking blocks can precede the text block, and the reply may arrive fenced.
-export async function callClaude({ system, messages, maxTokens = 1024 }) {
+export async function callClaude({ system, messages, maxTokens = 3000 }) {
   const key = getKey();
   if (!key) throw new Error('No API key saved');
 
@@ -36,7 +41,8 @@ export async function callClaude({ system, messages, maxTokens = 1024 }) {
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true',
     },
-    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages }),
+    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages,
+                           output_config: { effort: EFFORT } }),
   });
 
   if (!response.ok) throw new Error(`API error ${response.status}`);
