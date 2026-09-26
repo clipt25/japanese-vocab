@@ -11,11 +11,20 @@ const REHEARSAL_RATE = 0.8;
 let japaneseVoice = null;
 let gate = { before() {}, after() {} };
 
+// The first ja-JP voice macOS lists is "Eddy", one of the Eloquence voices.
+// Played through a 300-3400Hz phone band and transcribed by Whisper, Eddy
+// dropped the whole 8063 group from the phone number at every rate tried;
+// Kyoko read it back digit-perfect every time. So never take list order.
+const PREFERRED = [/^Kyoko/, /^Otoya/, /^O-?ren/, /Google 日本語/, /Microsoft (Nanami|Keita)/];
+const ELOQUENCE = /^(Eddy|Flo|Grandma|Grandpa|Reed|Rocko|Sandy|Shelley)\b/;
+
 function pickVoice() {
   const voices = window.speechSynthesis?.getVoices() ?? [];
+  const ja = voices.filter(v => v.lang === 'ja-JP' || v.lang?.startsWith('ja'));
   japaneseVoice =
-    voices.find(v => v.lang === 'ja-JP') ??
-    voices.find(v => v.lang?.startsWith('ja')) ?? null;
+    PREFERRED.map(pattern => ja.find(v => pattern.test(v.name))).find(Boolean) ??
+    ja.find(v => !ELOQUENCE.test(v.name)) ??
+    ja[0] ?? null;
 }
 
 export function initVoices() {

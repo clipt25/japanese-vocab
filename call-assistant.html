@@ -533,16 +533,16 @@ body[data-debrief="open"] #debrief{display:block}
 <script type="importmap">
 {
   "imports": {
-    "./call/dice.js": "./call/dice.js?v=0291b1f185",
-    "./call/fallback.js": "./call/fallback.js?v=0291b1f185",
-    "./call/listen.js": "./call/listen.js?v=0291b1f185",
-    "./call/match.js": "./call/match.js?v=0291b1f185",
-    "./call/normalize.js": "./call/normalize.js?v=0291b1f185",
-    "./call/phrases.js": "./call/phrases.js?v=0291b1f185",
-    "./call/rehearse.js": "./call/rehearse.js?v=0291b1f185",
-    "./call/speak.js": "./call/speak.js?v=0291b1f185",
-    "./call/staff-sim.js": "./call/staff-sim.js?v=0291b1f185",
-    "./call/ui.js": "./call/ui.js?v=0291b1f185"
+    "./call/dice.js": "./call/dice.js?v=5c3f639d92",
+    "./call/fallback.js": "./call/fallback.js?v=5c3f639d92",
+    "./call/listen.js": "./call/listen.js?v=5c3f639d92",
+    "./call/match.js": "./call/match.js?v=5c3f639d92",
+    "./call/normalize.js": "./call/normalize.js?v=5c3f639d92",
+    "./call/phrases.js": "./call/phrases.js?v=5c3f639d92",
+    "./call/rehearse.js": "./call/rehearse.js?v=5c3f639d92",
+    "./call/speak.js": "./call/speak.js?v=5c3f639d92",
+    "./call/staff-sim.js": "./call/staff-sim.js?v=5c3f639d92",
+    "./call/ui.js": "./call/ui.js?v=5c3f639d92"
   }
 }
 </script>
@@ -610,7 +610,9 @@ body[data-debrief="open"] #debrief{display:block}
         if (stage >= 0) setStage(stage);
       }
     },
-    onStatus: setStatus,
+    // The green button must mean the mic is actually open. Clicks only ask;
+    // the listener's own state (blocked, gave up, stopped) is what it shows.
+    onStatus: text => { setStatus(text); toggle.dataset.on = String(listener.running); },
   });
 
   // Without this the laptop transcribes its own rehearsal audio — and on

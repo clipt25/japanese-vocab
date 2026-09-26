@@ -26,6 +26,7 @@ export function createListener({ onMatch, onStatus, onRaw }) {
 
   let wanted = false;
   let paused = false;
+  let blocked = false;          // permission refused: keep saying so
   let lastTopId = null;
   let stableFor = 0;
   let backoff = FIRST_BACKOFF_MS;
@@ -57,6 +58,7 @@ export function createListener({ onMatch, onStatus, onRaw }) {
     if (event.error === 'no-speech') return;
     if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
       wanted = false;
+      blocked = true;
       onStatus('mic blocked — check browser permission');
       return;
     }
@@ -67,7 +69,9 @@ export function createListener({ onMatch, onStatus, onRaw }) {
   // Backoff and a budget matter: without them a persistent error (wifi drop)
   // becomes error -> end -> start -> error at ~1000 iterations per second.
   recognition.onend = () => {
-    if (!wanted || paused) { if (!wanted) onStatus('idle'); return; }
+    // onend always follows onerror. Saying 'idle' here would erase the one
+    // message that tells him why the radar is deaf.
+    if (!wanted || paused) { if (!wanted && !blocked) onStatus('idle'); return; }
     restarts += 1;
     if (restarts > RESTART_BUDGET) {
       wanted = false;
@@ -91,7 +95,7 @@ export function createListener({ onMatch, onStatus, onRaw }) {
 
   return {
     start() {
-      wanted = true; paused = false; lastTopId = null; stableFor = 0;
+      wanted = true; paused = false; blocked = false; lastTopId = null; stableFor = 0;
       backoff = FIRST_BACKOFF_MS; restarts = 0;
       try { recognition.start(); onStatus('listening'); }
       catch (error) { onStatus(`could not start: ${error.name}`); }
