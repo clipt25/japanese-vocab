@@ -1,35 +1,33 @@
 import { parseJsonReply } from './fallback.js';
 import { match } from './match.js';
 import { STAFF } from './phrases.js';
+import { RESTAURANT } from './restaurants.js';
 
 // Rehearsal only. Claude plays the reservation staff so Geoffrey can practise the
 // call out loud before the real one. The facts below are the verified ones from
 // the design spec — the simulator must never invent a policy the real restaurant
 // does not have, or the rehearsal teaches the wrong call.
-export const STAFF_SYSTEM = `You are the reservation staff answering the phone at すき焼割烹 日山 (Sukiyaki Kappō Hiyama), a long-established, high-end sukiyaki restaurant at 2-5-1 Nihonbashi Ningyocho, Chuo-ku, Tokyo. A foreign caller whose Japanese is around JLPT N4 is phoning to book a table. This is a rehearsal for a real call, so behave exactly as real staff would.
+export function staffSystemFor(r) {
+  return `You are the reservation staff answering the phone at ${r.sim.identity}. A foreign caller whose Japanese is around JLPT N4 is phoning to book a table. This is a rehearsal for a real call, so behave exactly as real staff would.
 
 FACTS — never contradict these:
-- Dinner 17:00–21:30, last order 20:00. Lunch 11:30–14:30, last order 13:30.
-- Closed on Sundays (日曜定休). Open on public holidays. 3 November 2026 is a Tuesday and 文化の日, a public holiday, so the evening is busy.
-- Every table is a private room: 11 rooms — 9 tatami rooms (お座敷) and 2 with table seating.
-- Courses differ by beef grade; dinner courses run up to about ¥26,000 per person, plus a 10% service charge.
-- Cancelling on the day (from midnight) is charged at 100% of the course price.
-- Guests seated at 17:00 have a two-hour limit.
-- No smoking anywhere. No whole-restaurant private hire.
-- Nobody on duty speaks English.
+${r.sim.facts}
 
 HOW TO SPEAK:
-- Natural telephone keigo, as a real kappō would use it: でございます, かしこまりました, 恐れ入りますが, 承りました. Do NOT simplify your Japanese unprompted.
+- ${r.sim.register} Do NOT simplify your Japanese unprompted.
 - If he says his Japanese is not good or asks you to speak slowly, do what real staff do: for the rest of the call, speak slowly in short sentences with plainer words, still politely, and set "slow": true on every one of those turns. If he only asks you to repeat, repeat once, more simply.
 - One turn at a time: one or two short sentences, as on a real phone line. Ask one thing at a time.
-- Ask what real staff ask for a booking: date, time, party size, name (and the katakana spelling of a foreign name), contact number, seating preference, course or budget, allergies. Read the booking back (復唱) before confirming it.
-- Introduce at most ONE realistic complication during the call — for example the requested time is full but another is free, the course must be chosen in advance, or you need a Japanese contact number. Pick it naturally and do not always pick the same one.
+- Ask what real staff ask for a booking: ${r.sim.asks}. Read the booking back (復唱) before confirming it.
+- Introduce at most ONE realistic complication during the call — for example ${r.sim.complications}. Pick it naturally and do not always pick the same one.
 - His lines reach you through speech recognition and may be garbled or mis-transcribed. React as real staff would to an unclear foreign caller: politely ask him to repeat, or confirm what you think he said.
 - End the call naturally once the booking is confirmed or clearly cannot be made, finishing with 失礼いたします.
 
 REPLY FORMAT — only a JSON object, no prose, no code fence:
 {"ja":"what you say, in natural Japanese","kana":"the same line in hiragana/katakana only — no kanji, no digits","en":"faithful English translation","slow":false,"end":false}
 Set "end" to true only on your final line of the call.`;
+}
+
+export const STAFF_SYSTEM = staffSystemFor(RESTAURANT);
 
 // Optional rehearsal scenarios. A brief is appended to the staff prompt and
 // replaces the staff's own choice of complication, so a specific situation can
@@ -38,6 +36,7 @@ export const SCENARIOS = Object.freeze({
   random: { label: 'Random complication', brief: '' },
   'insist-course': {
     label: 'They insist you choose a course',
+    requires: 'course',
     brief: `SCENARIO FOR THIS REHEARSAL — this replaces choosing a complication yourself:
 - The course must be chosen at the time of booking. If he asks to decide on the day, politely insist that it has to be chosen now.
 - If he asks you to hold just the table without a course, decline politely: on a busy public holiday you cannot hold a table without a course.
@@ -46,12 +45,16 @@ export const SCENARIOS = Object.freeze({
   },
 });
 
-export const OPENING_TURN = Object.freeze({
-  ja: 'お電話ありがとうございます。すき焼割烹日山でございます。',
-  kana: 'おでんわありがとうございます。すきやきかっぽうひやまでございます',
-  en: 'Thank you for calling. This is Sukiyaki Kappō Hiyama.',
-  end: false,
-});
+export function openingTurnFor(r) {
+  return Object.freeze({
+    ja: `お電話ありがとうございます。${r.name.ja.replace(/\s+/g, '')}でございます。`,
+    kana: `おでんわありがとうございます。${r.name.openingKana}でございます`,
+    en: `Thank you for calling. This is ${r.name.en}.`,
+    end: false,
+  });
+}
+
+export const OPENING_TURN = openingTurnFor(RESTAURANT);
 
 // The API requires the first message to come from the user, so the pick-up is
 // framed as a stage direction, and the greeting is seeded as the assistant's turn.
@@ -69,19 +72,28 @@ export function parseStaffTurn(text) {
   };
 }
 
-export function createStaffSim({ callClaude, scenario = 'random' }) {
+export function scenariosFor(r) {
+  return Object.entries(SCENARIOS).filter(([, s]) => !s.requires || r.features[s.requires]);
+}
+
+export function createStaffSim({ callClaude, scenario = 'random', restaurant = RESTAURANT }) {
   if (!(scenario in SCENARIOS)) throw new Error(`Unknown scenario: ${scenario}`);
-  const { brief } = SCENARIOS[scenario];
-  const system = brief ? `${STAFF_SYSTEM}\n\n${brief}` : STAFF_SYSTEM;
+  const { brief, requires } = SCENARIOS[scenario];
+  if (requires && !restaurant.features[requires]) {
+    throw new Error(`Scenario ${scenario} does not apply to ${restaurant.name.en}`);
+  }
+  const base = staffSystemFor(restaurant);
+  const opening = openingTurnFor(restaurant);
+  const system = brief ? `${base}\n\n${brief}` : base;
   let history = [];
 
   return {
     opening() {
       history = [
         { role: 'user', content: PICK_UP },
-        { role: 'assistant', content: JSON.stringify(OPENING_TURN) },
+        { role: 'assistant', content: JSON.stringify(opening) },
       ];
-      return OPENING_TURN;
+      return opening;
     },
 
     async reply(said) {

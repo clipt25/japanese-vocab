@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="google" content="notranslate">
 <meta name="theme-color" content="#FBF9F4">
-<title>日山 — Call Assistant</title>
+<title>Call Assistant</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- Separate requests on purpose: css2 fails the WHOLE response if any one
@@ -450,28 +450,20 @@ body[data-debrief="open"] #debrief{display:block}
 body[data-rehearse="on"] #rh-scenario,
 body[data-mode="call"] #rh-scenario{display:none}
 @media print{#rh-scenario{display:none!important}}
+#facts{display:contents}
+#restaurant-pick{min-height:44px;padding:6px 10px;border:2px solid var(--ink);border-radius:3px;
+  font-size:var(--t-ui);font-weight:700;color:var(--ink);background:var(--ground)}
+body[data-mode="call"] #restaurant-pick,
+body[data-rehearse="on"] #restaurant-pick{display:none}
+@media print{#restaurant-pick{display:none!important}}
 </style>
 </head>
 <body>
 
 <header class="card">
-  <div class="card__fact card__fact--prep"><span class="card__key">Restaurant</span>
-    <span class="card__val card__val--jp">すき焼割烹 日山</span></div>
-  <div class="card__fact card__fact--prep"><span class="card__key">Dial</span>
-    <span class="card__val">+81 3 3666 2901</span></div>
-  <div class="card__fact"><span class="card__key">Date</span>
-    <span class="card__val">Tue 3 Nov 2026</span></div>
-  <div class="card__fact"><span class="card__key">Time</span>
-    <span class="card__val">19:00</span></div>
-  <div class="card__fact"><span class="card__key">Party</span>
-    <span class="card__val">4 · tatami</span></div>
-  <div class="card__fact"><span class="card__key">Name</span>
-    <span class="card__val card__val--jp">ジェフリー</span></div>
-  <div class="card__fact"><span class="card__key">Your phone</span>
-    <span class="card__val">+62 812 8063 7730</span></div>
-  <div class="card__fact card__fact--prep"><span class="card__key">Cancel fee</span>
-    <span class="card__val card__val--warn">100% from midnight</span></div>
+  <div id="facts"></div>
   <div class="card__mic">
+    <select id="restaurant-pick" aria-label="Restaurant to call"></select>
     <button id="start-call" type="button">Start call</button>
     <button id="rehearse-btn" type="button">Rehearse</button>
     <select id="rh-scenario" aria-label="Rehearsal scenario"></select>
@@ -496,11 +488,7 @@ body[data-mode="call"] #rh-scenario{display:none}
   <button id="rh-end" type="button">End</button>
 </section>
 
-<div class="dial">
-  <strong>Call between 12:00–14:00 Jakarta time</strong> (14:00–16:00 Tokyo) — the
-  afternoon lull. Avoid 15:00–19:30 WIB: that is their dinner service. They are
-  closed Sundays; 3 Nov is a holiday but they are open.
-</div>
+<div class="dial" id="call-window"></div>
 
 <main>
   <section class="panel" id="radar-panel">
@@ -549,17 +537,19 @@ body[data-mode="call"] #rh-scenario{display:none}
 <script type="importmap">
 {
   "imports": {
-    "./call/dice.js": "./call/dice.js?v=7996c91121",
-    "./call/fallback.js": "./call/fallback.js?v=7996c91121",
-    "./call/interpret.js": "./call/interpret.js?v=7996c91121",
-    "./call/listen.js": "./call/listen.js?v=7996c91121",
-    "./call/match.js": "./call/match.js?v=7996c91121",
-    "./call/normalize.js": "./call/normalize.js?v=7996c91121",
-    "./call/phrases.js": "./call/phrases.js?v=7996c91121",
-    "./call/rehearse.js": "./call/rehearse.js?v=7996c91121",
-    "./call/speak.js": "./call/speak.js?v=7996c91121",
-    "./call/staff-sim.js": "./call/staff-sim.js?v=7996c91121",
-    "./call/ui.js": "./call/ui.js?v=7996c91121"
+    "./call/dice.js": "./call/dice.js?v=50d5332bf2",
+    "./call/fallback.js": "./call/fallback.js?v=50d5332bf2",
+    "./call/interpret.js": "./call/interpret.js?v=50d5332bf2",
+    "./call/listen.js": "./call/listen.js?v=50d5332bf2",
+    "./call/match.js": "./call/match.js?v=50d5332bf2",
+    "./call/normalize.js": "./call/normalize.js?v=50d5332bf2",
+    "./call/phrases.js": "./call/phrases.js?v=50d5332bf2",
+    "./call/register.js": "./call/register.js?v=50d5332bf2",
+    "./call/rehearse.js": "./call/rehearse.js?v=50d5332bf2",
+    "./call/restaurants.js": "./call/restaurants.js?v=50d5332bf2",
+    "./call/speak.js": "./call/speak.js?v=50d5332bf2",
+    "./call/staff-sim.js": "./call/staff-sim.js?v=50d5332bf2",
+    "./call/ui.js": "./call/ui.js?v=50d5332bf2"
   }
 }
 </script>
@@ -568,7 +558,8 @@ body[data-mode="call"] #rh-scenario{display:none}
            renderStaffSheet, setStage, nextStage, prevStage, stageIndexOfPhrase,
            speakPanic, renderDebrief, renderBand, markSuggested } from './call/ui.js';
   import { interpret, isOwnLine, repliesWithItself } from './call/interpret.js';
-  import { createStaffSim, scoreRadar, SCENARIOS } from './call/staff-sim.js';
+  import { RESTAURANT, RESTAURANTS } from './call/restaurants.js';
+  import { createStaffSim, scoreRadar, scenariosFor } from './call/staff-sim.js';
   import { createRehearsal } from './call/rehearse.js';
   import { match } from './call/match.js';
   import { PANIC, STAFF } from './call/phrases.js';
@@ -582,6 +573,40 @@ body[data-mode="call"] #rh-scenario{display:none}
   const out = document.getElementById('composer-out');
   const input = document.getElementById('composer-input');
   const setStatus = text => { status.textContent = text; };
+
+  // ── The restaurant being called ─────────────────────────────────────────
+  document.title = `${RESTAURANT.name.short} — Call Assistant`;
+  const factsRoot = document.getElementById('facts');
+  const [partyFact, ...extraFacts] = RESTAURANT.headerFacts;
+  const facts = [
+    { key: 'Restaurant', value: RESTAURANT.name.ja, jp: true, prep: true },
+    { key: 'Dial', value: RESTAURANT.dial, prep: true },
+    { key: 'Date', value: RESTAURANT.date.header },
+    { key: 'Time', value: RESTAURANT.time.header },
+    partyFact,
+    { key: 'Name', value: 'ジェフリー', jp: true },
+    { key: 'Your phone', value: '+62 812 8063 7730' },
+    ...extraFacts.map(f => ({ ...f, prep: true })),
+  ];
+  for (const f of facts) {
+    const fact = document.createElement('div');
+    fact.className = 'card__fact' + (f.prep ? ' card__fact--prep' : '');
+    const key = Object.assign(document.createElement('span'), { className: 'card__key', textContent: f.key });
+    const val = Object.assign(document.createElement('span'), { textContent: f.value,
+      className: 'card__val' + (f.jp ? ' card__val--jp' : '') + (f.warn ? ' card__val--warn' : '') });
+    fact.append(key, val);
+    factsRoot.append(fact);
+  }
+  const callWindow = document.getElementById('call-window');
+  callWindow.append(Object.assign(document.createElement('strong'), { textContent: RESTAURANT.callWindow.strong }),
+                    document.createTextNode(RESTAURANT.callWindow.rest));
+
+  const restaurantPick = document.getElementById('restaurant-pick');
+  for (const r of Object.values(RESTAURANTS)) restaurantPick.append(new Option(r.label, r.id));
+  restaurantPick.value = RESTAURANT.id;
+  // A reload, not a live swap: every module builds its phrases and prompts
+  // for one restaurant as it loads, so nothing can go stale mid-call.
+  restaurantPick.addEventListener('change', () => { location.search = `?r=${restaurantPick.value}`; });
 
   initVoices();
   renderScript(document.getElementById('script'), document.getElementById('stepper'));
@@ -809,7 +834,7 @@ body[data-mode="call"] #rh-scenario{display:none}
   }
 
   const scenarioSelect = document.getElementById('rh-scenario');
-  for (const [value, { label }] of Object.entries(SCENARIOS)) {
+  for (const [value, { label }] of scenariosFor(RESTAURANT)) {
     scenarioSelect.append(new Option(`Scenario: ${label}`, value));
   }
 

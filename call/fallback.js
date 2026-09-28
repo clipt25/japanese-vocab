@@ -1,3 +1,5 @@
+import { PLAIN_POLITE_RULE } from './register.js';
+
 // The slow path. Only ever invoked by an explicit tap, never automatically and
 // never from an interim result.
 
@@ -23,7 +25,8 @@ const SYSTEM = [
   'Reply with ONLY a JSON object, no prose and no code fence:',
   '{"kanji":"","kana":"","romaji":"","english":""}',
   'kana must contain kana only — no kanji, no digits.',
-  'romaji uses macrons. Keep replies short and phone-appropriate, polite register.',
+  'romaji uses macrons. Keep replies short and phone-appropriate.',
+  PLAIN_POLITE_RULE,
 ].join(' ');
 
 // Shared transport. Both the fallback translator and the rehearsal staff
