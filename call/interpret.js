@@ -1,6 +1,6 @@
 import { RESTAURANT } from './restaurants.js';
 import { PLAIN_POLITE_RULE } from './register.js';
-import { getKey } from './fallback.js';
+import { getKey, apiError } from './fallback.js';
 import { SELF, STAFF, byId } from './phrases.js';
 import { scorePhrase } from './match.js';
 
@@ -144,7 +144,8 @@ async function streamOnce(lane, system, content, onText) {
     throw Object.assign(new Error(`network: ${error.message}`), { retryable: true });
   }
   if (!response.ok) {
-    throw Object.assign(new Error(`API error ${response.status}`), { retryable: RETRY_STATUS.has(response.status) });
+    const error = await apiError(response);
+    throw Object.assign(error, { retryable: !error.fatal && RETRY_STATUS.has(response.status) });
   }
 
   const reader = response.body.getReader();
@@ -180,22 +181,39 @@ async function streamOnce(lane, system, content, onText) {
 // early: the sentence is still being spoken. Only the fast lanes run - the
 // English and the quick card - and the authoritative final verdict waits for
 // the finished sentence, so it never judges half a question.
+// With the call connected, the audio comes from the Yolla tab, which never
+// carries his own voice: everything heard is the restaurant. Asking "is this
+// him?" there only does harm - staff echo his words back (4人ですね, お名前は),
+// and a fragment like お名前 was judged to be his line and never translated.
+const SELF_CLAUSE = ENGLISH_SYSTEM.indexOf('If it is Geoffrey himself speaking');
+export const ENGLISH_CALL_SYSTEM = `${ENGLISH_SYSTEM.slice(0, SELF_CLAUSE).trimEnd()}
+
+Everything you receive is the restaurant staff speaking: it is captured from the call audio, which never contains his own voice. Always translate. Never answer SELF.`;
+export const VERDICT_CALL_SYSTEM = `${VERDICT_SYSTEM}
+
+This transcript was captured from the call audio, which never contains his own voice: it is always the staff. Never answer SELF.`;
+
 // A sentence still being spoken is cut off mid-way. Without this, the model
 // narrated instead of translating ("CONFIRMING: November — go ahead and
 // continue, waiting for the rest").
-export const EARLY_ENGLISH_SYSTEM = `${ENGLISH_SYSTEM}
+const EARLY_NOTE = `
 
 The staff is still talking: this transcript usually stops mid-sentence. Translate only the words that are there, as far as they go. Never comment on it being incomplete, never guess the rest, never add notes.`;
+export const EARLY_ENGLISH_SYSTEM = `${ENGLISH_SYSTEM}\n${EARLY_NOTE}`;
+const EARLY_ENGLISH_CALL_SYSTEM = `${ENGLISH_CALL_SYSTEM}\n${EARLY_NOTE}`;
 
-export function interpret(transcript, { recent = [], onEnglish, onVerdict, onError, early = false, verdict = true }) {
-  streamLane(ENGLISH_LANE, early ? EARLY_ENGLISH_SYSTEM : ENGLISH_SYSTEM, transcript,
+export function interpret(transcript, { recent = [], onEnglish, onVerdict, onError, early = false, verdict = true, translate = true, staffOnly = false }) {
+  // translate: false when the staff already spoke English - only the card is needed.
+  const englishSystem = staffOnly ? (early ? EARLY_ENGLISH_CALL_SYSTEM : ENGLISH_CALL_SYSTEM)
+    : (early ? EARLY_ENGLISH_SYSTEM : ENGLISH_SYSTEM);
+  if (translate) streamLane(ENGLISH_LANE, englishSystem, transcript,
     text => onEnglish?.(parseInterpretation(text), { done: false }))
     .then(text => onEnglish?.(parseInterpretation(text), { done: true }))
     .catch(error => onError?.('english', error));
   const content = buildVerdictMessage(transcript, recent);
   const lanes = !early ? [[QUICK_LANE, false], [FINAL_LANE, true]] : verdict ? [[QUICK_LANE, false]] : [];
   for (const [lane, final] of lanes) {
-    streamLane(lane, VERDICT_SYSTEM, content)
+    streamLane(lane, staffOnly ? VERDICT_CALL_SYSTEM : VERDICT_SYSTEM, content)
       .then(text => onVerdict?.(parseInterpretation(text), { final }))
       .catch(error => onError?.(final ? 'final' : 'quick', error));
   }

@@ -461,6 +461,56 @@ body[data-rehearse="on"] #restaurant-pick{display:none}
 #connect-call[data-on="true"]{background:var(--live);border-color:var(--live);color:var(--ground)}
 body[data-rehearse="on"] #connect-call{display:none}
 @media print{#connect-call{display:none!important}}
+
+/* ── Transcript: every line stays on screen ─────────────────────────────── */
+#history-panel{display:none;position:relative;min-height:0;background:var(--ground);
+  border-left:2px solid var(--rule)}
+body[data-mode="call"] main,
+main[data-has-history="true"]{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);
+  grid-template-rows:auto auto minmax(0,1fr)}
+body[data-mode="call"] #radar-panel,
+main[data-has-history="true"] #radar-panel{grid-column:1;grid-row:1}
+body[data-mode="call"] #stepper,
+main[data-has-history="true"] #stepper{grid-column:1;grid-row:2}
+body[data-mode="call"] #script-panel,
+main[data-has-history="true"] #script-panel{grid-column:1;grid-row:3}
+body[data-mode="call"] #history-panel,
+main[data-has-history="true"] #history-panel{display:block;grid-column:2;grid-row:1 / 4}
+/* The one-line band is what failed him: the transcript replaces it mid-call. */
+body[data-mode="call"] #radar-panel{display:none}
+#history-list{list-style:none;height:100%;overflow-y:auto;padding:8px 14px 56px;
+  overscroll-behavior:contain}
+#history-list:empty::before{content:'What they say appears here — and stays.';
+  display:block;padding:10px 0;font-size:var(--t-ui);color:var(--label)}
+.turn{padding:9px 0 9px 10px;border-bottom:1px solid var(--rule-faint);border-left:3px solid transparent}
+.turn--live{border-left-color:var(--live)}
+.turn__who{display:block;font-size:var(--t-micro);font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--label)}
+.turn__who:empty{display:none}
+.turn__en{font-size:20px;font-weight:600;line-height:1.3;color:var(--ink)}
+.turn__en:empty{display:none}
+.turn--staff .turn__en:empty{display:block}
+.turn--staff .turn__en:empty::before{content:'translating…';font-size:var(--t-ui);
+  font-weight:400;color:var(--label)}
+.turn__ja{font-family:var(--jp);font-size:15px;line-height:1.45;color:var(--muted);margin-top:2px}
+.turn--you{background:var(--surface)}
+.turn--you .turn__ja{color:var(--ink-2)}
+.history__jump{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
+  min-height:40px;padding:6px 16px;border-radius:20px;border:2px solid var(--ink);
+  background:var(--ink);color:var(--ground);font-size:var(--t-ui);font-weight:700;
+  box-shadow:0 2px 8px rgba(0,0,0,.25)}
+@media(max-width:760px){
+  body[data-mode="call"] main,main[data-has-history="true"]{grid-template-columns:1fr;
+    grid-template-rows:minmax(0,38%) auto minmax(0,1fr)}
+  body[data-mode="call"] #history-panel,main[data-has-history="true"] #history-panel{
+    grid-column:1;grid-row:1;border-left:none;border-bottom:2px solid var(--rule)}
+  body[data-mode="call"] #stepper,main[data-has-history="true"] #stepper{grid-row:2}
+  body[data-mode="call"] #script-panel,main[data-has-history="true"] #script-panel{grid-row:3}
+}
+@media print{#history-panel{display:none!important}}
+#api-alert{flex:0 0 auto;padding:10px 16px;background:var(--alert);color:var(--ground);
+  font-size:var(--t-body);font-weight:700;line-height:1.35}
+@media print{#api-alert{display:none!important}}
 </style>
 </head>
 <body>
@@ -484,6 +534,8 @@ body[data-rehearse="on"] #connect-call{display:none}
 
 <!-- Rehearsal only: Claude plays the staff, speaks each line aloud, and listens
      for the reply. Hidden unless body[data-rehearse="on"]. -->
+<div id="api-alert" role="alert" hidden></div>
+
 <section id="rehearse-bar" aria-live="polite">
   <span id="rh-status" class="rh__status" data-state="idle">—</span>
   <input id="rh-input" type="text" autocomplete="off" spellcheck="false"
@@ -505,6 +557,10 @@ body[data-rehearse="on"] #connect-call{display:none}
   <section class="panel" id="script-panel">
     <div id="script"></div>
   </section>
+  <aside id="history-panel" aria-label="What was said">
+    <ol id="history-list"></ol>
+    <button id="history-jump" class="history__jump" type="button" hidden>New lines ↓</button>
+  </aside>
 </main>
 
 <section id="composer">
@@ -544,19 +600,20 @@ body[data-rehearse="on"] #connect-call{display:none}
 <script type="importmap">
 {
   "imports": {
-    "./call/dice.js": "./call/dice.js?v=8767393410",
-    "./call/fallback.js": "./call/fallback.js?v=8767393410",
-    "./call/interpret.js": "./call/interpret.js?v=8767393410",
-    "./call/listen.js": "./call/listen.js?v=8767393410",
-    "./call/match.js": "./call/match.js?v=8767393410",
-    "./call/normalize.js": "./call/normalize.js?v=8767393410",
-    "./call/phrases.js": "./call/phrases.js?v=8767393410",
-    "./call/register.js": "./call/register.js?v=8767393410",
-    "./call/rehearse.js": "./call/rehearse.js?v=8767393410",
-    "./call/restaurants.js": "./call/restaurants.js?v=8767393410",
-    "./call/speak.js": "./call/speak.js?v=8767393410",
-    "./call/staff-sim.js": "./call/staff-sim.js?v=8767393410",
-    "./call/ui.js": "./call/ui.js?v=8767393410"
+    "./call/dice.js": "./call/dice.js?v=ae452dcacc",
+    "./call/fallback.js": "./call/fallback.js?v=ae452dcacc",
+    "./call/history.js": "./call/history.js?v=ae452dcacc",
+    "./call/interpret.js": "./call/interpret.js?v=ae452dcacc",
+    "./call/listen.js": "./call/listen.js?v=ae452dcacc",
+    "./call/match.js": "./call/match.js?v=ae452dcacc",
+    "./call/normalize.js": "./call/normalize.js?v=ae452dcacc",
+    "./call/phrases.js": "./call/phrases.js?v=ae452dcacc",
+    "./call/register.js": "./call/register.js?v=ae452dcacc",
+    "./call/rehearse.js": "./call/rehearse.js?v=ae452dcacc",
+    "./call/restaurants.js": "./call/restaurants.js?v=ae452dcacc",
+    "./call/speak.js": "./call/speak.js?v=ae452dcacc",
+    "./call/staff-sim.js": "./call/staff-sim.js?v=ae452dcacc",
+    "./call/ui.js": "./call/ui.js?v=ae452dcacc"
   }
 }
 </script>
@@ -568,11 +625,12 @@ body[data-rehearse="on"] #connect-call{display:none}
   import { RESTAURANT, RESTAURANTS } from './call/restaurants.js';
   import { createStaffSim, scoreRadar, scenariosFor } from './call/staff-sim.js';
   import { createRehearsal } from './call/rehearse.js';
+  import { createHistory } from './call/history.js';
   import { match } from './call/match.js';
   import { PANIC, STAFF } from './call/phrases.js';
   import { initVoices, setSpeechGate, speak } from './call/speak.js';
   import { createListener, isSecureForMic } from './call/listen.js';
-  import { composeEnglish, translateJapanese, hasKey, setKey, callClaude } from './call/fallback.js';
+  import { composeEnglish, translateJapanese, hasKey, setKey, callClaude, checkApi } from './call/fallback.js';
 
   const radarRoot = document.getElementById('radar');
   const toggle = document.getElementById('mic-toggle');
@@ -614,6 +672,28 @@ body[data-rehearse="on"] #connect-call{display:none}
   // A reload, not a live swap: every module builds its phrases and prompts
   // for one restaurant as it loads, so nothing can go stale mid-call.
   restaurantPick.addEventListener('change', () => { location.search = `?r=${restaurantPick.value}`; });
+
+  const mainEl = document.querySelector('main');
+  const history = createHistory(document.getElementById('history-list'), {
+    jumpButton: document.getElementById('history-jump'),
+    onChange: size => { mainEl.dataset.hasHistory = String(size > 0); },
+  });
+  setInterval(() => history.closeStale(10_000, 'Unclear — ask them to repeat (press 1)'), 2000);
+
+  // ── When translation cannot work, say so where he is looking ───────────────
+  const apiAlert = document.getElementById('api-alert');
+  function reportApiError(error, where) {
+    setStatus(`${where}: ${error.message}`);
+    if (!error.fatal) return;
+    apiAlert.textContent = `Translation is OFF — ${error.message.replace(/\.?$/, '.')} `
+      + 'Fix it at console.anthropic.com (Plans & Billing), then reload this page.';
+    apiAlert.hidden = false;
+  }
+  async function preflight() {
+    if (!hasKey()) return;
+    try { await checkApi(); apiAlert.hidden = true; }
+    catch (error) { reportApiError(error, 'translator check'); }
+  }
 
   initVoices();
   renderScript(document.getElementById('script'), document.getElementById('stepper'));
@@ -696,11 +776,18 @@ body[data-rehearse="on"] #connect-call{display:none}
   // about a second to answer, so "newest only" cancelled every one of them
   // before it arrived: measured, nothing appeared until the speaker stopped.
 
+  // With the call connected, everything heard is the restaurant: the Yolla tab
+  // never carries his own voice, and staff echo his words back.
+  const staffOnly = () => listener?.source === 'call';
+
   function heardInterim(text) {
-    if (!text || isOwnLine(text)) return;
+    if (!text || (!staffOnly() && isOwnLine(text))) return;
+    commitEnglish();
     // The words themselves, immediately - before any translation exists.
     if (!early?.english) renderBand(radarRoot, { label: 'Hearing', text, tone: 'miss', jp: true });
-    early ??= { read: '', english: '', timer: null };
+    early ??= { read: '', english: '', timer: null, row: null };
+    if (early.row) history.update(early.row, { ja: text });
+    else early.row = history.add('staff', text, '', { live: true });
     clearTimeout(early.timer);
     if (text.length - early.read.length >= EARLY_GROWTH) readEarly(text, false);
     // A pause mid-sentence: read it again, and only now suggest a card - a card
@@ -714,7 +801,7 @@ body[data-rehearse="on"] #connect-call{display:none}
     const seq = ++earlySeq;
     const context = recent.slice(-80).map(({ who, ja }) => ({ who, ja }));
     interpret(text, {
-      recent: context, early: true, verdict: withCard,
+      recent: context, early: true, verdict: withCard, staffOnly: staffOnly(),
       onEnglish: (reading, { done } = {}) => {
         if (!early || seq < englishShown || reading.self || !reading.english) return;
         // A newer reading takes over only once it says at least as much as the
@@ -723,6 +810,7 @@ body[data-rehearse="on"] #connect-call{display:none}
         if (seq > englishShown && !done && reading.english.length < (early.english?.length ?? 0)) return;
         englishShown = seq;
         early.english = reading.english;
+        history.update(early.row, { en: reading.english });
         renderBand(radarRoot, { label: 'Saying', text: reading.english });
       },
       onVerdict: reading => {
@@ -731,7 +819,8 @@ body[data-rehearse="on"] #connect-call{display:none}
         cardShown = seq;
         markSuggested(reading.replyId, reading.custom);
       },
-      onError: () => { /* the finished sentence is read again anyway */ },
+      // The finished sentence is read again anyway - unless nothing can work.
+      onError: (lane, error) => { if (error.fatal) reportApiError(error, 'interpreter'); },
     });
   }
 
@@ -742,9 +831,67 @@ body[data-rehearse="on"] #connect-call{display:none}
     early = null;
   }
 
+  // ── When the staff switch to English ───────────────────────────────────
+  // They know he is a foreigner, so some staff will try English. Measured in his
+  // Chrome on call-quality audio: a whole English sentence comes out of the
+  // Japanese recogniser as nonsense (ストーリーセブン) or nothing, while an English
+  // recogniser on the same track gets it ("sorry we are fully booked at 7:00").
+  // On pure Japanese the English recogniser stays completely silent, and English
+  // words inside a Japanese sentence (4 ピープル, 7 pm, OK) come through the
+  // Japanese one. So whatever the English recogniser hears IS English: it goes
+  // into the transcript as-is, and only the card is worked out.
+  // Two more measured facts shape this: the English recogniser streams words
+  // but, on call audio, may never commit a final result at all; and on accented
+  // or mixed speech its provisional text is junk ("when", "10", "109"). So a line
+  // counts as English only once it has at least three real words, and it is
+  // committed when it stops changing - not when a final that may never come.
+  const ENGLISH_MIN_WORDS = 3;
+  const ENGLISH_SETTLE_MS = 1500;
+  let englishLive = null;           // { row, text, timer }
+  const looksEnglish = text => (text.match(/[A-Za-z]{2,}/g) ?? []).length >= ENGLISH_MIN_WORDS;
+
+  function heardEnglishInterim(text) {
+    if (!looksEnglish(text)) return;
+    if (englishLive) { englishLive.text = text; history.update(englishLive.row, { en: text }); }
+    else englishLive = { text, row: history.add('staff', '', text, { live: true }), timer: null };
+    clearTimeout(englishLive.timer);
+    englishLive.timer = setTimeout(commitEnglish, ENGLISH_SETTLE_MS);
+  }
+  function heardEnglish(text) {
+    if (looksEnglish(text)) {
+      if (englishLive) englishLive.text = text;
+      else englishLive = { text, row: history.add('staff', '', text, { live: true }), timer: null };
+    }
+    commitEnglish();
+  }
+  // The staff switching back to Japanese also ends the English line.
+  function commitEnglish() {
+    if (!englishLive) return;
+    const { row, text, timer } = englishLive;
+    clearTimeout(timer);
+    englishLive = null;
+    history.update(row, { en: text, live: false });
+    const context = recent.slice(-80).map(({ who, ja }) => ({ who, ja }));
+    const entry = { who: 'staff', ja: text, english: text, finalized: false, row };
+    recent.push(entry);
+    interpret(text, {
+      recent: context, translate: false, staffOnly: true,
+      onVerdict: (reading, { final }) => {
+        if (entry.finalized || reading.self) return;
+        entry.finalized = final;
+        if (isCurrent(entry)) markSuggested(reading.replyId, reading.custom);
+      },
+      onError: (lane, error) => reportApiError(error, `interpreter (${lane})`),
+    });
+  }
+
   function heardFinal(transcript) {
+    commitEnglish();
+    const liveRow = early?.row;      // the row this sentence has been filling in
     endEarly();
-    if (isOwnLine(transcript)) {                 // one of his cards, read aloud
+    if (!staffOnly() && isOwnLine(transcript)) {   // one of his cards, read aloud
+      if (liveRow) history.update(liveRow, { who: 'you', ja: transcript, en: '', live: false });
+      else history.add('you', transcript);
       recent.push({ who: 'you', ja: transcript, english: '', finalized: true });
       return;
     }
@@ -754,12 +901,21 @@ body[data-rehearse="on"] #connect-call{display:none}
     const context = recent.slice(-80).map(({ who, ja }) => ({ who, ja }));
     const entry = { who: 'pending', ja: transcript, english: '', finalized: false };
     recent.push(entry);
+    entry.row = liveRow ?? history.add('staff', transcript, '', { live: true });
+    history.update(entry.row, { ja: transcript });
 
     interpret(transcript, {
-      recent: context,
-      onEnglish: reading => {
+      recent: context, staffOnly: staffOnly(),
+      onEnglish: (reading, { done } = {}) => {
+        if (done && !reading.self && !reading.english && entry.who !== 'you') {
+          history.update(entry.row, { en: 'Unclear — ask them to repeat (press 1)', live: false });
+          return;
+        }
         if (reading.self || !reading.english || entry.who === 'you') return;
         entry.english = reading.english;
+        if (done || reading.english.length >= (entry.row?.en?.length ?? 0)) {
+          history.update(entry.row, { en: reading.english, ...(done ? { live: false } : {}) });
+        }
         // A newer sentence already being spoken owns the band: the previous
         // sentence's late translation must not paint over it (measured:
         // "Thanks for calling" replaced 恐れ入ります mid-sentence).
@@ -777,6 +933,7 @@ body[data-rehearse="on"] #connect-call{display:none}
           // His own voice. If the quick verdict had taken it for staff, put
           // back the staff line he is answering, card and all.
           entry.who = 'you';
+          history.update(entry.row, { who: 'you', en: '', live: false });
           interpreted.delete(transcript);
           const staff = latestStaff();
           showStaff(staff);
@@ -792,7 +949,7 @@ body[data-rehearse="on"] #connect-call{display:none}
         markSuggested(reading.replyId, reading.custom);
       },
       onError: (lane, error) => {
-        setStatus(`interpreter (${lane}): ${error.message}`);
+        reportApiError(error, `interpreter (${lane})`);
         if (lane === 'english' && entry.who !== 'you' && isCurrent(entry) && !early) showStaff(entry);
       },
     });
@@ -801,12 +958,20 @@ body[data-rehearse="on"] #connect-call{display:none}
   const listener = createListener({
     // Only the call track: on speakerphone, provisional words are often his own voice.
     onInterim: text => { if (listener?.source === 'call' && hasKey()) heardInterim(text); },
+    // Measured: on garbled or mixed speech Chrome sometimes ends a sentence with an
+    // EMPTY final. Close it with the words it did show, so no row stays live forever.
+    onRaw: (text, isFinal) => {
+      if (isFinal && !text.trim() && early?.row?.ja && listener?.source === 'call' && hasKey()) heardFinal(early.row.ja);
+    },
     onMatch: (result, meta) => {
       if (hasKey()) {
         // Interim results would repaint the band mid-sentence, and on
         // speakerphone they are often his own voice. Only finals are read.
         if (meta.isFinal && meta.transcript.trim()) heardFinal(meta.transcript.trim());
         return;
+      }
+      if (meta.isFinal && meta.transcript.trim()) {
+        history.add('staff', meta.transcript.trim(), result.confident ? result.top.phrase.en : '');
       }
       renderRadar(radarRoot, result, { ...meta, onFallback: askClaude });
       // The matcher already knows where he is. Drive the script with it rather
@@ -845,10 +1010,13 @@ body[data-rehearse="on"] #connect-call{display:none}
   // track came back word-perfect with no microphone involved.
   const connectBtn = document.getElementById('connect-call');
   let callStream = null;
+  let englishListener = null;       // runs alongside, on the same call track
 
   function disconnectCall(message) {
     callStream?.getTracks().forEach(t => t.stop());
     callStream = null;
+    englishListener?.stop();
+    englishListener = null;
     listener?.setSource(null);
     listener?.stop();
     connectBtn.dataset.on = 'false';
@@ -858,6 +1026,7 @@ body[data-rehearse="on"] #connect-call{display:none}
 
   async function connectCall() {
     if (callStream) { disconnectCall('call audio disconnected'); return; }
+    preflight();
     if (!listener) { setStatus('speech recognition unsupported — use Chrome'); return; }
     let stream;
     try {
@@ -892,6 +1061,16 @@ body[data-rehearse="on"] #connect-call{display:none}
       () => disconnectCall('call audio lost — press Connect call again'), { once: true }));
     listener.setSource(track);
     if (!listener.running) listener.start();
+    // An English recogniser on the same track, for when the staff switch to English.
+    englishListener = createListener({
+      lang: 'en-US',
+      onMatch: () => {},
+      onStatus: () => {},
+      onInterim: text => { if (hasKey()) heardEnglishInterim(text); },
+      onRaw: (text, isFinal) => { if (isFinal && text.trim() && hasKey()) heardEnglish(text.trim()); },
+    });
+    englishListener?.setSource(track);
+    englishListener?.start();
     connectBtn.dataset.on = 'true';
     connectBtn.textContent = 'Call connected';
     setStatus('listening to the call');
@@ -928,7 +1107,7 @@ body[data-rehearse="on"] #connect-call{display:none}
   startBtn.addEventListener('click', () => {
     const inCall = document.body.dataset.mode === 'call';
     document.body.dataset.mode = inCall ? 'prep' : 'call';
-    if (!inCall) { recent.length = 0; markSuggested(null); showIdleBand(); }
+    if (!inCall) { recent.length = 0; markSuggested(null); showIdleBand(); history.clear(); preflight(); }
     startBtn.textContent = inCall ? 'Start call' : 'End call';
     if (!inCall && listener && !listener.running) {
       listener.start(); toggle.dataset.on = 'true';
@@ -978,6 +1157,7 @@ body[data-rehearse="on"] #connect-call{display:none}
   }
 
   function startRehearsal() {
+    preflight();
     if (!hasKey()) {
       const entered = prompt('The staff in the rehearsal is played by Claude.\nAnthropic API key (stored only in this browser):', '');
       if (!entered) return;
@@ -988,7 +1168,7 @@ body[data-rehearse="on"] #connect-call{display:none}
     document.body.dataset.mode = 'call';
     document.body.dataset.rehearse = 'on';
     rhInput.value = '';
-    recent.length = 0; interpreted.clear(); markSuggested(null);
+    recent.length = 0; interpreted.clear(); markSuggested(null); history.clear();
     rhInput.placeholder = hasMic ? 'Speak your reply — or type it' : 'No microphone here — type your reply';
     setStage(0);
 
@@ -996,14 +1176,22 @@ body[data-rehearse="on"] #connect-call{display:none}
       sim: createStaffSim({ callClaude, scenario: scenarioSelect.value }),
       onStaff: showStaffOnRadar,
       onYou: ({ text, final }) => {
-        if (final) recent.push({ who: 'you', ja: text, english: '', finalized: true });
+        if (final) {
+          recent.push({ who: 'you', ja: text, english: '', finalized: true });
+          history.add('you', text);
+        }
         if (document.activeElement !== rhInput) rhInput.value = text;
       },
       onStatus: state => { rhStatus.dataset.state = state; rhStatus.textContent = STATUS_TEXT[state] ?? state; },
       onEnd: finishRehearsal,
       // Errors go in the input's placeholder, never over the status pill — the
       // pill is the only thing that says whose turn it is.
-      onError: message => { rhInput.placeholder = message; },
+      onError: message => {
+        rhInput.placeholder = message;
+        if (/credit balance|billing|api key|authentication/i.test(message)) {
+          reportApiError(Object.assign(new Error(message), { fatal: true }), 'rehearsal');
+        }
+      },
     });
     setSpeechGate({ before: () => rehearsal?.hold(), after: () => rehearsal?.resume() });
     rehearsal.start();

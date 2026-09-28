@@ -29,6 +29,38 @@ const SYSTEM = [
   PLAIN_POLITE_RULE,
 ].join(' ');
 
+// The API explains itself in the body - "Your credit balance is too low to
+// access the Anthropic API". A bare "API error 400" on a live call left him
+// guessing why the English had stopped. Billing and key failures are fatal:
+// nothing will translate until they are fixed, so callers must say so loudly.
+export async function apiError(response) {
+  let message = '';
+  try { message = (await response.json())?.error?.message ?? ''; } catch { /* no JSON body */ }
+  const fatal = response.status === 401 || response.status === 403
+    || /credit balance|billing|api key|x-api-key|authentication/i.test(message);
+  return Object.assign(new Error(message || `API error ${response.status}`),
+    { status: response.status, fatal });
+}
+
+// One tiny request before a call starts, so an empty balance or a bad key is
+// found BEFORE he dials - not when the English silently stops mid-call.
+export async function checkApi() {
+  const key = getKey();
+  if (!key) throw Object.assign(new Error('No API key saved'), { fatal: true });
+  const response = await fetch(ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 1, thinking: { type: 'disabled' },
+                           messages: [{ role: 'user', content: 'ok' }] }),
+  });
+  if (!response.ok) throw await apiError(response);
+}
+
 // Shared transport. Both the fallback translator and the rehearsal staff
 // simulator go through here, so the two known traps are handled once:
 // thinking blocks can precede the text block, and the reply may arrive fenced.
@@ -48,7 +80,7 @@ export async function callClaude({ system, messages, maxTokens = 3000 }) {
                            output_config: { effort: EFFORT } }),
   });
 
-  if (!response.ok) throw new Error(`API error ${response.status}`);
+  if (!response.ok) throw await apiError(response);
   const data = await response.json();
   if (data.stop_reason === 'refusal') throw new Error('Claude declined that one');
 

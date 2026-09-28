@@ -23,7 +23,7 @@ export function isSecureForMic() {
   return window.isSecureContext === true && location.protocol !== 'file:';
 }
 
-export function createListener({ onMatch, onStatus, onRaw, onInterim,
+export function createListener({ onMatch, onStatus, onRaw, onInterim, lang = 'ja-JP',
                                  handoffAfterMs = HANDOFF_AFTER_MS, handoffByMs = HANDOFF_BY_MS }) {
   const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
   if (!Recognition) return null;
@@ -62,7 +62,7 @@ export function createListener({ onMatch, onStatus, onRaw, onInterim,
 
   function create() {
     const r = new Recognition();
-    r.lang = 'ja-JP';
+    r.lang = lang;
     r.continuous = true;
     r.interimResults = true;
     r.maxAlternatives = 1;
