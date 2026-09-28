@@ -511,6 +511,26 @@ body[data-mode="call"] #radar-panel{display:none}
 #api-alert{flex:0 0 auto;padding:10px 16px;background:var(--alert);color:var(--ground);
   font-size:var(--t-body);font-weight:700;line-height:1.35}
 @media print{#api-alert{display:none!important}}
+
+/* ── Past calls: every session saved, reread any time ───────────────────── */
+#past-btn{min-height:29px;font-size:var(--t-ui);font-weight:600;padding:3px 13px;
+  border:1px solid var(--rule);border-radius:3px;color:var(--ink);background:var(--ground)}
+body[data-mode="call"] #past-btn,body[data-rehearse="on"] #past-btn{display:none}
+#past-calls{display:none;position:fixed;inset:0;z-index:30;background:var(--ground);
+  overflow-y:auto;padding:18px clamp(16px,6vw,72px) 40px}
+body[data-past="open"] #past-calls{display:block}
+.past__bar{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.past__bar h2{flex:1;font-size:24px;color:var(--ink)}
+.past__bar button,.past__item button{min-height:44px;padding:6px 14px;border:1px solid var(--rule);
+  border-radius:3px;font-size:var(--t-ui);font-weight:600;color:var(--ink);background:var(--ground)}
+.past__list{list-style:none;display:flex;flex-direction:column;gap:8px;max-width:60rem}
+.past__item{display:flex;gap:8px;align-items:stretch}
+.past__item .past__open{flex:1;text-align:left;background:var(--surface);font-size:var(--t-body)}
+.past__item .past__delete{color:var(--alert)}
+.past__empty{font-size:var(--t-body);color:var(--label)}
+.past__turns{list-style:none;max-width:60rem}
+.turn__at{display:inline-block;min-width:3.4em;font-size:var(--t-micro);font-weight:700;color:var(--label)}
+@media print{#past-calls,#past-btn{display:none!important}}
 </style>
 </head>
 <body>
@@ -524,6 +544,7 @@ body[data-mode="call"] #radar-panel{display:none}
     <select id="rh-scenario" aria-label="Rehearsal scenario"></select>
     <button id="composer-toggle" type="button" aria-expanded="false"
             aria-controls="composer">Ask Claude <kbd>/</kbd></button>
+    <button id="past-btn" type="button">Past calls</button>
     <button id="print-btn" type="button">Print</button>
     <button id="connect-call" type="button" data-on="false"
             title="Listen to the Yolla tab directly — for calls with earphones">Connect call</button>
@@ -585,6 +606,15 @@ body[data-mode="call"] #radar-panel{display:none}
   </dl>
 </section>
 
+<section id="past-calls" role="dialog" aria-modal="true" aria-labelledby="past-title">
+  <div class="past__bar">
+    <button id="past-back" type="button" hidden>← All calls</button>
+    <h2 id="past-title">Past calls</h2>
+    <button id="past-close" type="button">Close</button>
+  </div>
+  <div id="past-body"></div>
+</section>
+
 <section id="debrief" role="dialog" aria-modal="true" aria-label="Rehearsal debrief">
   <div id="debrief-body"></div>
   <div class="debrief__actions">
@@ -600,20 +630,21 @@ body[data-mode="call"] #radar-panel{display:none}
 <script type="importmap">
 {
   "imports": {
-    "./call/dice.js": "./call/dice.js?v=ae452dcacc",
-    "./call/fallback.js": "./call/fallback.js?v=ae452dcacc",
-    "./call/history.js": "./call/history.js?v=ae452dcacc",
-    "./call/interpret.js": "./call/interpret.js?v=ae452dcacc",
-    "./call/listen.js": "./call/listen.js?v=ae452dcacc",
-    "./call/match.js": "./call/match.js?v=ae452dcacc",
-    "./call/normalize.js": "./call/normalize.js?v=ae452dcacc",
-    "./call/phrases.js": "./call/phrases.js?v=ae452dcacc",
-    "./call/register.js": "./call/register.js?v=ae452dcacc",
-    "./call/rehearse.js": "./call/rehearse.js?v=ae452dcacc",
-    "./call/restaurants.js": "./call/restaurants.js?v=ae452dcacc",
-    "./call/speak.js": "./call/speak.js?v=ae452dcacc",
-    "./call/staff-sim.js": "./call/staff-sim.js?v=ae452dcacc",
-    "./call/ui.js": "./call/ui.js?v=ae452dcacc"
+    "./call/dice.js": "./call/dice.js?v=7a1009689f",
+    "./call/fallback.js": "./call/fallback.js?v=7a1009689f",
+    "./call/history.js": "./call/history.js?v=7a1009689f",
+    "./call/interpret.js": "./call/interpret.js?v=7a1009689f",
+    "./call/listen.js": "./call/listen.js?v=7a1009689f",
+    "./call/match.js": "./call/match.js?v=7a1009689f",
+    "./call/normalize.js": "./call/normalize.js?v=7a1009689f",
+    "./call/phrases.js": "./call/phrases.js?v=7a1009689f",
+    "./call/register.js": "./call/register.js?v=7a1009689f",
+    "./call/rehearse.js": "./call/rehearse.js?v=7a1009689f",
+    "./call/restaurants.js": "./call/restaurants.js?v=7a1009689f",
+    "./call/sessions.js": "./call/sessions.js?v=7a1009689f",
+    "./call/speak.js": "./call/speak.js?v=7a1009689f",
+    "./call/staff-sim.js": "./call/staff-sim.js?v=7a1009689f",
+    "./call/ui.js": "./call/ui.js?v=7a1009689f"
   }
 }
 </script>
@@ -626,6 +657,7 @@ body[data-mode="call"] #radar-panel{display:none}
   import { createStaffSim, scoreRadar, scenariosFor } from './call/staff-sim.js';
   import { createRehearsal } from './call/rehearse.js';
   import { createHistory } from './call/history.js';
+  import { startSession, saveSession, loadSessions, deleteSession, sessionToText, describeSession } from './call/sessions.js';
   import { match } from './call/match.js';
   import { PANIC, STAFF } from './call/phrases.js';
   import { initVoices, setSpeechGate, speak } from './call/speak.js';
@@ -676,8 +708,32 @@ body[data-mode="call"] #radar-panel{display:none}
   const mainEl = document.querySelector('main');
   const history = createHistory(document.getElementById('history-list'), {
     jumpButton: document.getElementById('history-jump'),
-    onChange: size => { mainEl.dataset.hasHistory = String(size > 0); },
+    onChange: size => { mainEl.dataset.hasHistory = String(size > 0); scheduleSave(); },
   });
+
+  // ── Every call and rehearsal is saved as it happens ─────────────────────
+  let session = null;
+  let saveTimer = null;
+  function saveNow() {
+    clearTimeout(saveTimer);
+    if (!session) return;
+    session.rows = history.snapshot(session.startedAt);
+    saveSession(session);
+  }
+  function scheduleSave() {
+    if (!session) return;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveNow, 500);
+  }
+  function beginSession(kind) { session = startSession({ restaurant: RESTAURANT, kind }); }
+  function endSession() {
+    if (!session) return;
+    session.endedAt = Date.now();
+    saveNow();
+    session = null;
+  }
+  // Closing the tab mid-call keeps everything said so far.
+  addEventListener('pagehide', saveNow);
   setInterval(() => history.closeStale(10_000, 'Unclear — ask them to repeat (press 1)'), 2000);
 
   // ── When translation cannot work, say so where he is looking ───────────────
@@ -1107,7 +1163,8 @@ body[data-mode="call"] #radar-panel{display:none}
   startBtn.addEventListener('click', () => {
     const inCall = document.body.dataset.mode === 'call';
     document.body.dataset.mode = inCall ? 'prep' : 'call';
-    if (!inCall) { recent.length = 0; markSuggested(null); showIdleBand(); history.clear(); preflight(); }
+    if (!inCall) { recent.length = 0; markSuggested(null); showIdleBand(); history.clear(); preflight(); beginSession('call'); }
+    else endSession();
     startBtn.textContent = inCall ? 'Start call' : 'End call';
     if (!inCall && listener && !listener.running) {
       listener.start(); toggle.dataset.on = 'true';
@@ -1169,6 +1226,7 @@ body[data-mode="call"] #radar-panel{display:none}
     document.body.dataset.rehearse = 'on';
     rhInput.value = '';
     recent.length = 0; interpreted.clear(); markSuggested(null); history.clear();
+    beginSession('rehearsal');
     rhInput.placeholder = hasMic ? 'Speak your reply — or type it' : 'No microphone here — type your reply';
     setStage(0);
 
@@ -1198,6 +1256,7 @@ body[data-mode="call"] #radar-panel{display:none}
   }
 
   function finishRehearsal(turns) {
+    endSession();
     const staffTurns = turns.filter(t => t.who === 'staff');
     renderDebrief(document.getElementById('debrief-body'), turns, scoreRadar(staffTurns), interpreted);
     setSpeechGate(listenerGate);
@@ -1228,6 +1287,58 @@ body[data-mode="call"] #radar-panel{display:none}
   document.getElementById('debrief-close').addEventListener('click', () => {
     document.body.dataset.debrief = 'closed';
   });
+
+  // ── Past calls viewer ──────────────────────────────────────────────────
+  const pastBody = document.getElementById('past-body');
+  const pastTitle = document.getElementById('past-title');
+  const pastBack = document.getElementById('past-back');
+  const node = (tag, className, text) => Object.assign(document.createElement(tag),
+    { className: className ?? '', ...(text !== undefined ? { textContent: text } : {}) });
+
+  function showPastList() {
+    pastTitle.textContent = 'Past calls';
+    pastBack.hidden = true;
+    const sessions = loadSessions();
+    if (!sessions.length) { pastBody.replaceChildren(node('p', 'past__empty', 'No saved calls yet. Each call and rehearsal is saved here as it happens.')); return; }
+    const list = node('ol', 'past__list');
+    for (const s of sessions) {
+      const item = node('li', 'past__item');
+      const open = node('button', 'past__open', describeSession(s));
+      open.addEventListener('click', () => showPastSession(s));
+      const copy = node('button', 'past__copy', 'Copy');
+      copy.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(sessionToText(s)); copy.textContent = 'Copied'; }
+        catch { copy.textContent = 'Copy failed'; }
+      });
+      const del = node('button', 'past__delete', 'Delete');
+      del.addEventListener('click', () => {
+        if (confirm(`Delete this transcript?\n\n${describeSession(s)}`)) { deleteSession(s.id); showPastList(); }
+      });
+      item.append(open, copy, del);
+      list.append(item);
+    }
+    pastBody.replaceChildren(list);
+  }
+
+  function showPastSession(s) {
+    pastTitle.textContent = describeSession(s);
+    pastBack.hidden = false;
+    const turns = node('ol', 'past__turns');
+    for (const r of s.rows) {
+      const li = node('li', `turn turn--${r.who}`);
+      const secs = Math.max(0, Math.round((r.at ?? 0) / 1000));
+      li.append(node('span', 'turn__at', `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`));
+      if (r.who === 'you') li.append(node('span', 'turn__who', 'You'));
+      if (r.who !== 'you' && r.en) li.append(node('p', 'turn__en', r.en));
+      if (r.ja) li.append(node('p', 'turn__ja', r.ja));
+      turns.append(li);
+    }
+    pastBody.replaceChildren(turns);
+  }
+
+  document.getElementById('past-btn').addEventListener('click', () => { showPastList(); document.body.dataset.past = 'open'; });
+  document.getElementById('past-close').addEventListener('click', () => { document.body.dataset.past = 'closed'; });
+  pastBack.addEventListener('click', showPastList);
 
   document.getElementById('composer-go').addEventListener('click', runComposer);
   input.addEventListener('keydown', e => { if (e.key === 'Enter') runComposer(); });

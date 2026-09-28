@@ -60,7 +60,7 @@ export function createHistory(list, { jumpButton, onChange } = {}) {
     // who: 'staff' | 'you'. live: the sentence is still being spoken.
     add(who, ja = '', en = '', { live = false } = {}) {
       const node = el('li');
-      const row = { node, who, ja, en, live, updatedAt: Date.now(),
+      const row = { node, who, ja, en, live, createdAt: Date.now(), updatedAt: Date.now(),
         label: el('span', 'turn__who'), en_: el('p', 'turn__en'), ja_: el('p', 'turn__ja') };
       node.append(row.label, row.en_, row.ja_);
       node._row = row;
@@ -92,6 +92,11 @@ export function createHistory(list, { jumpButton, onChange } = {}) {
         if (!row?.live || Date.now() - row.updatedAt < maxAgeMs) continue;
         this.update(row, { live: false, ...(row.who === 'staff' && !row.en ? { en: unclearText } : {}) });
       }
+    },
+    // The transcript as plain data, for saving. at: ms since the session began.
+    snapshot(startedAt = 0) {
+      return [...list.children].map(node => node._row).filter(Boolean)
+        .map(({ who, ja, en, createdAt }) => ({ who, ja, en, at: createdAt - startedAt }));
     },
     get size() { return list.children.length; },
   };
