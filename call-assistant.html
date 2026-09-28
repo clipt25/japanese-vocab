@@ -445,6 +445,11 @@ body[data-debrief="open"] #debrief{display:block}
   border-radius:3px;font-size:var(--t-ui);font-weight:600}
 #debrief-again{background:var(--ink);color:var(--ground);border-color:var(--ink)}
 @media print{#rehearse-bar,#debrief{display:none!important}}
+#rh-scenario{min-height:44px;padding:6px 10px;border:1px solid var(--rule);border-radius:3px;
+  font-size:var(--t-micro);font-weight:600;color:var(--ink);background:var(--ground)}
+body[data-rehearse="on"] #rh-scenario,
+body[data-mode="call"] #rh-scenario{display:none}
+@media print{#rh-scenario{display:none!important}}
 </style>
 </head>
 <body>
@@ -469,6 +474,7 @@ body[data-debrief="open"] #debrief{display:block}
   <div class="card__mic">
     <button id="start-call" type="button">Start call</button>
     <button id="rehearse-btn" type="button">Rehearse</button>
+    <select id="rh-scenario" aria-label="Rehearsal scenario"></select>
     <button id="composer-toggle" type="button" aria-expanded="false"
             aria-controls="composer">Ask Claude <kbd>/</kbd></button>
     <button id="print-btn" type="button">Print</button>
@@ -543,17 +549,17 @@ body[data-debrief="open"] #debrief{display:block}
 <script type="importmap">
 {
   "imports": {
-    "./call/dice.js": "./call/dice.js?v=0792d4ef8a",
-    "./call/fallback.js": "./call/fallback.js?v=0792d4ef8a",
-    "./call/interpret.js": "./call/interpret.js?v=0792d4ef8a",
-    "./call/listen.js": "./call/listen.js?v=0792d4ef8a",
-    "./call/match.js": "./call/match.js?v=0792d4ef8a",
-    "./call/normalize.js": "./call/normalize.js?v=0792d4ef8a",
-    "./call/phrases.js": "./call/phrases.js?v=0792d4ef8a",
-    "./call/rehearse.js": "./call/rehearse.js?v=0792d4ef8a",
-    "./call/speak.js": "./call/speak.js?v=0792d4ef8a",
-    "./call/staff-sim.js": "./call/staff-sim.js?v=0792d4ef8a",
-    "./call/ui.js": "./call/ui.js?v=0792d4ef8a"
+    "./call/dice.js": "./call/dice.js?v=7996c91121",
+    "./call/fallback.js": "./call/fallback.js?v=7996c91121",
+    "./call/interpret.js": "./call/interpret.js?v=7996c91121",
+    "./call/listen.js": "./call/listen.js?v=7996c91121",
+    "./call/match.js": "./call/match.js?v=7996c91121",
+    "./call/normalize.js": "./call/normalize.js?v=7996c91121",
+    "./call/phrases.js": "./call/phrases.js?v=7996c91121",
+    "./call/rehearse.js": "./call/rehearse.js?v=7996c91121",
+    "./call/speak.js": "./call/speak.js?v=7996c91121",
+    "./call/staff-sim.js": "./call/staff-sim.js?v=7996c91121",
+    "./call/ui.js": "./call/ui.js?v=7996c91121"
   }
 }
 </script>
@@ -562,7 +568,7 @@ body[data-debrief="open"] #debrief{display:block}
            renderStaffSheet, setStage, nextStage, prevStage, stageIndexOfPhrase,
            speakPanic, renderDebrief, renderBand, markSuggested } from './call/ui.js';
   import { interpret, isOwnLine, repliesWithItself } from './call/interpret.js';
-  import { createStaffSim, scoreRadar } from './call/staff-sim.js';
+  import { createStaffSim, scoreRadar, SCENARIOS } from './call/staff-sim.js';
   import { createRehearsal } from './call/rehearse.js';
   import { match } from './call/match.js';
   import { PANIC, STAFF } from './call/phrases.js';
@@ -802,6 +808,11 @@ body[data-debrief="open"] #debrief{display:block}
     }
   }
 
+  const scenarioSelect = document.getElementById('rh-scenario');
+  for (const [value, { label }] of Object.entries(SCENARIOS)) {
+    scenarioSelect.append(new Option(`Scenario: ${label}`, value));
+  }
+
   function startRehearsal() {
     if (!hasKey()) {
       const entered = prompt('The staff in the rehearsal is played by Claude.\nAnthropic API key (stored only in this browser):', '');
@@ -818,7 +829,7 @@ body[data-debrief="open"] #debrief{display:block}
     setStage(0);
 
     rehearsal = createRehearsal({
-      sim: createStaffSim({ callClaude }),
+      sim: createStaffSim({ callClaude, scenario: scenarioSelect.value }),
       onStaff: showStaffOnRadar,
       onYou: ({ text, final }) => {
         if (final) recent.push({ who: 'you', ja: text, english: '', finalized: true });

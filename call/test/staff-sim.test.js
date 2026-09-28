@@ -103,3 +103,39 @@ test('the system prompt carries the facts the rehearsal must not contradict', ()
     assert.ok(STAFF_SYSTEM.includes(fact), `system prompt is missing: ${fact}`);
   }
 });
+
+// ── Scenarios and pace ──────────────────────────────────────────────────────
+import { SCENARIOS } from '../staff-sim.js';
+
+test('parseStaffTurn keeps slow:true and defaults it to false', () => {
+  assert.equal(parseStaffTurn(turn('はい。', { slow: true })).slow, true);
+  assert.equal(parseStaffTurn(turn('はい。')).slow, false);
+});
+
+test('the default scenario sends the plain staff prompt', async () => {
+  const claude = fakeClaude([turn('はい。')]);
+  const sim = createStaffSim({ callClaude: claude });
+  sim.opening();
+  await sim.reply('予約をお願いします');
+  assert.equal(claude.calls[0].system, STAFF_SYSTEM);
+});
+
+test('the insist-course scenario is appended to the staff prompt', async () => {
+  const claude = fakeClaude([turn('はい。')]);
+  const sim = createStaffSim({ callClaude: claude, scenario: 'insist-course' });
+  sim.opening();
+  await sim.reply('予約をお願いします');
+  const { system } = claude.calls[0];
+  assert.ok(system.startsWith(STAFF_SYSTEM));
+  assert.ok(system.includes(SCENARIOS['insist-course'].brief));
+  assert.match(system, /call back/i, 'the scenario must let him leave to think and call back');
+});
+
+test('an unknown scenario fails loudly instead of silently rehearsing the wrong call', () => {
+  assert.throws(() => createStaffSim({ callClaude: fakeClaude([]), scenario: 'nope' }), /unknown scenario/i);
+});
+
+test('the staff prompt tells the model to keep a slower pace once asked', () => {
+  assert.match(STAFF_SYSTEM, /rest of the call/);
+  assert.match(STAFF_SYSTEM, /"slow"/);
+});

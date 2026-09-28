@@ -6,6 +6,7 @@ import { speak } from './speak.js';
 
 const STAFF_RATE = 1.0;          // natural speed — rehearse against the real pace
 const SLOW_RATE = 0.75;          // for the "slower" replay button only
+const STAFF_SLOW_RATE = 0.85;    // once he has asked them to speak slowly, they do
 const SILENCE_MS = 2200;         // a pause this long means he has finished speaking.
                                  // Generous on purpose: an N4 speaker pauses mid-sentence.
 const RESTART_BUDGET = 6;
@@ -30,7 +31,7 @@ export function createRehearsal({ sim, onStaff, onYou, onStatus, onEnd, onError 
     try { r?.abort(); } catch { /* already stopped */ }
   }
 
-  function playStaff(turn, rate = STAFF_RATE) {
+  function playStaff(turn, rate = turn.slow ? STAFF_SLOW_RATE : STAFF_RATE) {
     stopListening();
     setState('staff');
     speak(turn.kana || turn.ja, {

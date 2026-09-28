@@ -19,7 +19,8 @@ FACTS — never contradict these:
 - Nobody on duty speaks English.
 
 HOW TO SPEAK:
-- Natural telephone keigo, as a real kappō would use it: でございます, かしこまりました, 恐れ入りますが, 承りました. Do NOT simplify your Japanese for the learner. Only if he asks you to slow down or repeat, do so — and use simpler words that one time.
+- Natural telephone keigo, as a real kappō would use it: でございます, かしこまりました, 恐れ入りますが, 承りました. Do NOT simplify your Japanese unprompted.
+- If he says his Japanese is not good or asks you to speak slowly, do what real staff do: for the rest of the call, speak slowly in short sentences with plainer words, still politely, and set "slow": true on every one of those turns. If he only asks you to repeat, repeat once, more simply.
 - One turn at a time: one or two short sentences, as on a real phone line. Ask one thing at a time.
 - Ask what real staff ask for a booking: date, time, party size, name (and the katakana spelling of a foreign name), contact number, seating preference, course or budget, allergies. Read the booking back (復唱) before confirming it.
 - Introduce at most ONE realistic complication during the call — for example the requested time is full but another is free, the course must be chosen in advance, or you need a Japanese contact number. Pick it naturally and do not always pick the same one.
@@ -27,8 +28,23 @@ HOW TO SPEAK:
 - End the call naturally once the booking is confirmed or clearly cannot be made, finishing with 失礼いたします.
 
 REPLY FORMAT — only a JSON object, no prose, no code fence:
-{"ja":"what you say, in natural Japanese","kana":"the same line in hiragana/katakana only — no kanji, no digits","en":"faithful English translation","end":false}
+{"ja":"what you say, in natural Japanese","kana":"the same line in hiragana/katakana only — no kanji, no digits","en":"faithful English translation","slow":false,"end":false}
 Set "end" to true only on your final line of the call.`;
+
+// Optional rehearsal scenarios. A brief is appended to the staff prompt and
+// replaces the staff's own choice of complication, so a specific situation can
+// be practised on purpose instead of waiting for it to come up by chance.
+export const SCENARIOS = Object.freeze({
+  random: { label: 'Random complication', brief: '' },
+  'insist-course': {
+    label: 'They insist you choose a course',
+    brief: `SCENARIO FOR THIS REHEARSAL — this replaces choosing a complication yourself:
+- The course must be chosen at the time of booking. If he asks to decide on the day, politely insist that it has to be chosen now.
+- If he asks you to hold just the table without a course, decline politely: on a busy public holiday you cannot hold a table without a course.
+- If he says he will think about it and call back, accept that naturally. Say you cannot promise the table will still be free, tell him by when to call back if he asks, and end the call politely.
+- If instead he chooses a course or gives a budget, continue the booking normally.`,
+  },
+});
 
 export const OPENING_TURN = Object.freeze({
   ja: 'お電話ありがとうございます。すき焼割烹日山でございます。',
@@ -48,11 +64,15 @@ export function parseStaffTurn(text) {
     ja: raw.ja.trim(),
     kana: typeof raw.kana === 'string' ? raw.kana.trim() : '',
     en: typeof raw.en === 'string' ? raw.en.trim() : '',
+    slow: raw.slow === true,
     end: raw.end === true,
   };
 }
 
-export function createStaffSim({ callClaude }) {
+export function createStaffSim({ callClaude, scenario = 'random' }) {
+  if (!(scenario in SCENARIOS)) throw new Error(`Unknown scenario: ${scenario}`);
+  const { brief } = SCENARIOS[scenario];
+  const system = brief ? `${STAFF_SYSTEM}\n\n${brief}` : STAFF_SYSTEM;
   let history = [];
 
   return {
@@ -70,7 +90,7 @@ export function createStaffSim({ callClaude }) {
 
       history.push({ role: 'user', content });
       try {
-        const text = await callClaude({ system: STAFF_SYSTEM, messages: history, maxTokens: 3000 });
+        const text = await callClaude({ system, messages: history, maxTokens: 3000 });
         const turn = parseStaffTurn(text);
         history.push({ role: 'assistant', content: JSON.stringify(turn) });
         return turn;
