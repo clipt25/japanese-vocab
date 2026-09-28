@@ -456,6 +456,11 @@ body[data-mode="call"] #rh-scenario{display:none}
 body[data-mode="call"] #restaurant-pick,
 body[data-rehearse="on"] #restaurant-pick{display:none}
 @media print{#restaurant-pick{display:none!important}}
+#connect-call{min-height:29px;font-size:var(--t-ui);font-weight:600;padding:3px 13px;
+  border:1px solid var(--rule);border-radius:3px;color:var(--ink);background:var(--ground)}
+#connect-call[data-on="true"]{background:var(--live);border-color:var(--live);color:var(--ground)}
+body[data-rehearse="on"] #connect-call{display:none}
+@media print{#connect-call{display:none!important}}
 </style>
 </head>
 <body>
@@ -470,6 +475,8 @@ body[data-rehearse="on"] #restaurant-pick{display:none}
     <button id="composer-toggle" type="button" aria-expanded="false"
             aria-controls="composer">Ask Claude <kbd>/</kbd></button>
     <button id="print-btn" type="button">Print</button>
+    <button id="connect-call" type="button" data-on="false"
+            title="Listen to the Yolla tab directly — for calls with earphones">Connect call</button>
     <button id="mic-toggle" type="button" data-on="false">Listen</button>
     <span id="mic-status">idle</span>
   </div>
@@ -537,19 +544,19 @@ body[data-rehearse="on"] #restaurant-pick{display:none}
 <script type="importmap">
 {
   "imports": {
-    "./call/dice.js": "./call/dice.js?v=50d5332bf2",
-    "./call/fallback.js": "./call/fallback.js?v=50d5332bf2",
-    "./call/interpret.js": "./call/interpret.js?v=50d5332bf2",
-    "./call/listen.js": "./call/listen.js?v=50d5332bf2",
-    "./call/match.js": "./call/match.js?v=50d5332bf2",
-    "./call/normalize.js": "./call/normalize.js?v=50d5332bf2",
-    "./call/phrases.js": "./call/phrases.js?v=50d5332bf2",
-    "./call/register.js": "./call/register.js?v=50d5332bf2",
-    "./call/rehearse.js": "./call/rehearse.js?v=50d5332bf2",
-    "./call/restaurants.js": "./call/restaurants.js?v=50d5332bf2",
-    "./call/speak.js": "./call/speak.js?v=50d5332bf2",
-    "./call/staff-sim.js": "./call/staff-sim.js?v=50d5332bf2",
-    "./call/ui.js": "./call/ui.js?v=50d5332bf2"
+    "./call/dice.js": "./call/dice.js?v=8767393410",
+    "./call/fallback.js": "./call/fallback.js?v=8767393410",
+    "./call/interpret.js": "./call/interpret.js?v=8767393410",
+    "./call/listen.js": "./call/listen.js?v=8767393410",
+    "./call/match.js": "./call/match.js?v=8767393410",
+    "./call/normalize.js": "./call/normalize.js?v=8767393410",
+    "./call/phrases.js": "./call/phrases.js?v=8767393410",
+    "./call/register.js": "./call/register.js?v=8767393410",
+    "./call/rehearse.js": "./call/rehearse.js?v=8767393410",
+    "./call/restaurants.js": "./call/restaurants.js?v=8767393410",
+    "./call/speak.js": "./call/speak.js?v=8767393410",
+    "./call/staff-sim.js": "./call/staff-sim.js?v=8767393410",
+    "./call/ui.js": "./call/ui.js?v=8767393410"
   }
 }
 </script>
@@ -671,7 +678,72 @@ body[data-rehearse="on"] #restaurant-pick{display:none}
     return recent.slice(recent.indexOf(entry) + 1).every(e => e.who !== 'staff');
   }
 
+  // ── Transcribe and translate AS THEY SPEAK (call connected) ──────────────
+  // Chrome commits a sentence only after a long silence: measured 1.7-4.6 s
+  // after the speaker stopped, on fast keigo through a phone codec - while the
+  // words themselves were already recognised, often before the sentence ended.
+  // With the call connected the recogniser hears only the staff, so the words
+  // are shown the instant they exist and translated as the sentence grows.
+  // The finished sentence is then read again, authoritatively.
+  const EARLY_STABLE_MS = 350;   // words unchanged this long: a natural beat
+  const EARLY_GROWTH = 8;        // or this many new characters since the last read
+  let early = null;              // the sentence in progress
+  let earlySeq = 0;              // readings requested, in order
+  let englishShown = 0;          // newest reading whose English is on screen
+  let cardShown = 0;             // newest reading whose card is highlighted
+  // Show any answer NEWER than what is on screen - not only the newest request.
+  // A reading is requested every half second while they talk and each takes
+  // about a second to answer, so "newest only" cancelled every one of them
+  // before it arrived: measured, nothing appeared until the speaker stopped.
+
+  function heardInterim(text) {
+    if (!text || isOwnLine(text)) return;
+    // The words themselves, immediately - before any translation exists.
+    if (!early?.english) renderBand(radarRoot, { label: 'Hearing', text, tone: 'miss', jp: true });
+    early ??= { read: '', english: '', timer: null };
+    clearTimeout(early.timer);
+    if (text.length - early.read.length >= EARLY_GROWTH) readEarly(text, false);
+    // A pause mid-sentence: read it again, and only now suggest a card - a card
+    // that jumped around while they were still talking would mislead.
+    early.timer = setTimeout(() => readEarly(text, true), EARLY_STABLE_MS);
+  }
+
+  function readEarly(text, withCard) {
+    if (!early || (text === early.read && !withCard)) return;
+    early.read = text;
+    const seq = ++earlySeq;
+    const context = recent.slice(-80).map(({ who, ja }) => ({ who, ja }));
+    interpret(text, {
+      recent: context, early: true, verdict: withCard,
+      onEnglish: (reading, { done } = {}) => {
+        if (!early || seq < englishShown || reading.self || !reading.english) return;
+        // A newer reading takes over only once it says at least as much as the
+        // line on screen: otherwise a finished "What date would you like" was
+        // replaced by the next reading's first word, "What".
+        if (seq > englishShown && !done && reading.english.length < (early.english?.length ?? 0)) return;
+        englishShown = seq;
+        early.english = reading.english;
+        renderBand(radarRoot, { label: 'Saying', text: reading.english });
+      },
+      onVerdict: reading => {
+        if (!early || seq < cardShown || reading.self) return;
+        if (!reading.replyId && !reading.custom) return;
+        cardShown = seq;
+        markSuggested(reading.replyId, reading.custom);
+      },
+      onError: () => { /* the finished sentence is read again anyway */ },
+    });
+  }
+
+  function endEarly() {
+    clearTimeout(early?.timer);
+    earlySeq += 1;               // any early reading still in flight is now stale
+    englishShown = cardShown = earlySeq;
+    early = null;
+  }
+
   function heardFinal(transcript) {
+    endEarly();
     if (isOwnLine(transcript)) {                 // one of his cards, read aloud
       recent.push({ who: 'you', ja: transcript, english: '', finalized: true });
       return;
@@ -688,7 +760,10 @@ body[data-rehearse="on"] #restaurant-pick{display:none}
       onEnglish: reading => {
         if (reading.self || !reading.english || entry.who === 'you') return;
         entry.english = reading.english;
-        if (isCurrent(entry)) showStaff(entry);
+        // A newer sentence already being spoken owns the band: the previous
+        // sentence's late translation must not paint over it (measured:
+        // "Thanks for calling" replaced 恐れ入ります mid-sentence).
+        if (isCurrent(entry) && !early) showStaff(entry);
       },
       onVerdict: (reading, { final }) => {
         if (entry.finalized) return;
@@ -713,17 +788,19 @@ body[data-rehearse="on"] #restaurant-pick{display:none}
         entry.custom = reading.custom;
         interpreted.set(transcript, { english: entry.english, replyId: reading.replyId, custom: reading.custom });
         if (!isCurrent(entry)) return;
-        showStaff(entry);
+        if (!early) showStaff(entry);
         markSuggested(reading.replyId, reading.custom);
       },
       onError: (lane, error) => {
         setStatus(`interpreter (${lane}): ${error.message}`);
-        if (lane === 'english' && entry.who !== 'you' && isCurrent(entry)) showStaff(entry);
+        if (lane === 'english' && entry.who !== 'you' && isCurrent(entry) && !early) showStaff(entry);
       },
     });
   }
 
   const listener = createListener({
+    // Only the call track: on speakerphone, provisional words are often his own voice.
+    onInterim: text => { if (listener?.source === 'call' && hasKey()) heardInterim(text); },
     onMatch: (result, meta) => {
       if (hasKey()) {
         // Interim results would repaint the band mid-sentence, and on
@@ -746,7 +823,7 @@ body[data-rehearse="on"] #restaurant-pick{display:none}
 
   // Without this the laptop transcribes its own rehearsal audio — and on
   // speakerphone that audio also goes down the line to the restaurant.
-  if (listener) setSpeechGate({ before: () => listener.pause(), after: () => listener.resume() });
+  if (listener) setSpeechGate({ before: () => { if (listener.source === 'mic') listener.pause(); }, after: () => listener.resume() });
 
   if (!isSecureForMic()) {
     toggle.disabled = true;
@@ -760,6 +837,68 @@ body[data-rehearse="on"] #restaurant-pick{display:none}
       else { listener.start(); toggle.dataset.on = 'true'; }
     });
   }
+
+  // ── Connect to the call (Yolla in a Chrome tab, earphones on) ─────────────
+  // With earphones the staff's voice never reaches a microphone, so the laptop
+  // mic would hear only him. Chrome can hand the Yolla tab's own audio to
+  // speech recognition instead - verified in his Chrome: Japanese fed through a
+  // track came back word-perfect with no microphone involved.
+  const connectBtn = document.getElementById('connect-call');
+  let callStream = null;
+
+  function disconnectCall(message) {
+    callStream?.getTracks().forEach(t => t.stop());
+    callStream = null;
+    listener?.setSource(null);
+    listener?.stop();
+    connectBtn.dataset.on = 'false';
+    connectBtn.textContent = 'Connect call';
+    setStatus(message);
+  }
+
+  async function connectCall() {
+    if (callStream) { disconnectCall('call audio disconnected'); return; }
+    if (!listener) { setStatus('speech recognition unsupported — use Chrome'); return; }
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getDisplayMedia({
+        // Chrome only shares tab audio alongside video; ask for as little as it allows.
+        video: { displaySurface: 'browser', frameRate: 1, width: 320 },
+        audio: { suppressLocalAudioPlayback: false },   // he still hears the call in his earphones
+        preferCurrentTab: false, selfBrowserSurface: 'exclude',
+        surfaceSwitching: 'include', systemAudio: 'exclude',
+      });
+    } catch (error) {
+      setStatus(error.name === 'NotAllowedError' ? 'call audio: cancelled' : `call audio: ${error.message}`);
+      return;
+    }
+    attachCallStream(stream);
+  }
+
+  // Everything after the share picker. Split out so an automated test can feed
+  // recorded call audio through the exact path the Yolla tab takes.
+  function attachCallStream(stream) {
+    const [track] = stream.getAudioTracks();
+    if (!track) {
+      stream.getTracks().forEach(t => t.stop());
+      setStatus('No sound shared — pick the Yolla tab and tick "Also share tab audio"');
+      return;
+    }
+    callStream = stream;
+    // Closing the Yolla tab or pressing "Stop sharing" ends the track. Say so
+    // loudly and stop - never fall back to the mic behind his back, because with
+    // earphones the mic hears only him.
+    stream.getTracks().forEach(t => t.addEventListener('ended',
+      () => disconnectCall('call audio lost — press Connect call again'), { once: true }));
+    listener.setSource(track);
+    if (!listener.running) listener.start();
+    connectBtn.dataset.on = 'true';
+    connectBtn.textContent = 'Call connected';
+    setStatus('listening to the call');
+  }
+  connectBtn.addEventListener('click', connectCall);
+  if (new URLSearchParams(location.search).has('debug')) window.callAssistant = { attachCallStream };
+  if (!navigator.mediaDevices?.getDisplayMedia) connectBtn.disabled = true;
 
   document.getElementById('key-set').addEventListener('click', () => {
     const entered = prompt('Anthropic API key (stored only in this browser):', '');
@@ -803,7 +942,7 @@ body[data-rehearse="on"] #restaurant-pick{display:none}
                         thinking: 'Staff thinking…', ended: 'Ended' };
   const hasMic = isSecureForMic() && Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition);
   const listenerGate = listener
-    ? { before: () => listener.pause(), after: () => listener.resume() }
+    ? { before: () => { if (listener.source === 'mic') listener.pause(); }, after: () => listener.resume() }
     : { before() {}, after() {} };
   let rehearsal = null;
 

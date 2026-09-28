@@ -177,11 +177,24 @@ async function streamOnce(lane, system, content, onText) {
 
 // Fires all three lanes. Callbacks arrive in any order; onVerdict says whether
 // it is the final one. The caller decides what still belongs on screen.
-export function interpret(transcript, { recent = [], onEnglish, onVerdict, onError }) {
-  streamLane(ENGLISH_LANE, ENGLISH_SYSTEM, transcript, text => onEnglish?.(parseInterpretation(text)))
+// early: the sentence is still being spoken. Only the fast lanes run - the
+// English and the quick card - and the authoritative final verdict waits for
+// the finished sentence, so it never judges half a question.
+// A sentence still being spoken is cut off mid-way. Without this, the model
+// narrated instead of translating ("CONFIRMING: November — go ahead and
+// continue, waiting for the rest").
+export const EARLY_ENGLISH_SYSTEM = `${ENGLISH_SYSTEM}
+
+The staff is still talking: this transcript usually stops mid-sentence. Translate only the words that are there, as far as they go. Never comment on it being incomplete, never guess the rest, never add notes.`;
+
+export function interpret(transcript, { recent = [], onEnglish, onVerdict, onError, early = false, verdict = true }) {
+  streamLane(ENGLISH_LANE, early ? EARLY_ENGLISH_SYSTEM : ENGLISH_SYSTEM, transcript,
+    text => onEnglish?.(parseInterpretation(text), { done: false }))
+    .then(text => onEnglish?.(parseInterpretation(text), { done: true }))
     .catch(error => onError?.('english', error));
   const content = buildVerdictMessage(transcript, recent);
-  for (const [lane, final] of [[QUICK_LANE, false], [FINAL_LANE, true]]) {
+  const lanes = !early ? [[QUICK_LANE, false], [FINAL_LANE, true]] : verdict ? [[QUICK_LANE, false]] : [];
+  for (const [lane, final] of lanes) {
     streamLane(lane, VERDICT_SYSTEM, content)
       .then(text => onVerdict?.(parseInterpretation(text), { final }))
       .catch(error => onError?.(final ? 'final' : 'quick', error));
