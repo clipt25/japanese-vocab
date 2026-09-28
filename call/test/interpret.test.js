@@ -152,3 +152,48 @@ test('once he agrees to a change, the verdict must not steer him back to the ori
   assert.match(VERDICT_SYSTEM, /The call so far is authoritative/);
   assert.match(VERDICT_SYSTEM, /Never steer him back to his original request/);
 });
+
+// ── Readings (kana + romaji) for recognised speech ──────────────────────────
+import { READING_LANE, READING_SYSTEM, parseReading, plausibleReading } from '../interpret.js';
+
+test('reading lane: Opus 5 without thinking (accuracy over cost, still no thinking delay)', () => {
+  assert.equal(READING_LANE.model, 'claude-opus-5');
+  assert.deepEqual(READING_LANE.thinking, { type: 'disabled' });
+});
+
+test('the reading prompt names the date traps the app warns about', () => {
+  for (const trap of ['みっか', 'ついたち', 'よんめい', 'しちじ']) assert.ok(READING_SYSTEM.includes(trap), trap);
+});
+
+test('parseReading takes kana from line one and romaji from line two', () => {
+  assert.deepEqual(parseReading('おしはらいほうほう\nOshiharai hōhō'), { kana: 'おしはらいほうほう', romaji: 'Oshiharai hōhō' });
+});
+
+test('parseReading tolerates blank lines and labels the model may add', () => {
+  assert.deepEqual(parseReading('\nKana: なんめいさま\n\nRomaji: Nanmei-sama\n'), { kana: 'なんめいさま', romaji: 'Nanmei-sama' });
+});
+
+test('parseReading of nothing is empty, never undefined', () => {
+  assert.deepEqual(parseReading(''), { kana: '', romaji: '' });
+});
+
+test('an answer is not a reading: the real failure on ですか is rejected', () => {
+  const answered = parseReading('こんにちは、ご質問ですね。それでは回答いたします。\n**line 1:**');
+  assert.equal(plausibleReading('ですか', answered), false);
+});
+
+test('a genuine reading passes, including numbers read in context', () => {
+  assert.equal(plausibleReading('11月3日の午後7時から4名様ですね',
+    { kana: 'じゅういちがつみっかのごごしちじからよんめいさまですね', romaji: 'jūichi-gatsu mikka no gogo shichi-ji kara yon-mei-sama desu ne' }), true);
+  assert.equal(plausibleReading('ですか', { kana: 'ですか', romaji: 'desu ka' }), true);
+});
+
+test('kanji in the kana line, or an empty half, is not a reading', () => {
+  assert.equal(plausibleReading('予約', { kana: '予約', romaji: 'yoyaku' }), false);
+  assert.equal(plausibleReading('予約', { kana: 'よやく', romaji: '' }), false);
+});
+
+test('full-width spaces and markdown are cleaned from readings', () => {
+  assert.deepEqual(parseReading('かしこまりました　じゅういちがつ\n**kashikomarimashita  jūichi-gatsu**'),
+    { kana: 'かしこまりました じゅういちがつ', romaji: 'kashikomarimashita jūichi-gatsu' });
+});

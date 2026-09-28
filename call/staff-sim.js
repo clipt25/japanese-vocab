@@ -23,7 +23,7 @@ HOW TO SPEAK:
 - End the call naturally once the booking is confirmed or clearly cannot be made, finishing with 失礼いたします.
 
 REPLY FORMAT — only a JSON object, no prose, no code fence:
-{"ja":"what you say, in natural Japanese","kana":"the same line in hiragana/katakana only — no kanji, no digits","en":"faithful English translation","slow":false,"end":false}
+{"ja":"what you say, in natural Japanese","kana":"the same line in hiragana/katakana only — no kanji, no digits","romaji":"the same line in Hepburn romaji with macrons","en":"faithful English translation","slow":false,"end":false}
 Set "end" to true only on your final line of the call.`;
 }
 
@@ -66,6 +66,7 @@ export function parseStaffTurn(text) {
   return {
     ja: raw.ja.trim(),
     kana: typeof raw.kana === 'string' ? raw.kana.trim() : '',
+    romaji: typeof raw.romaji === 'string' ? raw.romaji.trim() : '',
     en: typeof raw.en === 'string' ? raw.en.trim() : '',
     slow: raw.slow === true,
     end: raw.end === true,

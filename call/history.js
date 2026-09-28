@@ -54,15 +54,18 @@ export function createHistory(list, { jumpButton, onChange } = {}) {
       row.en_.textContent = en;
     }
     row.ja_.textContent = ja;
+    row.kana_.textContent = row.kana ?? '';
+    row.romaji_.textContent = row.romaji ?? '';
   }
 
   return {
     // who: 'staff' | 'you'. live: the sentence is still being spoken.
     add(who, ja = '', en = '', { live = false } = {}) {
       const node = el('li');
-      const row = { node, who, ja, en, live, createdAt: Date.now(), updatedAt: Date.now(),
-        label: el('span', 'turn__who'), en_: el('p', 'turn__en'), ja_: el('p', 'turn__ja') };
-      node.append(row.label, row.en_, row.ja_);
+      const row = { node, who, ja, en, live, kana: '', romaji: '', createdAt: Date.now(), updatedAt: Date.now(),
+        label: el('span', 'turn__who'), en_: el('p', 'turn__en'), ja_: el('p', 'turn__ja'),
+        kana_: el('p', 'turn__kana'), romaji_: el('p', 'turn__romaji') };
+      node.append(row.label, row.en_, row.ja_, row.kana_, row.romaji_);
       node._row = row;
       paint(row);
       list.append(node);
@@ -96,7 +99,7 @@ export function createHistory(list, { jumpButton, onChange } = {}) {
     // The transcript as plain data, for saving. at: ms since the session began.
     snapshot(startedAt = 0) {
       return [...list.children].map(node => node._row).filter(Boolean)
-        .map(({ who, ja, en, createdAt }) => ({ who, ja, en, at: createdAt - startedAt }));
+        .map(({ who, ja, en, kana, romaji, createdAt }) => ({ who, ja, en, kana, romaji, at: createdAt - startedAt }));
     },
     get size() { return list.children.length; },
   };

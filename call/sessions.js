@@ -36,7 +36,7 @@ export function startSession({ restaurant, kind, now = Date.now() }) {
     kind,                       // 'call' | 'rehearsal'
     startedAt: now,
     endedAt: null,
-    rows: [],                   // { who: 'staff' | 'you', ja, en, at } - at: ms from the start
+    rows: [],                   // { who: 'staff' | 'you', ja, en, kana, romaji, at } - at: ms from the start
   };
 }
 
@@ -69,6 +69,8 @@ export function sessionToText(session) {
   for (const r of session.rows) {
     const who = r.who === 'you' ? 'You' : 'Staff';
     lines.push(`[${clock(r.at ?? 0)}] ${who}: ${r.ja || r.en}`);
+    if (r.kana) lines.push(`        ${r.kana}`);
+    if (r.romaji) lines.push(`        ${r.romaji}`);
     if (r.who !== 'you' && r.en && r.ja) lines.push(`        → ${r.en}`);
   }
   return lines.join('\n');

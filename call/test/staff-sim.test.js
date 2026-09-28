@@ -139,3 +139,8 @@ test('the staff prompt tells the model to keep a slower pace once asked', () => 
   assert.match(STAFF_SYSTEM, /rest of the call/);
   assert.match(STAFF_SYSTEM, /"slow"/);
 });
+
+test('parseStaffTurn keeps the romaji reading for the debrief', () => {
+  assert.equal(parseStaffTurn(turn('はい。', { romaji: 'Hai.' })).romaji, 'Hai.');
+  assert.equal(parseStaffTurn(turn('はい。')).romaji, '');
+});

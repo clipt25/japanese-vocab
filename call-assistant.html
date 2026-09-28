@@ -492,7 +492,7 @@ body[data-mode="call"] #radar-panel{display:none}
 .turn--staff .turn__en:empty{display:block}
 .turn--staff .turn__en:empty::before{content:'translating…';font-size:var(--t-ui);
   font-weight:400;color:var(--label)}
-.turn__ja{font-family:var(--jp);font-size:15px;line-height:1.45;color:var(--muted);margin-top:2px}
+.turn__ja{font-family:var(--jp);font-size:17px;line-height:1.45;color:var(--ink-2);margin-top:3px}
 .turn--you{background:var(--surface)}
 .turn--you .turn__ja{color:var(--ink-2)}
 .history__jump{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
@@ -531,6 +531,13 @@ body[data-past="open"] #past-calls{display:block}
 .past__turns{list-style:none;max-width:60rem}
 .turn__at{display:inline-block;min-width:3.4em;font-size:var(--t-micro);font-weight:700;color:var(--label)}
 @media print{#past-calls,#past-btn{display:none!important}}
+
+/* Readings for everything recognised: kana, then romaji. */
+.turn__kana{font-family:var(--jp);font-size:14px;line-height:1.45;color:var(--muted)}
+.turn__romaji{font-size:15px;line-height:1.35;color:var(--ink-2)}
+.turn__kana:empty,.turn__romaji:empty{display:none}
+.debrief__kana{font-family:var(--jp);font-size:15px;color:var(--muted);margin-top:2px}
+.debrief__romaji{font-size:15px;color:var(--ink-2);margin-top:1px}
 </style>
 </head>
 <body>
@@ -630,21 +637,21 @@ body[data-past="open"] #past-calls{display:block}
 <script type="importmap">
 {
   "imports": {
-    "./call/dice.js": "./call/dice.js?v=7a1009689f",
-    "./call/fallback.js": "./call/fallback.js?v=7a1009689f",
-    "./call/history.js": "./call/history.js?v=7a1009689f",
-    "./call/interpret.js": "./call/interpret.js?v=7a1009689f",
-    "./call/listen.js": "./call/listen.js?v=7a1009689f",
-    "./call/match.js": "./call/match.js?v=7a1009689f",
-    "./call/normalize.js": "./call/normalize.js?v=7a1009689f",
-    "./call/phrases.js": "./call/phrases.js?v=7a1009689f",
-    "./call/register.js": "./call/register.js?v=7a1009689f",
-    "./call/rehearse.js": "./call/rehearse.js?v=7a1009689f",
-    "./call/restaurants.js": "./call/restaurants.js?v=7a1009689f",
-    "./call/sessions.js": "./call/sessions.js?v=7a1009689f",
-    "./call/speak.js": "./call/speak.js?v=7a1009689f",
-    "./call/staff-sim.js": "./call/staff-sim.js?v=7a1009689f",
-    "./call/ui.js": "./call/ui.js?v=7a1009689f"
+    "./call/dice.js": "./call/dice.js?v=ca1e4f6adf",
+    "./call/fallback.js": "./call/fallback.js?v=ca1e4f6adf",
+    "./call/history.js": "./call/history.js?v=ca1e4f6adf",
+    "./call/interpret.js": "./call/interpret.js?v=ca1e4f6adf",
+    "./call/listen.js": "./call/listen.js?v=ca1e4f6adf",
+    "./call/match.js": "./call/match.js?v=ca1e4f6adf",
+    "./call/normalize.js": "./call/normalize.js?v=ca1e4f6adf",
+    "./call/phrases.js": "./call/phrases.js?v=ca1e4f6adf",
+    "./call/register.js": "./call/register.js?v=ca1e4f6adf",
+    "./call/rehearse.js": "./call/rehearse.js?v=ca1e4f6adf",
+    "./call/restaurants.js": "./call/restaurants.js?v=ca1e4f6adf",
+    "./call/sessions.js": "./call/sessions.js?v=ca1e4f6adf",
+    "./call/speak.js": "./call/speak.js?v=ca1e4f6adf",
+    "./call/staff-sim.js": "./call/staff-sim.js?v=ca1e4f6adf",
+    "./call/ui.js": "./call/ui.js?v=ca1e4f6adf"
   }
 }
 </script>
@@ -652,7 +659,7 @@ body[data-past="open"] #past-calls{display:block}
   import { renderScript, renderPanic, renderRadar, renderFallbackResult,
            renderStaffSheet, setStage, nextStage, prevStage, stageIndexOfPhrase,
            speakPanic, renderDebrief, renderBand, markSuggested } from './call/ui.js';
-  import { interpret, isOwnLine, repliesWithItself } from './call/interpret.js';
+  import { interpret, isOwnLine, repliesWithItself, readJapanese } from './call/interpret.js';
   import { RESTAURANT, RESTAURANTS } from './call/restaurants.js';
   import { createStaffSim, scoreRadar, scenariosFor } from './call/staff-sim.js';
   import { createRehearsal } from './call/rehearse.js';
@@ -676,12 +683,12 @@ body[data-past="open"] #past-calls{display:block}
   const factsRoot = document.getElementById('facts');
   const [partyFact, ...extraFacts] = RESTAURANT.headerFacts;
   const facts = [
-    { key: 'Restaurant', value: RESTAURANT.name.ja, jp: true, prep: true },
+    { key: 'Restaurant', value: `${RESTAURANT.name.ja} (${RESTAURANT.name.en})`, jp: true, prep: true },
     { key: 'Dial', value: RESTAURANT.dial, prep: true },
     { key: 'Date', value: RESTAURANT.date.header },
     { key: 'Time', value: RESTAURANT.time.header },
     partyFact,
-    { key: 'Name', value: 'ジェフリー', jp: true },
+    { key: 'Name', value: 'ジェフリー (Jefurī)', jp: true },
     { key: 'Your phone', value: '+62 812 8063 7730' },
     ...extraFacts.map(f => ({ ...f, prep: true })),
   ];
@@ -838,7 +845,6 @@ body[data-past="open"] #past-calls{display:block}
 
   function heardInterim(text) {
     if (!text || (!staffOnly() && isOwnLine(text))) return;
-    commitEnglish();
     // The words themselves, immediately - before any translation exists.
     if (!early?.english) renderBand(radarRoot, { label: 'Hearing', text, tone: 'miss', jp: true });
     early ??= { read: '', english: '', timer: null, row: null };
@@ -854,6 +860,7 @@ body[data-past="open"] #past-calls{display:block}
   function readEarly(text, withCard) {
     if (!early || (text === early.read && !withCard)) return;
     early.read = text;
+    if (withCard) addReading(early.row, text);   // a pause: read what has been said so far
     const seq = ++earlySeq;
     const context = recent.slice(-80).map(({ who, ja }) => ({ who, ja }));
     interpret(text, {
@@ -887,67 +894,30 @@ body[data-past="open"] #past-calls{display:block}
     early = null;
   }
 
-  // ── When the staff switch to English ───────────────────────────────────
-  // They know he is a foreigner, so some staff will try English. Measured in his
-  // Chrome on call-quality audio: a whole English sentence comes out of the
-  // Japanese recogniser as nonsense (ストーリーセブン) or nothing, while an English
-  // recogniser on the same track gets it ("sorry we are fully booked at 7:00").
-  // On pure Japanese the English recogniser stays completely silent, and English
-  // words inside a Japanese sentence (4 ピープル, 7 pm, OK) come through the
-  // Japanese one. So whatever the English recogniser hears IS English: it goes
-  // into the transcript as-is, and only the card is worked out.
-  // Two more measured facts shape this: the English recogniser streams words
-  // but, on call audio, may never commit a final result at all; and on accented
-  // or mixed speech its provisional text is junk ("when", "10", "109"). So a line
-  // counts as English only once it has at least three real words, and it is
-  // committed when it stops changing - not when a final that may never come.
-  const ENGLISH_MIN_WORDS = 3;
-  const ENGLISH_SETTLE_MS = 1500;
-  let englishLive = null;           // { row, text, timer }
-  const looksEnglish = text => (text.match(/[A-Za-z]{2,}/g) ?? []).length >= ENGLISH_MIN_WORDS;
-
-  function heardEnglishInterim(text) {
-    if (!looksEnglish(text)) return;
-    if (englishLive) { englishLive.text = text; history.update(englishLive.row, { en: text }); }
-    else englishLive = { text, row: history.add('staff', '', text, { live: true }), timer: null };
-    clearTimeout(englishLive.timer);
-    englishLive.timer = setTimeout(commitEnglish, ENGLISH_SETTLE_MS);
-  }
-  function heardEnglish(text) {
-    if (looksEnglish(text)) {
-      if (englishLive) englishLive.text = text;
-      else englishLive = { text, row: history.add('staff', '', text, { live: true }), timer: null };
-    }
-    commitEnglish();
-  }
-  // The staff switching back to Japanese also ends the English line.
-  function commitEnglish() {
-    if (!englishLive) return;
-    const { row, text, timer } = englishLive;
-    clearTimeout(timer);
-    englishLive = null;
-    history.update(row, { en: text, live: false });
-    const context = recent.slice(-80).map(({ who, ja }) => ({ who, ja }));
-    const entry = { who: 'staff', ja: text, english: text, finalized: false, row };
-    recent.push(entry);
-    interpret(text, {
-      recent: context, translate: false, staffOnly: true,
-      onVerdict: (reading, { final }) => {
-        if (entry.finalized || reading.self) return;
-        entry.finalized = final;
-        if (isCurrent(entry)) markSuggested(reading.replyId, reading.custom);
-      },
-      onError: (lane, error) => reportApiError(error, `interpreter (${lane})`),
-    });
+  // Kana + romaji for a finished line, alongside its translation - never in its way.
+  // Requested at every natural pause as well as when Chrome commits the
+  // sentence - measured: Chrome can take 4.6 s to commit the last sentence
+  // before a silence, or never, which left exactly that row without readings.
+  // Only a reading newer than the one on screen is applied.
+  function addReading(row, japanese) {
+    if (!row || !japanese || !hasKey()) return;
+    const seq = row.readAsked = (row.readAsked ?? 0) + 1;
+    readJapanese(japanese)
+      .then(reading => {
+        if (seq <= (row.readShown ?? 0) || (!reading.kana && !reading.romaji)) return;
+        row.readShown = seq;
+        history.update(row, reading);
+      })
+      .catch(error => { if (error.fatal) reportApiError(error, 'reading'); });
   }
 
   function heardFinal(transcript) {
-    commitEnglish();
     const liveRow = early?.row;      // the row this sentence has been filling in
     endEarly();
     if (!staffOnly() && isOwnLine(transcript)) {   // one of his cards, read aloud
+      const ownRow = liveRow ?? history.add('you', transcript);
       if (liveRow) history.update(liveRow, { who: 'you', ja: transcript, en: '', live: false });
-      else history.add('you', transcript);
+      addReading(ownRow, transcript);
       recent.push({ who: 'you', ja: transcript, english: '', finalized: true });
       return;
     }
@@ -959,6 +929,7 @@ body[data-past="open"] #past-calls{display:block}
     recent.push(entry);
     entry.row = liveRow ?? history.add('staff', transcript, '', { live: true });
     history.update(entry.row, { ja: transcript });
+    addReading(entry.row, transcript);
 
     interpret(transcript, {
       recent: context, staffOnly: staffOnly(),
@@ -1066,13 +1037,10 @@ body[data-past="open"] #past-calls{display:block}
   // track came back word-perfect with no microphone involved.
   const connectBtn = document.getElementById('connect-call');
   let callStream = null;
-  let englishListener = null;       // runs alongside, on the same call track
 
   function disconnectCall(message) {
     callStream?.getTracks().forEach(t => t.stop());
     callStream = null;
-    englishListener?.stop();
-    englishListener = null;
     listener?.setSource(null);
     listener?.stop();
     connectBtn.dataset.on = 'false';
@@ -1117,16 +1085,11 @@ body[data-past="open"] #past-calls{display:block}
       () => disconnectCall('call audio lost — press Connect call again'), { once: true }));
     listener.setSource(track);
     if (!listener.running) listener.start();
-    // An English recogniser on the same track, for when the staff switch to English.
-    englishListener = createListener({
-      lang: 'en-US',
-      onMatch: () => {},
-      onStatus: () => {},
-      onInterim: text => { if (hasKey()) heardEnglishInterim(text); },
-      onRaw: (text, isFinal) => { if (isFinal && text.trim() && hasKey()) heardEnglish(text.trim()); },
-    });
-    englishListener?.setSource(track);
-    englishListener?.start();
+    // No English recogniser alongside. On real human Japanese it invented
+    // English ("I thought you called", "do you need help hi") - every such row
+    // was noise that buried what was actually said. English words inside a
+    // Japanese sentence (4 ピープル, OK, 7 pm) come through the Japanese one,
+    // and if the staff switch fully to English he understands them directly.
     connectBtn.dataset.on = 'true';
     connectBtn.textContent = 'Call connected';
     setStatus('listening to the call');
@@ -1236,7 +1199,7 @@ body[data-past="open"] #past-calls{display:block}
       onYou: ({ text, final }) => {
         if (final) {
           recent.push({ who: 'you', ja: text, english: '', finalized: true });
-          history.add('you', text);
+          addReading(history.add('you', text), text);
         }
         if (document.activeElement !== rhInput) rhInput.value = text;
       },
@@ -1258,7 +1221,9 @@ body[data-past="open"] #past-calls{display:block}
   function finishRehearsal(turns) {
     endSession();
     const staffTurns = turns.filter(t => t.who === 'staff');
-    renderDebrief(document.getElementById('debrief-body'), turns, scoreRadar(staffTurns), interpreted);
+    const readings = new Map(history.snapshot().filter(r => r.kana || r.romaji)
+      .map(r => [r.ja, { kana: r.kana, romaji: r.romaji }]));
+    renderDebrief(document.getElementById('debrief-body'), turns, scoreRadar(staffTurns), interpreted, readings);
     setSpeechGate(listenerGate);
     rehearsal = null;
     document.body.dataset.rehearse = 'off';
@@ -1331,6 +1296,8 @@ body[data-past="open"] #past-calls{display:block}
       if (r.who === 'you') li.append(node('span', 'turn__who', 'You'));
       if (r.who !== 'you' && r.en) li.append(node('p', 'turn__en', r.en));
       if (r.ja) li.append(node('p', 'turn__ja', r.ja));
+      if (r.kana) li.append(node('p', 'turn__kana', r.kana));
+      if (r.romaji) li.append(node('p', 'turn__romaji', r.romaji));
       turns.append(li);
     }
     pastBody.replaceChildren(turns);

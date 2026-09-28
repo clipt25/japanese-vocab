@@ -84,3 +84,11 @@ test('a transcript copies as readable text, in order, with who said it', () => {
   assert.match(text, /01:05/, 'times are shown from the start of the call');
   assert.match(text, /You/);
 });
+
+test('copied text carries the kana and romaji readings', () => {
+  const s = startSession({ restaurant: hiyama, kind: 'call' });
+  s.rows = [{ who: 'staff', ja: '何名様でしょうか', en: 'How many people?', kana: 'なんめいさまでしょうか', romaji: 'Nanmei-sama deshō ka', at: 0 }];
+  const text = sessionToText(s);
+  assert.match(text, /なんめいさまでしょうか/);
+  assert.match(text, /Nanmei-sama deshō ka/);
+});

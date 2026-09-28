@@ -244,7 +244,9 @@ export function renderFallbackResult(root, forms, who = 'staff') {
 // ── Rehearsal debrief ───────────────────────────────────────────────────────
 // The whole call with translations, plus what the radar did with each staff
 // line. Nothing here is shown during the call — only after, like a real debrief.
-export function renderDebrief(root, turns, report, interpreted = new Map()) {
+// readings: japanese -> { kana, romaji } from the transcript, for lines the
+// simulator did not read out itself (his own).
+export function renderDebrief(root, turns, report, interpreted = new Map(), readings = new Map()) {
   root.replaceChildren();
   root.append(el('h2', 'debrief__title', 'Rehearsal debrief'));
 
@@ -265,6 +267,10 @@ export function renderDebrief(root, turns, report, interpreted = new Map()) {
       const row = report.rows[staffIndex++];
       item.append(el('span', 'debrief__who', 'Staff'));
       item.append(el('p', 'debrief__ja', turn.ja));
+      const kana = turn.kana || readings.get(turn.ja)?.kana;
+      const romaji = turn.romaji || readings.get(turn.ja)?.romaji;
+      if (kana) item.append(el('p', 'debrief__kana', kana));
+      if (romaji) item.append(el('p', 'debrief__romaji', romaji));
       item.append(el('p', 'debrief__en', turn.en));
       const read = interpreted.get(turn.ja);
       if (read) {
@@ -278,6 +284,9 @@ export function renderDebrief(root, turns, report, interpreted = new Map()) {
     } else {
       item.append(el('span', 'debrief__who', 'You'));
       item.append(el('p', 'debrief__ja', turn.text));
+      const own = readings.get(turn.text);
+      if (own?.kana) item.append(el('p', 'debrief__kana', own.kana));
+      if (own?.romaji) item.append(el('p', 'debrief__romaji', own.romaji));
     }
     list.append(item);
   }
