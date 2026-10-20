@@ -5,12 +5,11 @@ import { PLAIN_POLITE_RULE } from './register.js';
 
 const KEY_STORAGE = 'jp-vocab-apikey';   // shared with the vocab app: same origin
 const ENDPOINT = 'https://api.anthropic.com/v1/messages';
-// Opus 5.5 at low effort. Haiku 4.5 was faster, but on the call accuracy is
-// what matters: measured against real staff phrasing it picked wrong replies.
-// Opus 5.5 always thinks, so every max_tokens below leaves room for that -
-// otherwise thinking can use the whole budget and the reply comes back empty.
-const MODEL = 'claude-opus-5-5';
-const EFFORT = 'low';
+// The composer and the tap-to-translate fallback: Opus 5 with thinking off.
+// Opus 5.5 at low effort spent 3.9-5.2 s thinking before its first word
+// (measured 2026-10-20); he is mid-call when he asks for these, and Opus 5 is
+// the same quality tier for a one-line polite sentence, in about 2 s.
+export const COMPOSER_LANE = { model: 'claude-opus-5', thinking: { type: 'disabled' } };
 
 export function getKey() {
   try { return localStorage.getItem(KEY_STORAGE) ?? ''; } catch { return ''; }
@@ -64,7 +63,7 @@ export async function checkApi() {
 // Shared transport. Both the fallback translator and the rehearsal staff
 // simulator go through here, so the two known traps are handled once:
 // thinking blocks can precede the text block, and the reply may arrive fenced.
-export async function callClaude({ system, messages, maxTokens = 3000 }) {
+export async function callClaude({ system, messages, maxTokens = 3000, lane = COMPOSER_LANE }) {
   const key = getKey();
   if (!key) throw new Error('No API key saved');
 
@@ -76,8 +75,7 @@ export async function callClaude({ system, messages, maxTokens = 3000 }) {
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true',
     },
-    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages,
-                           output_config: { effort: EFFORT } }),
+    body: JSON.stringify({ ...lane, max_tokens: maxTokens, system, messages }),
   });
 
   if (!response.ok) throw await apiError(response);
@@ -93,6 +91,71 @@ export async function callClaude({ system, messages, maxTokens = 3000 }) {
     .join('')
     .trim();
   if (!text) throw new Error('Empty reply from Claude');
+  return text;
+}
+
+// Streaming transport, shared by the live interpreter and the rehearsal staff.
+// One retry for the failures a Jakarta-to-US line actually produces: a dropped
+// connection, an overloaded or rate-limited API. A silent line on the call is
+// worse than one that arrives 300ms late.
+const RETRY_STATUS = new Set([429, 500, 502, 503, 504, 529]);
+
+export async function streamClaude(body, onText) {
+  try {
+    return await streamOnce(body, onText);
+  } catch (error) {
+    if (!error.retryable) throw error;
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return streamOnce(body, onText);
+  }
+}
+
+async function streamOnce(body, onText) {
+  let response;
+  try {
+    response = await fetch(ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': getKey(),
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({ ...body, stream: true }),
+    });
+  } catch (error) {
+    throw Object.assign(new Error(`network: ${error.message}`), { retryable: true });
+  }
+  if (!response.ok) {
+    const error = await apiError(response);
+    throw Object.assign(error, { retryable: !error.fatal && RETRY_STATUS.has(response.status) });
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let text = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let end;
+    while ((end = buffer.indexOf('\n\n')) >= 0) {
+      const data = buffer.slice(0, end).split('\n').find(l => l.startsWith('data: '));
+      buffer = buffer.slice(end + 2);
+      if (!data) continue;
+      const event = JSON.parse(data.slice(6));
+      // Thinking blocks (Opus 5.5 always thinks) stream as their own deltas.
+      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+        text += event.delta.text;
+        onText?.(text);
+      } else if (event.type === 'error') {
+        // overloaded_error mid-stream is worth one more try; others are not.
+        throw Object.assign(new Error(event.error?.message ?? 'Stream error'),
+                            { retryable: event.error?.type === 'overloaded_error' && !text });
+      }
+    }
+  }
   return text;
 }
 

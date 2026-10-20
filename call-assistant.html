@@ -637,21 +637,21 @@ body[data-past="open"] #past-calls{display:block}
 <script type="importmap">
 {
   "imports": {
-    "./call/dice.js": "./call/dice.js?v=ca1e4f6adf",
-    "./call/fallback.js": "./call/fallback.js?v=ca1e4f6adf",
-    "./call/history.js": "./call/history.js?v=ca1e4f6adf",
-    "./call/interpret.js": "./call/interpret.js?v=ca1e4f6adf",
-    "./call/listen.js": "./call/listen.js?v=ca1e4f6adf",
-    "./call/match.js": "./call/match.js?v=ca1e4f6adf",
-    "./call/normalize.js": "./call/normalize.js?v=ca1e4f6adf",
-    "./call/phrases.js": "./call/phrases.js?v=ca1e4f6adf",
-    "./call/register.js": "./call/register.js?v=ca1e4f6adf",
-    "./call/rehearse.js": "./call/rehearse.js?v=ca1e4f6adf",
-    "./call/restaurants.js": "./call/restaurants.js?v=ca1e4f6adf",
-    "./call/sessions.js": "./call/sessions.js?v=ca1e4f6adf",
-    "./call/speak.js": "./call/speak.js?v=ca1e4f6adf",
-    "./call/staff-sim.js": "./call/staff-sim.js?v=ca1e4f6adf",
-    "./call/ui.js": "./call/ui.js?v=ca1e4f6adf"
+    "./call/dice.js": "./call/dice.js?v=9723b886c9",
+    "./call/fallback.js": "./call/fallback.js?v=9723b886c9",
+    "./call/history.js": "./call/history.js?v=9723b886c9",
+    "./call/interpret.js": "./call/interpret.js?v=9723b886c9",
+    "./call/listen.js": "./call/listen.js?v=9723b886c9",
+    "./call/match.js": "./call/match.js?v=9723b886c9",
+    "./call/normalize.js": "./call/normalize.js?v=9723b886c9",
+    "./call/phrases.js": "./call/phrases.js?v=9723b886c9",
+    "./call/register.js": "./call/register.js?v=9723b886c9",
+    "./call/rehearse.js": "./call/rehearse.js?v=9723b886c9",
+    "./call/restaurants.js": "./call/restaurants.js?v=9723b886c9",
+    "./call/sessions.js": "./call/sessions.js?v=9723b886c9",
+    "./call/speak.js": "./call/speak.js?v=9723b886c9",
+    "./call/staff-sim.js": "./call/staff-sim.js?v=9723b886c9",
+    "./call/ui.js": "./call/ui.js?v=9723b886c9"
   }
 }
 </script>
@@ -669,7 +669,7 @@ body[data-past="open"] #past-calls{display:block}
   import { PANIC, STAFF } from './call/phrases.js';
   import { initVoices, setSpeechGate, speak } from './call/speak.js';
   import { createListener, isSecureForMic } from './call/listen.js';
-  import { composeEnglish, translateJapanese, hasKey, setKey, callClaude, checkApi } from './call/fallback.js';
+  import { composeEnglish, translateJapanese, hasKey, setKey, callClaude, streamClaude, checkApi } from './call/fallback.js';
 
   const radarRoot = document.getElementById('radar');
   const toggle = document.getElementById('mic-toggle');
@@ -828,12 +828,19 @@ body[data-past="open"] #past-calls{display:block}
   // With the call connected the recogniser hears only the staff, so the words
   // are shown the instant they exist and translated as the sentence grows.
   // The finished sentence is then read again, authoritatively.
-  const EARLY_STABLE_MS = 350;   // words unchanged this long: a natural beat
-  const EARLY_GROWTH = 8;        // or this many new characters since the last read
+  // Every new word is translated at once (was: every 8 characters, and the
+  // sentence's last few words waited out a 350 ms pause first). Requests are
+  // cheap and the account allows 5,000 a minute; the wait was not.
+  const EARLY_STABLE_MS = 350;   // words unchanged this long: a natural beat - suggest a card
+  // This long and it is usually the end of the sentence: start the authoritative
+  // card now (was 700 ms; mid-sentence pauses only cost an unused request). Chrome commits the sentence only 1.7-4.6 s later, and when it does,
+  // the answer already in flight is reused (call/interpret.js) instead of asked again.
+  const SETTLED_MS = 450;
   let early = null;              // the sentence in progress
   let earlySeq = 0;              // readings requested, in order
   let englishShown = 0;          // newest reading whose English is on screen
   let cardShown = 0;             // newest reading whose card is highlighted
+  let cardFinal = false;         // ...and whether that card came from the final verdict
   // Show any answer NEWER than what is on screen - not only the newest request.
   // A reading is requested every half second while they talk and each takes
   // about a second to answer, so "newest only" cancelled every one of them
@@ -847,24 +854,28 @@ body[data-past="open"] #past-calls{display:block}
     if (!text || (!staffOnly() && isOwnLine(text))) return;
     // The words themselves, immediately - before any translation exists.
     if (!early?.english) renderBand(radarRoot, { label: 'Hearing', text, tone: 'miss', jp: true });
-    early ??= { read: '', english: '', timer: null, row: null };
+    early ??= { read: '', english: '', timer: null, settle: null, row: null };
     if (early.row) history.update(early.row, { ja: text });
     else early.row = history.add('staff', text, '', { live: true });
     clearTimeout(early.timer);
-    if (text.length - early.read.length >= EARLY_GROWTH) readEarly(text, false);
-    // A pause mid-sentence: read it again, and only now suggest a card - a card
-    // that jumped around while they were still talking would mislead.
-    early.timer = setTimeout(() => readEarly(text, true), EARLY_STABLE_MS);
+    clearTimeout(early.settle);
+    readEarly(text, { card: false });
+    // A pause mid-sentence: only now suggest a card - a card that jumped around
+    // while they were still talking would mislead.
+    early.timer = setTimeout(() => readEarly(text, { card: true }), EARLY_STABLE_MS);
+    early.settle = setTimeout(() => readEarly(text, { card: true, final: true }), SETTLED_MS);
   }
 
-  function readEarly(text, withCard) {
-    if (!early || (text === early.read && !withCard)) return;
+  function readEarly(text, { card, final = false }) {
+    if (!early) return;
+    const fresh = text !== early.read;           // English only for words not yet sent
+    if (!fresh && !card) return;
     early.read = text;
-    if (withCard) addReading(early.row, text);   // a pause: read what has been said so far
+    if (card && !final) addReading(early.row, text);   // a pause: read what has been said so far
     const seq = ++earlySeq;
     const context = recent.slice(-80).map(({ who, ja }) => ({ who, ja }));
     interpret(text, {
-      recent: context, early: true, verdict: withCard, staffOnly: staffOnly(),
+      recent: context, early: true, verdict: card, final, translate: fresh, staffOnly: staffOnly(), prefetch: !card,
       onEnglish: (reading, { done } = {}) => {
         if (!early || seq < englishShown || reading.self || !reading.english) return;
         // A newer reading takes over only once it says at least as much as the
@@ -876,10 +887,12 @@ body[data-past="open"] #past-calls{display:block}
         history.update(early.row, { en: reading.english });
         renderBand(radarRoot, { label: 'Saying', text: reading.english });
       },
-      onVerdict: reading => {
+      onVerdict: (reading, { final: authoritative } = {}) => {
         if (!early || seq < cardShown || reading.self) return;
+        if (seq === cardShown && cardFinal && !authoritative) return;   // Opus 5.5 outranks Opus 5
         if (!reading.replyId && !reading.custom) return;
         cardShown = seq;
+        cardFinal = Boolean(authoritative);
         markSuggested(reading.replyId, reading.custom);
       },
       // The finished sentence is read again anyway - unless nothing can work.
@@ -889,8 +902,10 @@ body[data-past="open"] #past-calls{display:block}
 
   function endEarly() {
     clearTimeout(early?.timer);
+    clearTimeout(early?.settle);
     earlySeq += 1;               // any early reading still in flight is now stale
     englishShown = cardShown = earlySeq;
+    cardFinal = false;
     early = null;
   }
 
@@ -1194,7 +1209,7 @@ body[data-past="open"] #past-calls{display:block}
     setStage(0);
 
     rehearsal = createRehearsal({
-      sim: createStaffSim({ callClaude, scenario: scenarioSelect.value }),
+      sim: createStaffSim({ callClaude, streamClaude, scenario: scenarioSelect.value }),
       onStaff: showStaffOnRadar,
       onYou: ({ text, final }) => {
         if (final) {

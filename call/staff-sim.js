@@ -22,12 +22,25 @@ HOW TO SPEAK:
 - His lines reach you through speech recognition and may be garbled or mis-transcribed. React as real staff would to an unclear foreign caller: politely ask him to repeat, or confirm what you think he said.
 - End the call naturally once the booking is confirmed or clearly cannot be made, finishing with 失礼いたします.
 
-REPLY FORMAT — only a JSON object, no prose, no code fence:
-{"ja":"what you say, in natural Japanese","kana":"the same line in hiragana/katakana only — no kanji, no digits","romaji":"the same line in Hepburn romaji with macrons","en":"faithful English translation","slow":false,"end":false}
-Set "end" to true only on your final line of the call.`;
+REPLY FORMAT — exactly these lines, in this order, nothing else:
+PACE: normal  (or slow, once he has asked you to speak slowly)
+KANA: what you say, in hiragana/katakana only — no kanji, no digits; end each sentence with 。 or ？
+JA: the same line in natural written Japanese
+ROMAJI: the same line in Hepburn romaji with macrons
+EN: faithful English translation
+END: no  (yes only on your final line of the call)`;
 }
 
 export const STAFF_SYSTEM = staffSystemFor(RESTAURANT);
+
+// Opus 5 with thinking off, streamed, kana first - so the staff start speaking
+// while the rest of the reply is still being written. Measured 2026-10-20 from
+// his reply to the first spoken word: Opus 5.5 (low effort, one JSON block,
+// spoken only once complete) 5.6-8.2 s; Opus 5 streamed 1.9-2.5 s with the same
+// natural keigo. Sonnet 5 (1.1-1.3 s) said 「4人様、でよろしいでしょうか」 and
+// Haiku skipped asking whether 6:30 was acceptable - the rehearsal must teach
+// the real call, so neither plays the staff.
+export const STAFF_LANE = { model: 'claude-opus-5', max_tokens: 800, thinking: { type: 'disabled' } };
 
 // Optional rehearsal scenarios. A brief is appended to the staff prompt and
 // replaces the staff's own choice of complication, so a specific situation can
@@ -60,7 +73,36 @@ export const OPENING_TURN = openingTurnFor(RESTAURANT);
 // framed as a stage direction, and the greeting is seeded as the assistant's turn.
 const PICK_UP = '（電話が鳴り、受話器を取る）';
 
+// One line of the reply format, e.g. "KANA: ...". Tolerant of a stray space or a
+// full-width colon; returns '' while that line has not arrived yet.
+function field(text, name) {
+  return text.match(new RegExp(`^\\s*${name}\\s*[:：]\\s*(.*)$`, 'mi'))?.[1]?.trim() ?? '';
+}
+
+export function toLines(turn) {
+  return [`PACE: ${turn.slow ? 'slow' : 'normal'}`, `KANA: ${turn.kana ?? ''}`, `JA: ${turn.ja}`,
+          `ROMAJI: ${turn.romaji ?? ''}`, `EN: ${turn.en ?? ''}`, `END: ${turn.end ? 'yes' : 'no'}`].join('\n');
+}
+
+// What can already be spoken from a reply still streaming in: the sentences of
+// the KANA line that have their closing 。/？, plus the rest once the line ends.
+export function speakableSoFar(text) {
+  const line = text.match(/^\s*KANA\s*[:：]\s*([^\n]*)(\n?)/mi);
+  if (!line) return { sentences: [], complete: false, slow: /^\s*PACE\s*[:：]\s*slow/mi.test(text) };
+  const complete = line[2] === '\n';
+  const parts = line[1].split(/(?<=[。！？!?])/).map(p => p.trim()).filter(Boolean);
+  const sentences = complete || /[。！？!?]$/.test(line[1].trim()) ? parts : parts.slice(0, -1);
+  return { sentences, complete, slow: /^\s*PACE\s*[:：]\s*slow/mi.test(text),
+           ja: /^\s*JA\s*[:：][^\n]*\n/mi.test(text) ? field(text, 'JA') : '' };
+}
+
 export function parseStaffTurn(text) {
+  if (!/^\s*(\{|```)/.test(text)) {
+    const ja = field(text, 'JA');
+    if (!ja) throw new Error('Staff reply had no Japanese line');
+    return { ja, kana: field(text, 'KANA'), romaji: field(text, 'ROMAJI'), en: field(text, 'EN'),
+             slow: /^slow/i.test(field(text, 'PACE')), end: /^yes/i.test(field(text, 'END')) };
+  }
   const raw = parseJsonReply(text);
   if (!raw?.ja || typeof raw.ja !== 'string') throw new Error('Staff reply had no Japanese line');
   return {
@@ -77,7 +119,7 @@ export function scenariosFor(r) {
   return Object.entries(SCENARIOS).filter(([, s]) => !s.requires || r.features[s.requires]);
 }
 
-export function createStaffSim({ callClaude, scenario = 'random', restaurant = RESTAURANT }) {
+export function createStaffSim({ callClaude, streamClaude, scenario = 'random', restaurant = RESTAURANT }) {
   if (!(scenario in SCENARIOS)) throw new Error(`Unknown scenario: ${scenario}`);
   const { brief, requires } = SCENARIOS[scenario];
   if (requires && !restaurant.features[requires]) {
@@ -92,20 +134,24 @@ export function createStaffSim({ callClaude, scenario = 'random', restaurant = R
     opening() {
       history = [
         { role: 'user', content: PICK_UP },
-        { role: 'assistant', content: JSON.stringify(opening) },
+        { role: 'assistant', content: toLines(opening) },
       ];
       return opening;
     },
 
-    async reply(said) {
+    // onProgress({ sentences, complete, slow, ja }) fires as the reply streams,
+    // so the rehearsal can speak each kana sentence the moment it is whole.
+    async reply(said, { onProgress } = {}) {
       const content = said?.trim();
       if (!content) throw new Error('Nothing to send — no reply was heard');
 
       history.push({ role: 'user', content });
       try {
-        const text = await callClaude({ system, messages: history, maxTokens: 3000 });
+        const text = streamClaude
+          ? await streamClaude({ ...STAFF_LANE, system, messages: history }, partial => onProgress?.(speakableSoFar(partial)))
+          : await callClaude({ system, messages: history, maxTokens: 3000 });
         const turn = parseStaffTurn(text);
-        history.push({ role: 'assistant', content: JSON.stringify(turn) });
+        history.push({ role: 'assistant', content: toLines(turn) });
         return turn;
       } catch (error) {
         // Roll back so the roles still alternate and the same reply can be retried.

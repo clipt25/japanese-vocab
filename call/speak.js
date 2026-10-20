@@ -71,3 +71,60 @@ export function speak(phrase, { rate = REHEARSAL_RATE, onEnd } = {}) {
   }, 0);
   return true;
 }
+
+// Speech that starts before the whole line exists: sentences are added as they
+// stream in and spoken in order, back to back. The gate closes once, on the
+// first sentence, and opens once, after the last; onEnd fires once, after
+// close() and the final sentence - or when a generous estimate for everything
+// queued runs out, since Chrome can drop end events.
+export function speakSequence({ rate = REHEARSAL_RATE, onEnd } = {}) {
+  const synth = 'speechSynthesis' in window ? window.speechSynthesis : null;
+  let pending = 0;
+  let closed = false;
+  let finished = false;
+  let started = false;
+  let ready = false;              // Chrome drops an utterance queued in the same tick as cancel()
+  const waiting = [];
+  let deadline = Date.now();
+  let watchdog = null;
+
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    clearTimeout(watchdog);
+    if (started) gate.after();
+    onEnd?.();
+  };
+  const settle = () => { if (closed && pending === 0) finish(); };
+  const say = utterance => synth.speak(utterance);
+
+  synth?.cancel();
+  setTimeout(() => { ready = true; waiting.splice(0).forEach(say); }, 0);
+
+  return {
+    add(text) {
+      if (finished || !synth || !text?.trim()) return;
+      pending += 1;
+      let done = false;
+      const one = () => { if (done) return; done = true; pending -= 1; settle(); };
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ja-JP';
+      utterance.rate = rate;
+      if (japaneseVoice) utterance.voice = japaneseVoice;
+      utterance.onstart = () => { if (!started) { started = true; gate.before(); } };
+      utterance.onend = one;
+      utterance.onerror = one;
+      deadline = Math.max(deadline, Date.now()) + (text.length * 140) / rate + 1500;
+      if (ready) say(utterance); else waiting.push(utterance);
+    },
+    // The watchdog starts only once the line is complete: while it is still
+    // streaming in, a quiet gap is the model writing, not a lost end event.
+    close() {
+      closed = true;
+      settle();
+      if (!finished) watchdog = setTimeout(finish, Math.max(0, deadline - Date.now()) + 1000);
+    },
+    cancel() { closed = true; synth?.cancel(); finish(); },
+    get started() { return started || pending > 0; },
+  };
+}

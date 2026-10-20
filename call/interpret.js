@@ -1,6 +1,6 @@
 import { RESTAURANT } from './restaurants.js';
 import { PLAIN_POLITE_RULE } from './register.js';
-import { getKey, apiError } from './fallback.js';
+import { streamClaude } from './fallback.js';
 import { SELF, STAFF, byId } from './phrases.js';
 import { scorePhrase } from './match.js';
 
@@ -21,6 +21,12 @@ import { scorePhrase } from './match.js';
 // steered him to wrong cards in the first round. Fast mode would help, but the
 // account's fast-mode limit is 0 tokens/minute.
 export const ENGLISH_LANE = { model: 'claude-sonnet-5', max_tokens: 300, thinking: { type: 'disabled' } };
+// Raced against Sonnet on the call: Haiku's first words land ~280 ms sooner
+// (870 vs 1150 ms under real parallel load, 2026-10-20) and its English was
+// right on all 17 test lines; Sonnet's replaces it once complete, because
+// Sonnet is the one that reliably puts fees and changed times in CAPITALS.
+// Haiku never decides anything - cards stay with Opus.
+export const FAST_ENGLISH_LANE = { model: 'claude-haiku-4-5', max_tokens: 300 };
 export const QUICK_LANE = { model: 'claude-opus-5', max_tokens: 250, thinking: { type: 'disabled' } };
 export const FINAL_LANE = { model: 'claude-opus-5-5', max_tokens: 2000, output_config: { effort: 'low' } };
 
@@ -61,7 +67,8 @@ export function plausibleReading(japanese, { kana, romaji }) {
 
 const NO_READING = Object.freeze({ kana: '', romaji: '' });
 export async function readJapanese(japanese) {
-  const reading = parseReading(await streamLane(READING_LANE, READING_SYSTEM, japanese));
+  const reading = parseReading(await remembered(JSON.stringify(['reading', japanese]),
+    () => streamLane(READING_LANE, READING_SYSTEM, japanese)));
   return plausibleReading(japanese, reading) ? reading : NO_READING;
 }
 
@@ -151,68 +158,63 @@ function parseSay(raw) {
   return { id: 'custom', who: 'self', kanji, kana, romaji, en };
 }
 
-// One retry for the failures a Jakarta-to-US line actually produces: a dropped
-// connection, an overloaded or rate-limited API. A silent line on the call is
-// worse than one that arrives 300ms late.
-const RETRY_STATUS = new Set([429, 500, 502, 503, 504, 529]);
-
-async function streamLane(lane, system, content, onText) {
-  try {
-    return await streamOnce(lane, system, content, onText);
-  } catch (error) {
-    if (!error.retryable) throw error;
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return streamOnce(lane, system, content, onText);
-  }
+// The same question asked twice gets the same answer in flight. The card is
+// first asked at a pause in the staff's speech; when Chrome commits that same
+// sentence 1.7-4.6 s later, the answer already running is reused instead of
+// starting over - that is what lets the authoritative card skip the wait.
+const inFlight = new Map();
+const IN_FLIGHT_LIMIT = 80;
+function remembered(key, run) {
+  if (inFlight.has(key)) return inFlight.get(key);
+  const promise = run();
+  inFlight.set(key, promise);
+  promise.catch(() => inFlight.delete(key));          // a failure is never reused
+  if (inFlight.size > IN_FLIGHT_LIMIT) inFlight.delete(inFlight.keys().next().value);
+  return promise;
 }
 
-async function streamOnce(lane, system, content, onText) {
-  let response;
-  try {
-    response = await fetch(ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': getKey(),
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({ ...lane, stream: true, system, messages: [{ role: 'user', content }] }),
-    });
-  } catch (error) {
-    throw Object.assign(new Error(`network: ${error.message}`), { retryable: true });
-  }
-  if (!response.ok) {
-    const error = await apiError(response);
-    throw Object.assign(error, { retryable: !error.fatal && RETRY_STATUS.has(response.status) });
-  }
+function streamLane(lane, system, content, onText) {
+  return streamClaude({ ...lane, system, messages: [{ role: 'user', content }] }, onText);
+}
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  let text = '';
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    let end;
-    while ((end = buffer.indexOf('\n\n')) >= 0) {
-      const data = buffer.slice(0, end).split('\n').find(l => l.startsWith('data: '));
-      buffer = buffer.slice(end + 2);
-      if (!data) continue;
-      const event = JSON.parse(data.slice(6));
-      // Thinking blocks (Opus 5.5 always thinks) stream as their own deltas.
-      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-        text += event.delta.text;
-        onText?.(text);
-      } else if (event.type === 'error') {
-        // overloaded_error mid-stream is worth one more try; others are not.
-        throw Object.assign(new Error(event.error?.message ?? 'Stream error'),
-                            { retryable: event.error?.type === 'overloaded_error' && !text });
-      }
-    }
-  }
-  return text;
+// Card lanes carry the whole call, so the system prompt and the call so far
+// are marked for caching: they repeat on every request and only the newest
+// transcript changes. Measured: 2,527 of 2,572 tokens read from cache. It
+// costs nothing in speed and cuts the input bill for these lanes ~10x.
+function verdictLane(lane, system, transcript, recent) {
+  const content = recent.length
+    ? [{ type: 'text', text: `Call so far:\n${recent.map(r => `${r.who === 'you' ? 'Geoffrey' : 'Staff'}: ${r.ja}`).join('\n')}\n\n`,
+         cache_control: { type: 'ephemeral' } },
+       { type: 'text', text: `Transcript to judge:\n${transcript}` }]
+    : `Transcript to judge:\n${transcript}`;
+  const cachedSystem = [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }];
+  return remembered(JSON.stringify([lane.model, system, content]),
+    () => streamLane(lane, cachedSystem, content));
+}
+
+// Haiku and Sonnet translate the same words at once. Haiku's text shows first;
+// Sonnet's takes over as soon as it says at least as much, or finishes - so the
+// line never shrinks mid-read. Only Sonnet's finish counts as done, unless
+// Sonnet failed, in which case Haiku's does.
+function raceEnglish(system, transcript, onEnglish, onError) {
+  const lanes = { fast: { text: '', done: false, failed: false }, best: { text: '', done: false, failed: false } };
+  const emit = () => {
+    const { fast, best } = lanes;
+    const useBest = best.done || (!best.failed && best.text.length >= fast.text.length);
+    const pick = useBest ? best : fast;
+    if (!pick.text && !pick.done) return;
+    onEnglish(parseInterpretation(pick.text), { done: useBest ? best.done : (fast.done && best.failed) });
+  };
+  const run = (name, lane) => streamLane(lane, system, transcript, text => { lanes[name].text = text; emit(); })
+    .then(text => { lanes[name].text = text; lanes[name].done = true; emit(); })
+    .catch(error => {
+      lanes[name].failed = true;
+      const other = lanes[name === 'fast' ? 'best' : 'fast'];
+      if (other.failed) onError(error);
+      else if (name === 'best' && lanes.fast.done) emit();
+    });
+  run('fast', FAST_ENGLISH_LANE);
+  run('best', ENGLISH_LANE);
 }
 
 // Fires all three lanes. Callbacks arrive in any order; onVerdict says whether
@@ -241,18 +243,32 @@ The staff is still talking: this transcript usually stops mid-sentence. Translat
 export const EARLY_ENGLISH_SYSTEM = `${ENGLISH_SYSTEM}\n${EARLY_NOTE}`;
 const EARLY_ENGLISH_CALL_SYSTEM = `${ENGLISH_CALL_SYSTEM}\n${EARLY_NOTE}`;
 
-export function interpret(transcript, { recent = [], onEnglish, onVerdict, onError, early = false, verdict = true, translate = true, staffOnly = false }) {
+// final: also run the authoritative Opus 5.5 verdict on an early (still being
+// spoken) transcript - used at a longer pause, so its answer is already in
+// flight when Chrome commits the sentence.
+// prefetch: start the quick card for these words without reporting it. The
+// card is shown only at a pause; by then the request for exactly those words
+// has been running since they arrived, and the pause reuses it (measured: the
+// card waited ~2.25 s after the last word when it was only asked at the pause).
+export function interpret(transcript, { recent = [], onEnglish, onVerdict, onError, early = false, verdict = true, translate = true, staffOnly = false, final: speculate = false, prefetch = false }) {
   // translate: false when the staff already spoke English - only the card is needed.
   const englishSystem = staffOnly ? (early ? EARLY_ENGLISH_CALL_SYSTEM : ENGLISH_CALL_SYSTEM)
     : (early ? EARLY_ENGLISH_SYSTEM : ENGLISH_SYSTEM);
-  if (translate) streamLane(ENGLISH_LANE, englishSystem, transcript,
-    text => onEnglish?.(parseInterpretation(text), { done: false }))
-    .then(text => onEnglish?.(parseInterpretation(text), { done: true }))
-    .catch(error => onError?.('english', error));
-  const content = buildVerdictMessage(transcript, recent);
-  const lanes = !early ? [[QUICK_LANE, false], [FINAL_LANE, true]] : verdict ? [[QUICK_LANE, false]] : [];
+  if (translate) {
+    // Racing needs no SELF judgement, so only with the call connected: on
+    // speakerphone Haiku took all three of his own echoed lines for staff.
+    if (staffOnly) raceEnglish(englishSystem, transcript, (r, meta) => onEnglish?.(r, meta), e => onError?.('english', e));
+    else streamLane(ENGLISH_LANE, englishSystem, transcript,
+      text => onEnglish?.(parseInterpretation(text), { done: false }))
+      .then(text => onEnglish?.(parseInterpretation(text), { done: true }))
+      .catch(error => onError?.('english', error));
+  }
+  if (prefetch && !verdict) {
+    verdictLane(QUICK_LANE, staffOnly ? VERDICT_CALL_SYSTEM : VERDICT_SYSTEM, transcript.trim(), recent).catch(() => {});
+  }
+  const lanes = !early || speculate ? [[QUICK_LANE, false], [FINAL_LANE, true]] : verdict ? [[QUICK_LANE, false]] : [];
   for (const [lane, final] of lanes) {
-    streamLane(lane, staffOnly ? VERDICT_CALL_SYSTEM : VERDICT_SYSTEM, content)
+    verdictLane(lane, staffOnly ? VERDICT_CALL_SYSTEM : VERDICT_SYSTEM, transcript.trim(), recent)
       .then(text => onVerdict?.(parseInterpretation(text), { final }))
       .catch(error => onError?.(final ? 'final' : 'quick', error));
   }
