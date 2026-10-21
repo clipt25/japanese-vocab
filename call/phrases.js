@@ -12,7 +12,7 @@
 import { RESTAURANT, cap } from './restaurants.js';
 
 function staffPhrases(r) {
-  const d = r.date, t = r.time, p = r.party, n = r.name, f = r.features;
+  const d = r.date, t = r.time, p = r.party, n = r.name, f = r.features, b = r.budget;
   return [
   { id: 'staff-greeting', who: 'staff',
     kanji: `はい、${n.short}でございます。`, kana: `はい、${n.shortKana}でございます`,
@@ -124,21 +124,35 @@ function staffPhrases(r) {
   { id: 'staff-course', who: 'staff', when: f.course,
     kanji: 'コースはお決まりでしょうか。', kana: 'こーすはおきまりでしょうか',
     romaji: 'Kōsu wa o-kimari deshō ka.', en: 'Have you decided on a course?',
-    replies: ['self-course-later', 'self-course-recommend'] },
+    replies: ['self-course-later', r.fallbackCourse ? 'self-course-pick' : 'self-course-recommend'] },
+
+  { id: 'staff-pot-choice', who: 'staff', when: Boolean(r.pots),
+    kanji: 'すき焼きとしゃぶしゃぶ、どちらになさいますか。', kana: 'すきやきとしゃぶしゃぶ、どちらになさいますか',
+    romaji: 'Sukiyaki to shabu-shabu, dochira ni nasaimasu ka.', en: 'Sukiyaki or shabu-shabu?',
+    replies: ['self-pot-later', 'self-sukiyaki', 'self-shabu'] },
+
+  { id: 'staff-seat-type', who: 'staff', when: Boolean(r.seatRequest),
+    kanji: 'お席はテーブル席と掘りごたつ席がございますが、どちらがよろしいでしょうか。',
+    kana: 'おせきはてーぶるせきとほりごたつせきがございますが、どちらがよろしいでしょうか',
+    romaji: 'O-seki wa tēburu-seki to horigotatsu-seki ga gozaimasu ga, dochira ga yoroshii deshō ka.',
+    en: 'We have table seats and sunken-floor seats — which would you prefer?',
+    replies: ['self-seat-request'] },
 
   { id: 'staff-course-in-advance', who: 'staff', when: f.course,
     kanji: 'お料理は事前にお決めいただいております。', kana: 'おりょうりはじぜんにおきめいただいております',
     romaji: 'O-ryōri wa jizen ni o-kime itadaite orimasu.',
     en: 'We ask that the course be chosen in advance.',
-    replies: ['self-hold-booking', 'self-budget', 'self-think-callback'],
-    note: 'The refusal of your "decide on the day" plan. First ask them to hold the table; if they refuse, give a budget — or say you will think and call back.' },
+    replies: b ? ['self-hold-booking', 'self-budget', 'self-think-callback']
+      : ['self-course-pick', 'self-hold-booking', 'self-think-callback'],
+    note: b ? 'The refusal of your "decide on the day" plan. First ask them to hold the table; if they refuse, give a budget — or say you will think and call back.'
+      : `The refusal of your "decide on the day" plan. Fine — choose the ${r.fallbackCourse?.en ?? 'course'} (${r.fallbackCourse?.detail ?? 'see the menu'}).` },
 
   { id: 'staff-cannot-hold', who: 'staff', when: f.course,
     kanji: 'コースがお決まりでないと、お席のご用意ができかねます。',
     kana: 'こーすがおきまりでないと、おせきのごよういができかねます',
     romaji: 'Kōsu ga o-kimari de nai to, o-seki no go-yōi ga dekikanemasu.',
     en: 'Without a course chosen, we cannot hold the table.',
-    replies: ['self-think-callback', 'self-budget'] },
+    replies: b ? ['self-think-callback', 'self-budget'] : ['self-course-pick', 'self-think-callback'] },
 
   { id: 'staff-hold-ok', who: 'staff', when: f.course,
     kanji: 'かしこまりました。では、お席だけお取りしておきます。',
@@ -157,7 +171,7 @@ function staffPhrases(r) {
   { id: 'staff-budget', who: 'staff', when: f.course,
     kanji: 'ご予算はおいくらぐらいをお考えでしょうか。', kana: 'ごよさんはおいくらぐらいをおかんがえでしょうか',
     romaji: 'Go-yosan wa oikura gurai o o-kangae deshō ka.',
-    en: 'What budget did you have in mind?', replies: ['self-budget'] },
+    en: 'What budget did you have in mind?', replies: [b ? 'self-budget' : 'self-course-pick'] },
 
   { id: 'staff-service-charge', who: 'staff', when: f.serviceCharge, decoy: true,
     kanji: 'サービス料を別途10パーセント頂戴しております。',
@@ -171,7 +185,8 @@ function staffPhrases(r) {
     romaji: 'Tōjitsu no kyanseru wa kōsu ryōkin o zengaku chōdai shite orimasu.',
     en: 'Same-day cancellation is charged at the FULL course price.',
     replies: ['self-understood', 'self-cancel-ask'],
-    note: '~¥88,000 for four. This is real money — make sure you heard it right.' },
+    note: b ? '~¥88,000 for four. This is real money — make sure you heard it right.'
+      : 'This is real money — make sure you heard it right, and ask from when it applies.' },
 
   { id: 'staff-card-number', who: 'staff', decoy: true,
     kanji: 'クレジットカードの番号をお伺いしてもよろしいでしょうか。',
@@ -323,10 +338,10 @@ function selfPhrases(r) {
   const d = r.date, t = r.time, p = r.party, f = r.features, b = r.budget;
   return [
   { id: 'self-open', who: 'self', stage: 'open',
-    kanji: 'すみません、予約をお願いします。日本語があまり得意ではないので、ゆっくり話してください。',
-    kana: 'すみません、よやくをおねがいします。にほんごがあまりとくいではないので、ゆっくりはなしてください',
-    romaji: 'Sumimasen, yoyaku o onegai shimasu. Nihongo ga amari tokui de wa nai node, yukkuri hanashite kudasai.',
-    en: "Excuse me, I'd like to make a reservation. My Japanese isn't very good, so please speak slowly.",
+    kanji: 'すみません、予約をお願いします。日本語が下手なので、ゆっくり、簡単な日本語で話してください。',
+    kana: 'すみません、よやくをおねがいします。にほんごがへたなので、ゆっくり、かんたんなにほんごではなしてください',
+    romaji: 'Sumimasen, yoyaku o onegai shimasu. Nihongo ga heta na node, yukkuri, kantan na nihongo de hanashite kudasai.',
+    en: "Excuse me, I'd like to make a reservation. My Japanese is poor, so please speak slowly, in simple Japanese.",
     note: 'Say it all in ONE breath. Split in two, the staff answer the booking at full speed before you reach the second half. Booking first, so the first word they hear is 予約. NOT もしもし as the opener.' },
 
   { id: 'self-new-booking', who: 'self', stage: 'open',
@@ -336,11 +351,11 @@ function selfPhrases(r) {
     en: "No — I'd like to make a new reservation." },
 
   { id: 'self-level', who: 'self', stage: 'open',
-    kanji: 'すみません、日本語があまり得意ではありません。ゆっくり話してください。',
-    kana: 'すみません、にほんごがあまりとくいではありません。ゆっくりはなしてください',
-    romaji: 'Sumimasen, nihongo ga amari tokui de wa arimasen. Yukkuri hanashite kudasai.',
-    en: "Sorry, my Japanese isn't very good. Please speak slowly.",
-    note: '得意, NOT 上手 — 上手 praises other people, never yourself. Say this early.' },
+    kanji: 'すみません、日本語が下手です。ゆっくり、簡単な日本語で話してください。',
+    kana: 'すみません、にほんごがへたです。ゆっくり、かんたんなにほんごではなしてください',
+    romaji: 'Sumimasen, nihongo ga heta desu. Yukkuri, kantan na nihongo de hanashite kudasai.',
+    en: 'Sorry, my Japanese is poor. Please speak slowly, in simple Japanese.',
+    note: '下手 (heta) is the easy word for "not good at", fine to say about yourself. Asking for 簡単な日本語 gets most staff to switch to plain words. Say this early.' },
 
   { id: 'self-datetime', who: 'self', stage: 'when',
     kanji: `${d.ja}の${t.periodJa}${t.ja}にお願いします。`,
@@ -363,8 +378,8 @@ function selfPhrases(r) {
     note: `${p.selfJa} from you; ${p.staffJa}様 is what THEY say about you.` },
 
   { id: 'self-adults-only', who: 'self', stage: 'party',
-    kanji: '全員大人です。子供はいません。', kana: 'ぜんいんおとなです。こどもはいません',
-    romaji: "Zen'in otona desu. Kodomo wa imasen.", en: 'All adults, no children.' },
+    kanji: 'みんな大人です。子供はいません。', kana: 'みんなおとなです。こどもはいません',
+    romaji: 'Minna otona desu. Kodomo wa imasen.', en: 'All adults, no children.' },
 
   { id: 'self-name', who: 'self', stage: 'name',
     kanji: '名前はジェフリーです。', kana: 'なまえはじぇふりーです',
@@ -380,10 +395,10 @@ function selfPhrases(r) {
     romaji: 'Jefurī Jēmuzu desu.', en: 'Geoffrey James.' },
 
   { id: 'self-phone-intro', who: 'self', stage: 'phone',
-    kanji: '電話番号は海外の番号です。インドネシアです。',
-    kana: 'でんわばんごうはかいがいのばんごうです。いんどねしあです',
-    romaji: 'Denwa bangō wa kaigai no bangō desu. Indoneshia desu.',
-    en: 'My phone number is an overseas one — Indonesia.',
+    kanji: '電話番号は外国の番号です。インドネシアです。',
+    kana: 'でんわばんごうはがいこくのばんごうです。いんどねしあです',
+    romaji: 'Denwa bangō wa gaikoku no bangō desu. Indoneshia desu.',
+    en: 'My phone number is a foreign one — Indonesia.',
     note: 'Say this BEFORE the digits so they know a long number is coming.' },
 
   { id: 'self-phone-digits', who: 'self', stage: 'phone',
@@ -412,6 +427,13 @@ function selfPhrases(r) {
     en: 'geoffrejames@gmail.com',
     note: 'g-e-o-f-f-r-e-j-a-m-e-s @ gmail.com — slowly, one letter at a time.' },
 
+  { id: 'self-seat-request', who: 'self', stage: 'seat', when: Boolean(r.seatRequest),
+    kanji: `${r.seatRequest?.ja}でお願いします。`,
+    kana: `${r.seatRequest?.kana}でおねがいします`,
+    romaji: `${cap(r.seatRequest?.romaji ?? '')} de onegai shimasu.`,
+    en: `${cap(r.seatRequest?.en ?? '')}, please.`,
+    note: r.seatRequest?.note },
+
   { id: 'self-zashiki-yes', who: 'self', when: f.seating, stage: 'seat',
     kanji: 'お座敷でお願いします。', kana: 'おざしきでおねがいします',
     romaji: 'O-zashiki de onegai shimasu.', en: 'A tatami room, please.',
@@ -427,9 +449,9 @@ function selfPhrases(r) {
     romaji: 'Tēburu-seki de onegai shimasu.', en: 'Table seating, please.' },
 
   { id: 'self-course-later', who: 'self', when: f.course, stage: 'course',
-    kanji: 'コースは当日決めてもいいですか。',
-    kana: 'こーすはとうじつきめてもいいですか',
-    romaji: 'Kōsu wa tōjitsu kimete mo ii desu ka.',
+    kanji: 'コースは、その日に決めてもいいですか。',
+    kana: 'こーすは、そのひにきめてもいいですか',
+    romaji: 'Kōsu wa, sono hi ni kimete mo ii desu ka.',
     en: 'May we decide the course on the day?' },
 
   { id: 'self-course-recommend', who: 'self', when: f.course, stage: 'course',
@@ -438,11 +460,32 @@ function selfPhrases(r) {
     romaji: 'Dewa, osusume no kōsu de onegai shimasu.',
     en: 'Then your recommended course, please.' },
 
-  { id: 'self-budget', who: 'self', stage: 'course', when: f.course,
-    kanji: `予算は一人${b?.ja}くらいです。`,
-    kana: `よさんはひとり${b?.kana}くらいです`,
-    romaji: `Yosan wa hitori ${b?.romaji} kurai desu.`,
-    en: `About ${b?.en} per person.`,
+  { id: 'self-course-pick', who: 'self', stage: 'course', when: Boolean(r.fallbackCourse),
+    kanji: `では、${r.fallbackCourse?.ja}でお願いします。`,
+    kana: `では、${r.fallbackCourse?.kana}でおねがいします`,
+    romaji: `Dewa, ${r.fallbackCourse?.romaji} de onegai shimasu.`,
+    en: `Then the ${r.fallbackCourse?.en}, please.`,
+    note: `Only if they need the course now. ${r.fallbackCourse?.detail}.` },
+
+  { id: 'self-pot-later', who: 'self', stage: 'course', when: Boolean(r.pots),
+    kanji: 'すき焼きかしゃぶしゃぶかは、その日に決めてもいいですか。',
+    kana: 'すきやきかしゃぶしゃぶかは、そのひにきめてもいいですか',
+    romaji: 'Sukiyaki ka shabu-shabu ka wa, sono hi ni kimete mo ii desu ka.',
+    en: 'May we choose sukiyaki or shabu-shabu on the day?' },
+
+  { id: 'self-sukiyaki', who: 'self', stage: 'course', when: Boolean(r.pots),
+    kanji: 'すき焼きでお願いします。', kana: 'すきやきでおねがいします',
+    romaji: 'Sukiyaki de onegai shimasu.', en: 'Sukiyaki, please.' },
+
+  { id: 'self-shabu', who: 'self', stage: 'course', when: Boolean(r.pots),
+    kanji: 'しゃぶしゃぶでお願いします。', kana: 'しゃぶしゃぶでおねがいします',
+    romaji: 'Shabu-shabu de onegai shimasu.', en: 'Shabu-shabu, please.' },
+
+  { id: 'self-budget', who: 'self', stage: 'course', when: f.course && Boolean(b),
+    kanji: `一人${b?.ja}くらいでお願いします。`,
+    kana: `ひとり${b?.kana}くらいでおねがいします`,
+    romaji: `Hitori ${b?.romaji} kurai de onegai shimasu.`,
+    en: `About ${b?.en} per person, please.`,
     note: 'Matches their actual course pricing. ~¥88,000 for four with the 10% service charge.' },
 
   { id: 'self-allergy-none', who: 'self', stage: 'course',
@@ -454,7 +497,7 @@ function selfPhrases(r) {
     kana: 'よやくだけさきにおねがいできますか。こーすはあとできめます',
     romaji: 'Yoyaku dake saki ni onegai dekimasu ka. Kōsu wa ato de kimemasu.',
     en: "Can you hold just the reservation? I'll decide the course later.",
-    note: 'Try this BEFORE saying you will call back. Hanging up without a booking on a busy holiday evening can lose you the 19:00 table.' },
+    note: r.holdNote ?? 'Try this BEFORE saying you will call back. Hanging up without a booking on a busy holiday evening can lose you the 19:00 table.' },
 
   { id: 'self-think-callback', who: 'self', when: f.course, stage: 'course',
     kanji: '分かりました。少し考えて、また電話します。',
@@ -484,10 +527,10 @@ function selfPhrases(r) {
     note: 'NOT 承知しました — that is what THEY say to YOU. For fees, time limits, late rules.' },
 
   { id: 'self-confirm', who: 'self', stage: 'close',
-    kanji: `確認します。${d.ja}、${t.fullJa}、${p.selfJa}ですね。`,
-    kana: `かくにんします。${d.kana}、${t.fullKana}、${p.selfKana}ですね`,
-    romaji: `Kakunin shimasu. ${cap(d.romaji)}, ${t.fullRomaji}, ${p.selfRomaji} desu ne.`,
-    en: `Let me check — ${d.enShort}, ${t.enSpoken}, ${p.en} people, right?` },
+    kanji: `もう一度言います。${d.ja}、${t.fullJa}、${p.selfJa}ですね。`,
+    kana: `もういちどいいます。${d.kana}、${t.fullKana}、${p.selfKana}ですね`,
+    romaji: `Mō ichido iimasu. ${cap(d.romaji)}, ${t.fullRomaji}, ${p.selfRomaji} desu ne.`,
+    en: `Let me say it back — ${d.enShort}, ${t.enSpoken}, ${p.en} people, right?` },
 
   { id: 'self-card-ok', who: 'self', stage: 'close', when: f.cashless,
     kanji: 'はい、カードで払います。', kana: 'はい、かーどではらいます',
@@ -518,16 +561,16 @@ function selfPhrases(r) {
     note: 'Do NOT read card digits down a line you cannot hear. Ask them to email instead.' },
 
   { id: 'self-callback-deflect', who: 'self', stage: 'phone',
-    kanji: '海外の番号なので、メールで連絡してください。',
-    kana: 'かいがいのばんごうなので、めーるでれんらくしてください',
-    romaji: 'Kaigai no bangō na node, mēru de renraku shite kudasai.',
-    en: 'My number is overseas — please contact me by email.' },
+    kanji: '外国の番号なので、メールで連絡してください。',
+    kana: 'がいこくのばんごうなので、めーるでれんらくしてください',
+    romaji: 'Gaikoku no bangō na node, mēru de renraku shite kudasai.',
+    en: 'My number is foreign — please contact me by email.' },
 
   { id: 'self-readback-please', who: 'self', stage: 'phone',
-    kanji: '確認のために、もう一度言ってください。',
-    kana: 'かくにんのために、もういちどいってください',
-    romaji: 'Kakunin no tame ni, mō ichido itte kudasai.',
-    en: 'Please read that back to me, to check.',
+    kanji: '書いたものを、もう一度読んでください。',
+    kana: 'かいたものを、もういちどよんでください',
+    romaji: 'Kaita mono o, mō ichido yonde kudasai.',
+    en: 'Please read back what you wrote down.',
     note: 'Use after the email AND the phone number. They will hear ジェフリー and write geoffrey@ — there is no y.' },
 
   { id: 'self-what-time-call', who: 'self', stage: 'trouble',
@@ -538,10 +581,10 @@ function selfPhrases(r) {
     note: 'Tokyo is 2 hours ahead of Jakarta. Write the time down in BOTH.' },
 
   { id: 'self-horigotatsu', who: 'self', when: f.seating, stage: 'seat',
-    kanji: 'お座敷は掘りごたつですか。足を下ろせますか。',
-    kana: 'おざしきはほりごたつですか。あしをおろせますか',
-    romaji: 'O-zashiki wa horigotatsu desu ka. Ashi o orosemasu ka.',
-    en: 'Are the tatami rooms sunken-floor? Can we put our legs down?',
+    kanji: 'お座敷は掘りごたつですか。',
+    kana: 'おざしきはほりごたつですか',
+    romaji: 'O-zashiki wa horigotatsu desu ka.',
+    en: 'Are the tatami rooms sunken-floor (legs down, no kneeling)?',
     note: 'Unverified for Hiyama. Two hours of 正座 for four people is worth one question.' },
 
   { id: 'self-no-occasion', who: 'self', stage: 'course',
@@ -549,17 +592,17 @@ function selfPhrases(r) {
     romaji: 'Iie, futsū no shokuji desu.', en: 'No, just dinner.' },
 
   { id: 'self-email-confirm', who: 'self', stage: 'close',
-    kanji: '確認のメールを送ってください。', kana: 'かくにんのめーるをおくってください',
-    romaji: 'Kakunin no mēru o okutte kudasai.',
-    en: 'Please send me a confirmation email.',
+    kanji: '予約のメールを送ってください。', kana: 'よやくのめーるをおくってください',
+    romaji: 'Yoyaku no mēru o okutte kudasai.',
+    en: 'Please send me an email with the booking.',
     note: 'You have no Japanese phone. Written confirmation is your only proof.' },
 
   { id: 'self-staff-name', who: 'self', stage: 'close',
-    kanji: '担当の方のお名前を教えてください。',
-    kana: 'たんとうのかたのおなまえをおしえてください',
-    romaji: 'Tantō no kata no o-namae o oshiete kudasai.',
-    en: 'May I have your name — the person I am speaking with?',
-    note: 'Write it down. If the booking is missing on the night, this is your recourse.' },
+    kanji: 'すみません、お名前を教えてください。',
+    kana: 'すみません、おなまえをおしえてください',
+    romaji: 'Sumimasen, o-namae o oshiete kudasai.',
+    en: 'Sorry — may I have your name?',
+    note: 'Ask at the end, once the booking is confirmed, so it is clear you mean THEIR name. Write it down: if the booking is missing on the night, this is your recourse.' },
 
   { id: 'self-other-date', who: 'self', stage: 'trouble',
     kanji: '他の日は空いていますか。', kana: 'ほかのひはあいていますか',
@@ -614,16 +657,19 @@ function selfPhrases(r) {
   ];
 }
 
+// cue: what the staff say that means "this stage now" - the words he listens
+// for on the call, shown under each stage's name in the stage bar.
+// when: the same in English, for the tooltip and screen readers.
 const ALL_STAGES = [
-  { id: 'open', label: 'Opening' },
-  { id: 'when', label: 'Date & time' },
-  { id: 'party', label: 'Party size' },
-  { id: 'name', label: 'Your name' },
-  { id: 'phone', label: 'Phone & email' },
-  { id: 'seat', label: 'Seating' },
-  { id: 'course', label: 'Course & allergies' },
-  { id: 'close', label: 'Confirm & close' },
-  { id: 'trouble', label: 'If it goes wrong' },
+  { id: 'open', label: 'Opening', cue: 'お電話ありがとうございます', when: 'They pick up' },
+  { id: 'when', label: 'Date & time', cue: 'お日にち・お時間', when: 'They ask the date or time' },
+  { id: 'party', label: 'Party size', cue: '何名様', when: 'They ask how many people' },
+  { id: 'name', label: 'Your name', cue: 'お名前', when: 'They ask your name' },
+  { id: 'phone', label: 'Phone & email', cue: 'お電話番号・ご連絡先', when: 'They ask how to reach you' },
+  { id: 'seat', label: 'Seating', cue: 'お席', when: 'They ask where you want to sit' },
+  { id: 'course', label: 'Course & allergies', cue: 'コース・アレルギー', when: 'They ask the course or allergies' },
+  { id: 'close', label: 'Confirm & close', cue: '復唱・承りました', when: 'They read the booking back' },
+  { id: 'trouble', label: 'If it goes wrong', cue: '満席・聞こえない', when: 'Full, or you cannot hear' },
 ];
 
 // A phrase with when: false belongs to a topic this restaurant never raises.
@@ -638,7 +684,7 @@ export function buildLibrary(restaurant) {
   const stages = ALL_STAGES
     .filter(stage => self.some(p => p.stage === stage.id))
     .map(stage => stage.id === 'course' && !restaurant.features.course
-      ? { ...stage, label: 'Allergies & extras' } : stage);
+      ? { ...stage, label: 'Allergies & extras', cue: 'アレルギー', when: 'They ask about allergies' } : stage);
   return {
     STAFF: staff, SELF: self, PHRASES: all,
     PANIC: self.filter(p => p.stage === 'panic'),

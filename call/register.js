@@ -15,7 +15,12 @@ export function keigoIn(japanese) {
   return KEIGO_MARKERS.filter(marker => text.includes(marker));
 }
 
+// Easy words too, at his request (2026-10-21: "use kantan vocabulary"): his
+// cards were rewritten to beginner words, and lines Claude writes for him
+// must stay at that level.
 export const PLAIN_POLITE_RULE =
   'Write his lines in plain polite Japanese (です/ます) that a JLPT N4 speaker can say smoothly. '
   + 'Never humble or honorific keigo — no ' + KEIGO_MARKERS.join(', ')
-  + ' (ありがとうございます is fine).';
+  + ' (ありがとうございます is fine). '
+  + 'Use only easy, everyday words (JLPT N5–N4) in short sentences: 下手 not 得意, 外国 not 海外, '
+  + 'その日 not 当日, もう一度言います not 確認します.';

@@ -189,18 +189,31 @@ body[data-mode="call"] .panic__key{position:static;font-size:var(--t-ui);
 body[data-mode="call"] #start-call{background:var(--alert);color:var(--ground);
   border-color:var(--alert)}
 
-/* ---------------- stage accordion (navigation) ---------------- */
-#stepper{flex:0 0 auto;display:flex;gap:1px;padding:0 12px;align-items:stretch;
-  background:var(--surface);border-bottom:1px solid var(--rule)}
-.step{flex:1;min-width:0;padding:3px;font-size:var(--t-micro);font-weight:600;
-  letter-spacing:.02em;text-transform:uppercase;color:var(--label);white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis;text-align:center;min-height:23px;
-  border-bottom:3px solid transparent}
-.step[data-current="true"]{color:var(--ink);border-bottom-color:var(--alert)}
-.step:hover{color:var(--ink)}
-#stepper-hint{font-size:var(--t-micro);color:var(--label);margin-left:10px;
-  white-space:nowrap;align-self:center}
-@media(max-width:900px){#stepper-hint{display:none}}
+/* ---------------- stage bar (navigation) ---------------- */
+/* Every stage named in full, in readable type, numbered, and under each name
+   the words the staff say when that stage starts: he hears 何名様 and clicks
+   "3 Party size". It was 13px uppercase cut to "PARTY SI…", and said nothing
+   about when to use it. One row, each name and cue on one line: where the
+   column is too narrow for all nine (call mode, beside the transcript) the
+   row scrolls sideways and setStage() keeps the current stage in view -
+   squeezing nine boxes into 850px wrapped them to four lines each. */
+#stepper{flex:0 0 auto;display:flex;flex-wrap:nowrap;gap:4px;padding:5px 12px;align-items:stretch;
+  background:var(--surface);border-bottom:1px solid var(--rule);
+  overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;scroll-padding-inline:12px}
+.step{flex:1 0 auto;white-space:nowrap;display:flex;flex-direction:column;justify-content:flex-start;
+  gap:1px;padding:4px 8px 5px;text-align:left;border:1px solid var(--rule-faint);
+  border-bottom:3px solid var(--rule-faint);border-radius:6px;background:var(--ground)}
+.step__name{font-size:var(--t-find);font-weight:700;line-height:1.15;color:var(--ink-2)}
+.step__cue{font-family:var(--jp);font-size:var(--t-micro);font-weight:500;line-height:1.25;
+  color:var(--muted);overflow-wrap:anywhere}                     /* 9.40:1 */
+.step:hover{background:var(--hover);border-color:var(--rule)}
+.step:hover .step__name{color:var(--ink)}
+.step[data-current="true"]{background:var(--surface-hot);border-color:var(--alert)}
+.step[data-current="true"] .step__name{color:var(--ink)}
+.step[data-current="true"] .step__cue{color:var(--alert)}        /* 7.53:1 */
+#stepper-hint{flex:0 0 auto;font-size:var(--t-micro);color:var(--label);margin-left:6px;
+  align-self:center;max-width:6.5em;line-height:1.25}
+@media(max-width:1100px){#stepper-hint{display:none}}
 
 /* The accordion is gone (setStage shows exactly one section); .stage__label,
    .stage__count and .stage__body went with it, and their rules went too -
@@ -637,21 +650,21 @@ body[data-past="open"] #past-calls{display:block}
 <script type="importmap">
 {
   "imports": {
-    "./call/dice.js": "./call/dice.js?v=9723b886c9",
-    "./call/fallback.js": "./call/fallback.js?v=9723b886c9",
-    "./call/history.js": "./call/history.js?v=9723b886c9",
-    "./call/interpret.js": "./call/interpret.js?v=9723b886c9",
-    "./call/listen.js": "./call/listen.js?v=9723b886c9",
-    "./call/match.js": "./call/match.js?v=9723b886c9",
-    "./call/normalize.js": "./call/normalize.js?v=9723b886c9",
-    "./call/phrases.js": "./call/phrases.js?v=9723b886c9",
-    "./call/register.js": "./call/register.js?v=9723b886c9",
-    "./call/rehearse.js": "./call/rehearse.js?v=9723b886c9",
-    "./call/restaurants.js": "./call/restaurants.js?v=9723b886c9",
-    "./call/sessions.js": "./call/sessions.js?v=9723b886c9",
-    "./call/speak.js": "./call/speak.js?v=9723b886c9",
-    "./call/staff-sim.js": "./call/staff-sim.js?v=9723b886c9",
-    "./call/ui.js": "./call/ui.js?v=9723b886c9"
+    "./call/dice.js": "./call/dice.js?v=e2ad203219",
+    "./call/fallback.js": "./call/fallback.js?v=e2ad203219",
+    "./call/history.js": "./call/history.js?v=e2ad203219",
+    "./call/interpret.js": "./call/interpret.js?v=e2ad203219",
+    "./call/listen.js": "./call/listen.js?v=e2ad203219",
+    "./call/match.js": "./call/match.js?v=e2ad203219",
+    "./call/normalize.js": "./call/normalize.js?v=e2ad203219",
+    "./call/phrases.js": "./call/phrases.js?v=e2ad203219",
+    "./call/register.js": "./call/register.js?v=e2ad203219",
+    "./call/rehearse.js": "./call/rehearse.js?v=e2ad203219",
+    "./call/restaurants.js": "./call/restaurants.js?v=e2ad203219",
+    "./call/sessions.js": "./call/sessions.js?v=e2ad203219",
+    "./call/speak.js": "./call/speak.js?v=e2ad203219",
+    "./call/staff-sim.js": "./call/staff-sim.js?v=e2ad203219",
+    "./call/ui.js": "./call/ui.js?v=e2ad203219"
   }
 }
 </script>

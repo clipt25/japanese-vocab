@@ -45,3 +45,22 @@ for (const restaurant of Object.values(RESTAURANTS)) {
 test('the live interpreter is told to write his lines without keigo', () => {
   assert.ok(VERDICT_SYSTEM.includes(PLAIN_POLITE_RULE));
 });
+
+test('his lines use easy words (kantan): none of the harder ones he asked to drop', async () => {
+  // Asked for on 2026-10-21. The staff may say these words; he never has to.
+  const HARD = ['得意', '海外', '当日', '確認', '予算', '全員', '担当', '下ろせ'];
+  const { buildLibrary } = await import('../phrases.js');
+  const { RESTAURANTS } = await import('../restaurants.js');
+  for (const r of Object.values(RESTAURANTS)) {
+    for (const p of buildLibrary(r).SELF) {
+      const found = HARD.filter(w => p.kanji.includes(w));
+      assert.deepEqual(found, [], `${r.id}/${p.id}: ${p.kanji}`);
+    }
+  }
+});
+
+test('lines Claude writes for him are held to the same easy words', async () => {
+  const { PLAIN_POLITE_RULE } = await import('../register.js');
+  assert.match(PLAIN_POLITE_RULE, /easy, everyday words/);
+  assert.match(PLAIN_POLITE_RULE, /下手 not 得意/);
+});

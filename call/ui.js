@@ -56,6 +56,8 @@ export function setStage(index) {
   }
   for (const step of stepperRoot.querySelectorAll('.step')) {
     step.dataset.current = String(Number(step.dataset.index) === index);
+    // A narrow stage bar scrolls sideways: never leave the current stage off-screen.
+    if (step.dataset.current === 'true') step.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
   }
   // The idle band names the stage he is standing in. When he walks the stepper
   // himself nothing re-renders the radar, so the band would keep naming the
@@ -75,7 +77,13 @@ export function renderScript(root, stepper) {
   stepper.replaceChildren();
 
   STAGES.forEach((stage, index) => {
-    const step = el('button', 'step', stage.label);
+    // Name in full - never cut off - and under it the words that mean "now":
+    // what the staff say when this stage starts.
+    const step = el('button', 'step');
+    step.append(el('span', 'step__name', `${index + 1} ${stage.label}`));
+    if (stage.cue) step.append(el('span', 'step__cue', stage.cue));
+    step.title = stage.when ? `${stage.when} — ${stage.cue}` : stage.label;
+    step.setAttribute('aria-label', stage.when ? `${stage.label}: when ${stage.when.toLowerCase()}` : stage.label);
     step.type = 'button';
     step.dataset.index = String(index);
     step.addEventListener('click', () => setStage(index));

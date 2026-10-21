@@ -144,6 +144,61 @@ export const RESTAURANTS = Object.freeze({
       complications: 'the requested time is full because the room is small but another time is free, or you need a Japanese contact number',
     },
   },
+
+  // Checked 2026-10-21 on Google Maps (4.4 from 712 reviews, +81 555-28-4151,
+  // open daily 11:00–15:30 and 18:00–21:30), the official site
+  // nagomi-yamanakako.com (courses, dinner reservation-only, cards + PayPay)
+  // and Hot Pepper (horigotatsu seating, no tatami zashiki, online booking).
+  // Listings disagree on dinner start (17:30/18:00/18:30); Google and the
+  // official top page both say 18:00. The official site also lists a mobile,
+  // 080-4538-1725.
+  nagomi: {
+    id: 'nagomi',
+    label: 'Nagomi Yamanakako — Thu 29 Oct, 19:00',
+    name: { ja: '山中湖 和食 和み', short: '和み', shortKana: 'なごみ', shortRomaji: 'Nagomi',
+            en: 'Yamanakako Washoku Nagomi', interpret: 'Nagomi, Lake Yamanaka',
+            openingKana: 'やまなかこわしょくなごみ' },
+    dial: '+81 555 28 4151',
+    meal: 'dinner',
+    date: { ja: '10月29日', kana: 'じゅうがつにじゅうくにち', romaji: 'jū-gatsu nijūku-nichi',
+            weekdayJa: '木曜日', weekdayKana: 'もくようび', weekdayRomaji: 'mokuyōbi', weekdayEn: 'Thursday',
+            enShort: 'October 29th', header: 'Thu 29 Oct 2026', holiday: false,
+            note: '10月 is じゅうがつ. 29日 is にじゅうくにち — く, not きゅう.' },
+    time: EVENING_7,
+    party: PARTY[4],
+    partyCount: 4,
+    // course: they may ask him to choose now - everything is made in-house.
+    // His plan: ask to decide on the day; if they insist, the Matsu course.
+    features: { seating: false, course: true, serviceCharge: false, cashless: false },
+    budget: null,
+    fallbackCourse: { ja: '松コース', kana: 'まつこーす', romaji: 'Matsu kōsu',
+                      en: 'Matsu course', detail: 'A5 Kyushu-ou wagyu, ¥6,578 each' },
+    pots: true,                                    // sukiyaki or shabu-shabu, every course
+    seatRequest: { ja: '掘りごたつの席', kana: 'ほりごたつのせき', romaji: 'horigotatsu no seki',
+                   en: 'a sunken-floor (horigotatsu) table',
+                   note: 'Legs go down into a well under the table — no kneeling. Hot Pepper lists horigotatsu seats; they have no tatami zashiki.' },
+    holdNote: 'Try this BEFORE saying you will call back — hanging up without a booking can lose you the 19:00 table.',
+    headerFacts: [{ key: 'Party', value: '4' }, { key: 'Course', value: 'on the day · else Matsu' },
+                  { key: 'Dinner', value: 'reservation only', warn: true }],
+    callWindow: { strong: 'Call 13:30–15:30 Jakarta time',
+                  rest: ' (15:30–17:30 Tokyo), between lunch (ends 15:30) and dinner (from 18:00). Open every day. No call needed: Google Maps → Reserve a table, or Hot Pepper (instant booking until 17:00 that day).' },
+    booking: `Thursday 29 October 2026, 19:00, 4 people, ${BOOKER}; course: he would like to choose on the day — if they need it now, the 松 (Matsu) course, A5 wagyu, ¥6,578 each; sukiyaki or shabu-shabu can be decided on the day too`,
+    detailsSpoken: '29 October, 7pm, 4 people',
+    changeExample: { accepted: '18:00 or 19:30 instead of 19:00', agreed: '19:30 instead of 19:00' },
+    sim: {
+      identity: '山中湖 和食 和み (Nagomi), a family-run Japanese restaurant by Lake Yamanaka at 21 Yamanaka, Yamanakako, Yamanashi, known for sukiyaki and shabu-shabu with Fuji "phantom pork" (富士山幻の豚, raised on Mt Fuji spring water) and A5 Kyushu-ou black wagyu',
+      facts: `- Open every day: lunch 11:00–15:30 (last order 14:30), dinner 18:00–21:30 (last order 20:30). Dinner is by reservation only (完全予約制).
+- 29 October 2026 is a Thursday.
+- Dinner courses, each as sukiyaki or shabu-shabu, prices including tax: 竹コース ¥4,378 (phantom pork or Kyushu-ou black wagyu), 松コース ¥6,578 (A5 Kyushu-ou wagyu), 蓮コース ¥9,856 (wagyu and phantom pork side by side). Eel courses only by advance order.
+- Everything is made in-house, so the kitchen likes to know the course in advance.
+- Table seats and horigotatsu (sunken-floor) seats; no tatami zashiki. Floor heating. Lake view by day. Parking for 10 cars.
+- Cards (Visa, Mastercard, Amex, JCB, Diners), PayPay and other QR payments are accepted.
+- For this rehearsal, assume nobody on duty speaks English.`,
+      register: 'Polite, warm family-restaurant phone Japanese: です/ます with standard service phrases such as かしこまりました and 少々お待ちください.',
+      asks: 'date, time, party size, name (and the katakana spelling of a foreign name), contact number, course (or whether to decide on the day), sukiyaki or shabu-shabu, seating, allergies',
+      complications: 'the 19:00 table is full but 18:00 or 19:30 is free, you ask him to choose the course now because everything is prepared in-house, or you need a Japanese contact number',
+    },
+  },
 });
 
 export const DEFAULT_RESTAURANT = 'hiyama';

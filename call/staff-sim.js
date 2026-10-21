@@ -52,7 +52,7 @@ export const SCENARIOS = Object.freeze({
     requires: 'course',
     brief: `SCENARIO FOR THIS REHEARSAL — this replaces choosing a complication yourself:
 - The course must be chosen at the time of booking. If he asks to decide on the day, politely insist that it has to be chosen now.
-- If he asks you to hold just the table without a course, decline politely: on a busy public holiday you cannot hold a table without a course.
+- If he asks you to hold just the table without a course, decline politely: {BUSY} you cannot hold a table without a course.
 - If he says he will think about it and call back, accept that naturally. Say you cannot promise the table will still be free, tell him by when to call back if he asks, and end the call politely.
 - If instead he chooses a course or gives a budget, continue the booking normally.`,
   },
@@ -127,7 +127,9 @@ export function createStaffSim({ callClaude, streamClaude, scenario = 'random', 
   }
   const base = staffSystemFor(restaurant);
   const opening = openingTurnFor(restaurant);
-  const system = brief ? `${base}\n\n${brief}` : base;
+  // The brief is shared by every restaurant; only Hiyama's date is a holiday.
+  const busy = restaurant.date.holiday ? 'on a busy public holiday' : 'on a busy evening';
+  const system = brief ? `${base}\n\n${brief.replace('{BUSY}', busy)}` : base;
   let history = [];
 
   return {

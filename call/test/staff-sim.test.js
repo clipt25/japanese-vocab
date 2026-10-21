@@ -127,8 +127,20 @@ test('the insist-course scenario is appended to the staff prompt', async () => {
   await sim.reply('予約をお願いします');
   const { system } = claude.calls[0];
   assert.ok(system.startsWith(STAFF_SYSTEM));
-  assert.ok(system.includes(SCENARIOS['insist-course'].brief));
+  assert.ok(system.includes(SCENARIOS['insist-course'].brief.replace('{BUSY}', 'on a busy public holiday')));
   assert.match(system, /call back/i, 'the scenario must let him leave to think and call back');
+});
+
+test('the insist-course brief only calls the evening a holiday when it is one', async () => {
+  const { RESTAURANTS } = await import('../restaurants.js');
+  const claude = fakeClaude([turn('はい。')]);
+  const sim = createStaffSim({ callClaude: claude, scenario: 'insist-course', restaurant: RESTAURANTS.nagomi });
+  sim.opening();
+  await sim.reply('予約をお願いします');
+  const { system } = claude.calls[0];
+  assert.match(system, /on a busy evening you cannot hold a table/);
+  assert.doesNotMatch(system, /public holiday you cannot/);
+  assert.doesNotMatch(system, /\{BUSY\}/);
 });
 
 test('an unknown scenario fails loudly instead of silently rehearsing the wrong call', () => {

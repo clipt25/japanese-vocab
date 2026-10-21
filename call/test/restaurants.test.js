@@ -89,3 +89,37 @@ test('date traps are called out on the date card', () => {
   assert.match(buildLibrary(RESTAURANTS.hiyama).byId('self-datetime').note, /みっか/);
   assert.match(buildLibrary(RESTAURANTS.pst).byId('self-datetime').note, /ついたち/);
 });
+
+test('Nagomi: the booking he asked for, and only lines that fit the restaurant', async () => {
+  const { buildLibrary } = await import('../phrases.js');
+  const lib = buildLibrary(RESTAURANTS.nagomi);
+  assert.equal(lib.byId('self-datetime').kanji, '10月29日の夜7時にお願いします。');
+  assert.equal(lib.byId('self-datetime').kana, 'じゅうがつにじゅうくにちのよるしちじにおねがいします');
+  assert.equal(lib.byId('self-party').kanji, '4人でお願いします。');
+  assert.equal(lib.byId('self-course-pick').kanji, 'では、松コースでお願いします。');
+  assert.ok(lib.byId('self-course-later'), 'decide the course on the day is his first ask');
+  assert.equal(lib.byId('self-seat-request').kanji, '掘りごたつの席でお願いします。');
+  for (const id of ['self-pot-later', 'self-sukiyaki', 'self-shabu', 'staff-pot-choice', 'staff-seat-type']) assert.ok(lib.byId(id), id);
+  // Hiyama-only lines: a budget figure and tatami rooms do not exist at Nagomi
+  for (const id of ['self-budget', 'self-zashiki-yes', 'staff-zashiki-or-table']) assert.equal(lib.byId(id), undefined, id);
+  assert.deepEqual(lib.byId('staff-course').replies, ['self-course-later', 'self-course-pick']);
+  assert.ok(lib.byId('staff-course-in-advance').replies.includes('self-course-pick'));
+});
+
+test('other restaurants keep their own course and seating lines', async () => {
+  const { buildLibrary } = await import('../phrases.js');
+  const hiyama = buildLibrary(RESTAURANTS.hiyama);
+  assert.deepEqual(hiyama.byId('staff-course').replies, ['self-course-later', 'self-course-recommend']);
+  assert.ok(hiyama.byId('self-budget') && hiyama.byId('self-zashiki-yes'));
+  for (const id of ['self-course-pick', 'self-sukiyaki', 'self-seat-request']) assert.equal(hiyama.byId(id), undefined, id);
+});
+
+test('every stage tells him when to use it, in the words the staff will say', async () => {
+  const { buildLibrary } = await import('../phrases.js');
+  for (const r of Object.values(RESTAURANTS)) {
+    for (const stage of buildLibrary(r).STAGES) {
+      assert.ok(stage.cue && /[ぁ-んァ-ン一-龯]/.test(stage.cue), `${r.id}/${stage.id} cue`);
+      assert.ok(stage.when, `${r.id}/${stage.id} when`);
+    }
+  }
+});
