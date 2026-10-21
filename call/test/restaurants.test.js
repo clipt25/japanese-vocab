@@ -106,6 +106,27 @@ test('Nagomi: the booking he asked for, and only lines that fit the restaurant',
   assert.ok(lib.byId('staff-course-in-advance').replies.includes('self-course-pick'));
 });
 
+test('Hosha: Friday 18:30 for four, and no course or seating talk', async () => {
+  const { buildLibrary } = await import('../phrases.js');
+  const lib = buildLibrary(RESTAURANTS.hosha);
+  assert.equal(restaurantId('?r=hosha'), 'hosha');
+  assert.equal(lib.byId('self-datetime').kanji, '10月30日の夜6時半にお願いします。');
+  assert.equal(lib.byId('self-party').kanji, '4人でお願いします。');
+  for (const id of ['self-budget', 'self-course-pick', 'self-seat-request', 'staff-cashless']) assert.equal(lib.byId(id), undefined, id);
+  // 18:00 is too early: he asks for 19:00 or 19:30 and turns down an earlier offer
+  assert.equal(lib.byId('self-later-times').kanji, '7時か7時半は空いていますか。');
+  assert.deepEqual(lib.byId('staff-offer-earlier').replies, ['self-too-early', 'self-later-times']);
+  assert.equal(lib.byId('staff-full').replies[0], 'self-later-times');
+  assert.match(RESTAURANTS.hosha.booking, /NOT 18:00/);
+});
+
+test('later-time lines only exist where he named later times', async () => {
+  const { buildLibrary } = await import('../phrases.js');
+  const nagomi = buildLibrary(RESTAURANTS.nagomi);
+  for (const id of ['self-later-times', 'self-too-early', 'staff-offer-earlier']) assert.equal(nagomi.byId(id), undefined, id);
+  assert.deepEqual(nagomi.byId('staff-full').replies, ['self-other-time', 'self-other-date']);
+});
+
 test('other restaurants keep their own course and seating lines', async () => {
   const { buildLibrary } = await import('../phrases.js');
   const hiyama = buildLibrary(RESTAURANTS.hiyama);
@@ -121,5 +142,14 @@ test('every stage tells him when to use it, in the words the staff will say', as
       assert.ok(stage.cue && /[ぁ-んァ-ン一-龯]/.test(stage.cue), `${r.id}/${stage.id} cue`);
       assert.ok(stage.when, `${r.id}/${stage.id} when`);
     }
+  }
+});
+
+test('the opening asks for slow, easy Japanese without calling his Japanese poor', async () => {
+  const { buildLibrary } = await import('../phrases.js');
+  for (const r of Object.values(RESTAURANTS)) {
+    const lib = buildLibrary(r);
+    assert.equal(lib.byId('self-open').kanji, 'すみません、予約をお願いします。ゆっくり、簡単な日本語でお願いします。', r.id);
+    for (const p of lib.PHRASES.filter(p => p.who === 'self')) assert.ok(!p.kanji.includes('下手'), `${r.id}/${p.id}`);
   }
 });

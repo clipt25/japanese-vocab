@@ -22,5 +22,5 @@ export const PLAIN_POLITE_RULE =
   'Write his lines in plain polite Japanese (です/ます) that a JLPT N4 speaker can say smoothly. '
   + 'Never humble or honorific keigo — no ' + KEIGO_MARKERS.join(', ')
   + ' (ありがとうございます is fine). '
-  + 'Use only easy, everyday words (JLPT N5–N4) in short sentences: 下手 not 得意, 外国 not 海外, '
+  + 'Use only easy, everyday words (JLPT N5–N4) in short sentences: 外国 not 海外, '
   + 'その日 not 当日, もう一度言います not 確認します.';

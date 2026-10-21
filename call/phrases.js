@@ -13,6 +13,9 @@ import { RESTAURANT, cap } from './restaurants.js';
 
 function staffPhrases(r) {
   const d = r.date, t = r.time, p = r.party, n = r.name, f = r.features, b = r.budget;
+  // Where he has named acceptable later times, ask for those before an open "other times?".
+  const otherTime = r.laterTimes ? ['self-later-times', 'self-other-time'] : ['self-other-time'];
+  const early = r.laterTimes?.tooEarly;
   return [
   { id: 'staff-greeting', who: 'staff',
     kanji: `はい、${n.short}でございます。`, kana: `はい、${n.shortKana}でございます`,
@@ -88,7 +91,7 @@ function staffPhrases(r) {
     kana: 'もうしわけございません、そのひはまんせきでございます',
     romaji: 'Mōshiwake gozaimasen, sono hi wa manseki de gozaimasu.',
     en: 'I am very sorry — we are fully booked that day.',
-    replies: ['self-other-time', 'self-other-date'] },
+    replies: [...otherTime, 'self-other-date'] },
 
   { id: 'staff-offer-other-time', who: 'staff',
     kanji: `${t.ja}ですと満席ですが、${t.laterJa}でしたらご案内できます。`,
@@ -96,6 +99,13 @@ function staffPhrases(r) {
     romaji: `${cap(t.romaji)} desu to manseki desu ga, ${t.laterRomaji} deshitara go-annai dekimasu.`,
     en: `${t.en} is full, but we could seat you at ${t.laterEn}.`,
     replies: ['self-yes-request', 'self-other-date'] },
+
+  { id: 'staff-offer-earlier', who: 'staff', when: Boolean(early),
+    kanji: `${early?.ja}からでしたら、お席をご用意できます。`,
+    kana: `${early?.kana}からでしたら、おせきをごよういできます`,
+    romaji: `${cap(early?.romaji ?? '')} kara deshitara, o-seki o go-yōi dekimasu.`,
+    en: `We could have a table for you from ${early?.en}.`,
+    replies: ['self-too-early', 'self-later-times'] },
 
   { id: 'staff-holiday-busy', who: 'staff', when: d.holiday,
     kanji: `${d.ja}は祝日でございまして、大変混み合っております。`,
@@ -237,7 +247,7 @@ function staffPhrases(r) {
     kana: 'そのひはだんたいさまのごよやくがはいっております',
     romaji: 'Sono hi wa dantai-sama no go-yoyaku ga haitte orimasu.',
     en: 'We have a large group booked that day.',
-    replies: ['self-other-time', 'self-other-date'] },
+    replies: [...otherTime, 'self-other-date'] },
 
   { id: 'staff-line-bad', who: 'staff',
     kanji: '恐れ入ります、お電話が少々遠いようですが。',
@@ -338,10 +348,10 @@ function selfPhrases(r) {
   const d = r.date, t = r.time, p = r.party, f = r.features, b = r.budget;
   return [
   { id: 'self-open', who: 'self', stage: 'open',
-    kanji: 'すみません、予約をお願いします。日本語が下手なので、ゆっくり、簡単な日本語で話してください。',
-    kana: 'すみません、よやくをおねがいします。にほんごがへたなので、ゆっくり、かんたんなにほんごではなしてください',
-    romaji: 'Sumimasen, yoyaku o onegai shimasu. Nihongo ga heta na node, yukkuri, kantan na nihongo de hanashite kudasai.',
-    en: "Excuse me, I'd like to make a reservation. My Japanese is poor, so please speak slowly, in simple Japanese.",
+    kanji: 'すみません、予約をお願いします。ゆっくり、簡単な日本語でお願いします。',
+    kana: 'すみません、よやくをおねがいします。ゆっくり、かんたんなにほんごでおねがいします',
+    romaji: 'Sumimasen, yoyaku o onegai shimasu. Yukkuri, kantan na nihongo de onegai shimasu.',
+    en: "Excuse me, I'd like to make a reservation. Slowly and in simple Japanese, please.",
     note: 'Say it all in ONE breath. Split in two, the staff answer the booking at full speed before you reach the second half. Booking first, so the first word they hear is 予約. NOT もしもし as the opener.' },
 
   { id: 'self-new-booking', who: 'self', stage: 'open',
@@ -351,11 +361,11 @@ function selfPhrases(r) {
     en: "No — I'd like to make a new reservation." },
 
   { id: 'self-level', who: 'self', stage: 'open',
-    kanji: 'すみません、日本語が下手です。ゆっくり、簡単な日本語で話してください。',
-    kana: 'すみません、にほんごがへたです。ゆっくり、かんたんなにほんごではなしてください',
-    romaji: 'Sumimasen, nihongo ga heta desu. Yukkuri, kantan na nihongo de hanashite kudasai.',
-    en: 'Sorry, my Japanese is poor. Please speak slowly, in simple Japanese.',
-    note: '下手 (heta) is the easy word for "not good at", fine to say about yourself. Asking for 簡単な日本語 gets most staff to switch to plain words. Say this early.' },
+    kanji: 'はい、大丈夫です。ゆっくり、簡単な日本語でお願いします。',
+    kana: 'はい、だいじょうぶです。ゆっくり、かんたんなにほんごでおねがいします',
+    romaji: 'Hai, daijōbu desu. Yukkuri, kantan na nihongo de onegai shimasu.',
+    en: "Yes, that's fine. Slowly and in simple Japanese, please.",
+    note: 'Use when they ask if Japanese is OK, or say nobody speaks English. Asking for 簡単な日本語 gets most staff to switch to plain words.' },
 
   { id: 'self-datetime', who: 'self', stage: 'when',
     kanji: `${d.ja}の${t.periodJa}${t.ja}にお願いします。`,
@@ -611,6 +621,16 @@ function selfPhrases(r) {
   { id: 'self-other-time', who: 'self', stage: 'trouble',
     kanji: '他の時間は空いていますか。', kana: 'ほかのじかんはあいていますか',
     romaji: 'Hoka no jikan wa aite imasu ka.', en: 'Are other times available?' },
+
+  // Only where he has named the later times he can take (Hosha: 19:00 / 19:30, never 18:00).
+  { id: 'self-later-times', who: 'self', stage: 'trouble', when: Boolean(r.laterTimes),
+    kanji: `${r.laterTimes?.ja}は空いていますか。`, kana: `${r.laterTimes?.kana}はあいていますか`,
+    romaji: `${cap(r.laterTimes?.romaji ?? '')} wa aite imasu ka.`, en: `Is ${r.laterTimes?.en} free?` },
+
+  { id: 'self-too-early', who: 'self', stage: 'trouble', when: Boolean(r.laterTimes),
+    kanji: 'ちょっと早いです。', kana: 'ちょっとはやいです',
+    romaji: 'Chotto hayai desu.', en: 'That is a little early for us.',
+    note: `Say this if they offer an earlier time, then ask for ${r.laterTimes?.en}.` },
 
   { id: 'self-cancel-ask', who: 'self', stage: 'trouble',
     kanji: 'キャンセル料はいつからかかりますか。', kana: 'きゃんせるりょうはいつからかかりますか',

@@ -62,5 +62,6 @@ test('his lines use easy words (kantan): none of the harder ones he asked to dro
 test('lines Claude writes for him are held to the same easy words', async () => {
   const { PLAIN_POLITE_RULE } = await import('../register.js');
   assert.match(PLAIN_POLITE_RULE, /easy, everyday words/);
-  assert.match(PLAIN_POLITE_RULE, /下手 not 得意/);
+  assert.match(PLAIN_POLITE_RULE, /外国 not 海外/);
+  assert.doesNotMatch(PLAIN_POLITE_RULE, /下手/, 'he asked not to call his Japanese 下手');
 });

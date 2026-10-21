@@ -70,7 +70,7 @@ test('lanes: English is Sonnet 5, quick is Opus 5, final is Opus 5.5 with room t
 import { isOwnLine, repliesWithItself } from '../interpret.js';
 
 test('his own card lines are recognised locally, as the recogniser writes them', () => {
-  for (const heard of ['すみません予約をお願いします日本語が下手なのでゆっくり簡単な日本語で話してください', '11月3日の夜7時にお願いします', '4人でお願いします',
+  for (const heard of ['すみません予約をお願いしますゆっくり簡単な日本語でお願いします', '11月3日の夜7時にお願いします', '4人でお願いします',
                        '国番号は62です812の8063の7730です', 'はい分かりました', 'ありがとうございました失礼します']) {
     assert.ok(isOwnLine(heard), heard);
   }
@@ -89,7 +89,7 @@ test('a line both sides say is left to the models', () => {
 });
 
 test('a verdict telling him to repeat what was just heard marks it as his', () => {
-  assert.equal(repliesWithItself('すみません予約をお願いします日本語が下手なのでゆっくり簡単な日本語で話してください', 'self-open'), true);
+  assert.equal(repliesWithItself('すみません予約をお願いしますゆっくり簡単な日本語でお願いします', 'self-open'), true);
   assert.equal(repliesWithItself('何名様でいらっしゃいますか', 'self-party'), false);
   assert.equal(repliesWithItself('何名様でいらっしゃいますか', null), false);
 });

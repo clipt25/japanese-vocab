@@ -199,6 +199,55 @@ export const RESTAURANTS = Object.freeze({
       complications: 'the 19:00 table is full but 18:00 or 19:30 is free, you ask him to choose the course now because everything is prepared in-house, or you need a Japanese contact number',
     },
   },
+
+  // Checked 2026-10-21 on Tabelog (3.18–3.32, 17:00–23:00, last order 22:30,
+  // closed Sundays, dinner ¥5,000–5,999, phone booking) and Google Maps (4.8 from
+  // 84 reviews). A reviewer says you will not get in without a booking.
+  // 食呑 is read しょくどん, as in 食呑処.
+  hosha: {
+    id: 'hosha',
+    label: '食呑 ほしゃ Fujiyoshida — Fri 30 Oct, 18:30',
+    name: { ja: '食呑 ほしゃ', short: 'ほしゃ', shortKana: 'ほしゃ', shortRomaji: 'Hosha',
+            en: 'Shokudon Hosha', interpret: 'Hosha izakaya, Fujiyoshida',
+            openingKana: 'しょくどんほしゃ' },
+    dial: '+81 555 25 6196',
+    meal: 'dinner',
+    date: { ja: '10月30日', kana: 'じゅうがつさんじゅうにち', romaji: 'jū-gatsu sanjū-nichi',
+            weekdayJa: '金曜日', weekdayKana: 'きんようび', weekdayRomaji: "kin'yōbi", weekdayEn: 'Friday',
+            enShort: 'October 30th', header: 'Fri 30 Oct 2026', holiday: false,
+            note: '10月 is じゅうがつ. 30日 is regular — さんじゅうにち.' },
+    time: {
+      ja: '6時半', kana: 'ろくじはん', romaji: 'roku-ji han',
+      fullJa: '午後6時半', fullKana: 'ごごろくじはん', fullRomaji: 'gogo roku-ji han',
+      periodJa: '夜', periodKana: 'よる', periodRomaji: 'yoru',
+      en: '6:30', enSpoken: '6:30pm', header: '18:30',
+      laterJa: '7時', laterKana: 'しちじ', laterRomaji: 'shichi-ji', laterEn: '7:00',
+    },
+    party: PARTY[4],
+    partyCount: 4,
+    features: { seating: false, course: false, serviceCharge: false, cashless: false },
+    budget: null,
+    headerFacts: [{ key: 'Party', value: '4' }, { key: 'Booking', value: 'needed — small and popular', warn: true }],
+    callWindow: { strong: 'Call 13:00–14:45 Jakarta time',
+                  rest: ' (15:00–16:45 Tokyo), while they prep before opening at 17:00. Closed Sundays. Phone only — no online booking. Times: 18:30, 19:00 or 19:30 — not 18:00. If they are full, Kiyo (+81 555 72 9929) is the backup.' },
+    // He can take 18:30, 19:00 or 19:30 — never earlier (Panorama-dai sunset runs to ~16:45).
+    laterTimes: { ja: '7時か7時半', kana: 'しちじかしちじはん', romaji: 'shichi-ji ka shichi-ji han', en: '7:00 or 7:30',
+                  tooEarly: { ja: '6時', kana: 'ろくじ', romaji: 'roku-ji', en: '6:00' } },
+    booking: `Friday 30 October 2026, 18:30, 4 people, ${BOOKER}; if 18:30 is full he can take 19:00 or 19:30, but NOT 18:00 or earlier — steer him to decline an earlier time`,
+    detailsSpoken: '30 October, 6:30pm, 4 people',
+    changeExample: { accepted: '19:00 or 19:30 instead of 18:30', agreed: '19:00 instead of 18:30' },
+    sim: {
+      identity: '食呑 ほしゃ (Shokudon Hosha), a small izakaya in a converted weaving warehouse at 5-12-20 Shimoyoshida, Fujiyoshida, Yamanashi. The owner is from Ibaraki and serves fresh fish and Ibaraki produce',
+      facts: `- Open 17:00–23:00, last order 22:30. Closed on Sundays.
+- 30 October 2026 is a Friday, so the evening is busy. Walk-ins are usually turned away; tables are booked by phone.
+- À la carte izakaya dishes, fresh fish and seasonal plates; dinner is about ¥5,000–6,000 per person. No set course has to be chosen when booking.
+- A small room — a party of 4 fits, but times fill up.
+- For this rehearsal, assume nobody on duty speaks English.`,
+      register: 'Friendly izakaya phone Japanese: です/ます with standard service phrases such as かしこまりました and 少々お待ちください — casual and warm rather than formal.',
+      asks: 'date, time, party size, name (and the katakana spelling of a foreign name), contact number, allergies',
+      complications: 'the 18:30 table is full but 19:00 or 19:30 is free, or you need a Japanese contact number',
+    },
+  },
 });
 
 export const DEFAULT_RESTAURANT = 'hiyama';
