@@ -92,7 +92,22 @@ function staffPhrases(r) {
     kana: 'もうしわけございません、そのひはまんせきでございます',
     romaji: 'Mōshiwake gozaimasen, sono hi wa manseki de gozaimasu.',
     en: 'I am very sorry — we are fully booked that day.',
-    replies: [...otherTime, 'self-other-date'] },
+    replies: [...otherTime, 'self-other-date', 'self-decline-close'] },
+
+  { id: 'staff-no-reservations', who: 'staff',
+    kanji: '申し訳ございません、当店ではご予約を承っておりません。',
+    kana: 'もうしわけございません、とうてんではごよやくをうけたまわっておりません',
+    romaji: 'Mōshiwake gozaimasen, tōten de wa go-yoyaku o uketamawatte orimasen.',
+    en: 'I am sorry — we do not take reservations.',
+    replies: ['self-walk-in-ask', 'self-decline-close'],
+    note: 'うけたまわって + おりません = NOT taking bookings. The opposite of 承りました.' },
+
+  { id: 'staff-walk-in-ok', who: 'staff',
+    kanji: '直接お越しいただければ、ご案内いたします。',
+    kana: 'ちょくせつおこしいただければ、ごあんないいたします',
+    romaji: 'Chokusetsu o-koshi itadakereba, go-annai itashimasu.',
+    en: 'Just come in, and we will seat you.',
+    replies: ['self-walk-in-thanks'] },
 
   { id: 'staff-offer-other-time', who: 'staff',
     kanji: `${t.ja}ですと満席ですが、${t.laterJa}でしたらご案内できます。`,
@@ -614,6 +629,28 @@ function selfPhrases(r) {
     romaji: 'Sumimasen, o-namae o oshiete kudasai.',
     en: 'Sorry — may I have your name?',
     note: 'Ask at the end, once the booking is confirmed, so it is clear you mean THEIR name. Write it down: if the booking is missing on the night, this is your recourse.' },
+
+  // When it simply will not work out: thank them and close, in easy words.
+  { id: 'self-decline-close', who: 'self', stage: 'trouble',
+    kanji: '分かりました。また今度お願いします。ありがとうございました。失礼します。',
+    kana: 'わかりました。またこんどおねがいします。ありがとうございました。しつれいします',
+    romaji: 'Wakarimashita. Mata kondo onegai shimasu. Arigatō gozaimashita. Shitsurei shimasu.',
+    en: 'I see. Another time, then. Thank you very much. Goodbye.',
+    note: 'Use when nothing works — no free time, or a time you cannot take. This ends the call politely; then hang up.' },
+
+  { id: 'self-walk-in-ask', who: 'self', stage: 'trouble',
+    kanji: '予約なしで行ってもいいですか。',
+    kana: 'よやくなしでいってもいいですか',
+    romaji: 'Yoyaku nashi de itte mo ii desu ka.',
+    en: 'Can we just come without a reservation?',
+    note: 'For when they say they do not take reservations (ご予約は承っておりません).' },
+
+  { id: 'self-walk-in-thanks', who: 'self', stage: 'trouble',
+    kanji: '分かりました。じゃあ、その日に行きます。ありがとうございました。失礼します。',
+    kana: 'わかりました。じゃあ、そのひにいきます。ありがとうございました。しつれいします',
+    romaji: 'Wakarimashita. Jā, sono hi ni ikimasu. Arigatō gozaimashita. Shitsurei shimasu.',
+    en: "OK. We'll come on the day, then. Thank you very much. Goodbye.",
+    note: 'Ends the call. Go a little early — without a booking there may be a wait.' },
 
   { id: 'self-other-date', who: 'self', stage: 'trouble',
     kanji: '他の日は空いていますか。', kana: 'ほかのひはあいていますか',

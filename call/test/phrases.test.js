@@ -76,3 +76,15 @@ test('panic phrases are all stage panic', () => {
   for (const p of PANIC) assert.equal(p.stage, 'panic');
   assert.ok(PANIC.length >= 4);
 });
+
+test('when a booking cannot be made, he has easy lines to thank them and close', async () => {
+  const { buildLibrary } = await import('../phrases.js');
+  const { RESTAURANTS } = await import('../restaurants.js');
+  for (const r of Object.values(RESTAURANTS)) {
+    const lib = buildLibrary(r);
+    for (const id of ['self-decline-close', 'self-walk-in-ask', 'self-walk-in-thanks']) assert.ok(lib.byId(id), `${r.id}/${id}`);
+    assert.ok(lib.byId('staff-full').replies.includes('self-decline-close'));
+    assert.deepEqual(lib.byId('staff-no-reservations').replies, ['self-walk-in-ask', 'self-decline-close']);
+    assert.match(lib.byId('self-decline-close').kanji, /ありがとうございました。失礼します。$/);
+  }
+});

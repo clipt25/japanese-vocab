@@ -72,6 +72,23 @@ export const SCENARIOS = Object.freeze({
 - The reservation is in your book, but for {OTHER_TIME} instead of {TIME}. Read it back with {OTHER_TIME}.
 - If he says he booked {TIME}, check: {TIME} is free, so change it and read the corrected reservation back.`,
   },
+  // Two ways a booking call can simply not work out. The point is to practise
+  // ending it well: thank them and close, instead of freezing or pushing.
+  'no-table': {
+    label: 'No table at any time — thank them and close',
+    brief: `SCENARIO FOR THIS REHEARSAL — this replaces choosing a complication yourself:
+- The whole day he asks for is fully booked: no table at {TIME} and no other time that day for his party ({DETAILS}).
+- If he asks about other times, say every time that day is full. If he asks about another day, say you are sorry but you are fully booked for the next few days as well.
+- You do not keep a waiting list. Do not offer alternatives on your own.
+- When he thanks you or says he will try another time, thank him warmly and end the call politely with 失礼いたします.`,
+  },
+  'no-reservations': {
+    label: "They don't take reservations — thank them and close",
+    brief: `SCENARIO FOR THIS REHEARSAL — this replaces choosing a complication yourself, and overrides anything in the facts about reservations:
+- The restaurant does not take reservations (ご予約は承っておりません): guests come in and wait for a table. Say so as soon as he asks to book.
+- If he asks whether they can just come without a reservation, say yes, and that on busy evenings there can be a wait of about 30 minutes.
+- When he thanks you, end the call politely with 失礼いたします.`,
+  },
   'insist-course': {
     label: 'They insist you choose a course',
     requires: 'course',

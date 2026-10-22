@@ -156,3 +156,26 @@ test('parseStaffTurn keeps the romaji reading for the debrief', () => {
   assert.equal(parseStaffTurn(turn('はい。', { romaji: 'Hai.' })).romaji, 'Hai.');
   assert.equal(parseStaffTurn(turn('はい。')).romaji, '');
 });
+
+test('every booking restaurant can rehearse a call that ends without a booking', async () => {
+  const { RESTAURANTS } = await import('../restaurants.js');
+  const { scenariosFor } = await import('../staff-sim.js');
+  for (const r of Object.values(RESTAURANTS)) {
+    if ((r.purpose ?? 'book') !== 'book') continue;
+    const ids = scenariosFor(r).map(([id]) => id);
+    assert.ok(ids.includes('no-table') && ids.includes('no-reservations'), `${r.id}: ${ids}`);
+    const claude = fakeClaude([turn('はい。')]);
+    const sim = createStaffSim({ callClaude: claude, scenario: 'no-table', restaurant: r });
+    sim.opening();
+    await sim.reply('予約をお願いします');
+    const { system } = claude.calls[0];
+    assert.match(system, /fully booked/);
+    assert.ok(system.includes(r.detailsSpoken), r.id);
+    assert.doesNotMatch(system, /\{(TIME|DETAILS)\}/);
+  }
+});
+
+test('the no-reservations scenario overrides the facts, and both end the call politely', () => {
+  assert.match(SCENARIOS['no-reservations'].brief, /overrides anything in the facts about reservations/);
+  for (const id of ['no-table', 'no-reservations']) assert.match(SCENARIOS[id].brief, /end the call politely/);
+});

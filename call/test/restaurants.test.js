@@ -124,7 +124,7 @@ test('later-time lines only exist where he named later times', async () => {
   const { buildLibrary } = await import('../phrases.js');
   const nagomi = buildLibrary(RESTAURANTS.nagomi);
   for (const id of ['self-later-times', 'self-too-early', 'staff-offer-earlier']) assert.equal(nagomi.byId(id), undefined, id);
-  assert.deepEqual(nagomi.byId('staff-full').replies, ['self-other-time', 'self-other-date']);
+  assert.deepEqual(nagomi.byId('staff-full').replies, ['self-other-time', 'self-other-date', 'self-decline-close']);
 });
 
 test('other restaurants keep their own course and seating lines', async () => {
