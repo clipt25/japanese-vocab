@@ -105,7 +105,7 @@ export const RESTAURANTS = Object.freeze({
 
   fujinoya: {
     id: 'fujinoya',
-    label: 'ふじ乃屋 Fujiyoshida — Fri 30 Oct, 12:15',
+    label: 'ふじ乃屋 Fujiyoshida — Fri 30 Oct, 12:30',
     name: { ja: 'ふじ乃屋', short: 'ふじ乃屋', shortKana: 'ふじのや', shortRomaji: 'Fujinoya',
             en: 'Sukiyaki & Shabu-shabu Fujinoya', interpret: 'Fujinoya, Fujiyoshida',
             openingKana: 'ふじのや' },
@@ -115,12 +115,14 @@ export const RESTAURANTS = Object.freeze({
             weekdayJa: '金曜日', weekdayKana: 'きんようび', weekdayRomaji: "kin'yōbi", weekdayEn: 'Friday',
             enShort: 'October 30th', header: 'Fri 30 Oct 2026', holiday: false,
             note: '10月 is じゅうがつ. 30日 is regular — さんじゅうにち.' },
+    // Booked by phone on 28 Sep for 12:30 (asked 12:15; the staff closed with
+    // 「12時半 待ってます」), so the profile carries the time actually booked.
     time: {
-      ja: '12時15分', kana: 'じゅうにじじゅうごふん', romaji: 'jūni-ji jūgo-fun',
-      fullJa: '12時15分', fullKana: 'じゅうにじじゅうごふん', fullRomaji: 'jūni-ji jūgo-fun',
+      ja: '12時半', kana: 'じゅうにじはん', romaji: 'jūni-ji han',
+      fullJa: '12時半', fullKana: 'じゅうにじはん', fullRomaji: 'jūni-ji han',
       periodJa: '昼', periodKana: 'ひる', periodRomaji: 'hiru',
-      en: '12:15', enSpoken: '12:15', header: '12:15',
-      laterJa: '12時45分', laterKana: 'じゅうにじよんじゅうごふん', laterRomaji: 'jūni-ji yonjūgo-fun', laterEn: '12:45',
+      en: '12:30', enSpoken: '12:30', header: '12:30',
+      laterJa: '1時', laterKana: 'いちじ', laterRomaji: 'ichi-ji', laterEn: '1:00',
     },
     party: PARTY[4],
     partyCount: 4,
@@ -129,9 +131,14 @@ export const RESTAURANTS = Object.freeze({
     headerFacts: [{ key: 'Party', value: '4' }, { key: 'Seats', value: '15 only', warn: true }],
     callWindow: { strong: 'Try an Instagram DM first (@fujinoya_sukiyaki).',
                   rest: ' To call: 12:00–14:30 Jakarta time (14:00–16:30 Tokyo), between their lunch and dinner. Open daily 11:00–22:00.' },
-    booking: `Friday 30 October 2026, 12:15 lunch, 4 people, ${BOOKER}`,
-    detailsSpoken: '30 October, 12:15, 4 people',
-    changeExample: { accepted: '12:00 or 13:00 instead of 12:15', agreed: '13:00 instead of 12:15' },
+    booking: `Friday 30 October 2026, 12:30 lunch, 4 people, ${BOOKER}`,
+    detailsSpoken: '30 October, 12:30, 4 people',
+    changeExample: { accepted: '12:00 or 13:00 instead of 12:30', agreed: '13:00 instead of 12:30' },
+    // A reservation he already holds: what a confirmation call checks.
+    booked: { via: 'phone', on: { ja: '9月28日', kana: 'くがつにじゅうはちにち', romaji: 'ku-gatsu nijūhachi-nichi', en: '28 Sep' },
+              summary: 'booked by phone on 28 September 2026; the staff closed with 「12時半 待ってます」; party size was not written down at the time (planned 4)',
+              // He first asked for 12:15 - the likeliest wrong time in their book.
+              otherTime: { ja: '12時15分', en: '12:15' } },
     sim: {
       identity: 'すき焼きとしゃぶしゃぶ ふじ乃屋 (Fujinoya), a small sukiyaki and shabu-shabu restaurant serving A5 wagyu at 3-16-5 Shimoyoshida, Fujiyoshida, Yamanashi, a few minutes from Gekkoji station. It opened in April 2026',
       facts: `- Open every day 11:00–22:00, last order 21:00. Lunch and dinner prices are the same.
@@ -185,6 +192,10 @@ export const RESTAURANTS = Object.freeze({
     booking: `Thursday 29 October 2026, 19:00, 4 people, ${BOOKER}; course: he would like to choose on the day — if they need it now, the 松 (Matsu) course, A5 wagyu, ¥6,578 each; sukiyaki or shabu-shabu can be decided on the day too`,
     detailsSpoken: '29 October, 7pm, 4 people',
     changeExample: { accepted: '18:00 or 19:30 instead of 19:00', agreed: '19:30 instead of 19:00' },
+    booked: { via: 'online', on: { ja: '10月21日', kana: 'じゅうがつにじゅういちにち', romaji: 'jū-gatsu nijūichi-nichi', en: '21 Oct' },
+              site: { ja: 'グーグルマップ', kana: 'ぐーぐるまっぷ', romaji: 'Gūguru Mappu', en: 'Google Maps' },
+              summary: 'booked online on 21 October 2026 through Google Maps (Reserve a table, handled by Retty): 19:00, 4 people, a large horigotatsu table (掘りごたつ席・大); the name may be in roman letters',
+              otherTime: { ja: '6時', en: '18:00' } },
     sim: {
       identity: '山中湖 和食 和み (Nagomi), a family-run Japanese restaurant by Lake Yamanaka at 21 Yamanaka, Yamanakako, Yamanashi, known for sukiyaki and shabu-shabu with Fuji "phantom pork" (富士山幻の豚, raised on Mt Fuji spring water) and A5 Kyushu-ou black wagyu',
       facts: `- Open every day: lunch 11:00–15:30 (last order 14:30), dinner 18:00–21:30 (last order 20:30). Dinner is by reservation only (完全予約制).
@@ -259,7 +270,46 @@ export function restaurantId(search = globalThis.location?.search ?? '') {
   return id && Object.hasOwn(RESTAURANTS, id) ? id : DEFAULT_RESTAURANT;
 }
 
-export const RESTAURANT = RESTAURANTS[restaurantId()];
+// Two kinds of call: booking a table, or checking one he already has (?call=confirm).
+export const PURPOSES = Object.freeze({ book: 'Book a table', confirm: 'Confirm my booking' });
+
+export function purposeId(search = globalThis.location?.search ?? '') {
+  return new URLSearchParams(search).get('call') === 'confirm' ? 'confirm' : 'book';
+}
+
+// The profile a call runs on. A confirmation keeps every fact of the booking
+// and changes what he is trying to do - which the script, the interpreter and
+// the rehearsal staff all read from here.
+export function profileFor(restaurant, purpose = 'book') {
+  if (purpose !== 'confirm') return { ...restaurant, purpose: 'book' };
+  const b = restaurant.booked;
+  const original = restaurant.booking;
+  return {
+    ...restaurant,
+    purpose: 'confirm',
+    booking: `He is calling to CONFIRM a reservation he already has (${b ? b.summary : 'how and when he booked is not on record'}): ${original}. `
+      + 'He wants to hear that it is in their book, with its date, time and party size. If they cannot find it, he asks them to look '
+      + 'again under ジェフリー, the roman-letter GEOFFREY and his surname ジェームズ, says how he booked, and if it really is not there, '
+      + 'books the same table again with the same details.',
+    // The briefing leads with what is being checked; the call-time advice stays.
+    callWindow: {
+      strong: b ? `Checking a booking made ${b.via === 'phone' ? 'by phone' : `online (${b.site.en})`} on ${b.on.en}.`
+                : 'Checking a booking - how and when it was made is not on record.',
+      rest: ` ${restaurant.callWindow.strong}${restaurant.callWindow.rest}`,
+    },
+    headerFacts: [
+      { key: 'Booked', value: b ? (b.via === 'phone' ? `by phone, ${b.on.en}` : `online (${b.site.en}), ${b.on.en}`) : 'not on record', warn: !b },
+      ...restaurant.headerFacts,
+    ],
+    sim: {
+      ...restaurant.sim,
+      asks: 'the name the reservation is under and its date; then look it up in the reservation book and read it back',
+      complications: 'the reservation cannot be found under that name at first, or the book shows a different time',
+    },
+  };
+}
+
+export const RESTAURANT = profileFor(RESTAURANTS[restaurantId()], purposeId());
 
 // Romaji at the start of a sentence.
 export function cap(s) {

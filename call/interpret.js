@@ -73,12 +73,17 @@ export async function readJapanese(japanese) {
 }
 
 const BOOKING = RESTAURANT.booking;
+// What the call is for: booking a table, or checking one he already has.
+const CONFIRMING = RESTAURANT.purpose === 'confirm';
+const TASK = CONFIRMING ? `checking his existing ${RESTAURANT.meal} reservation` : `booking ${RESTAURANT.meal}`;
+const NOT_FOUND = CONFIRMING
+  ? ' If they say they cannot find his reservation (見当たらない, 承っておりません, ございません), start the line with NOT FOUND.' : '';
 
-export const ENGLISH_SYSTEM = `You are a live interpreter for Geoffrey, a JLPT N4 Japanese learner on a phone call booking ${RESTAURANT.meal} at ${RESTAURANT.name.ja} (${RESTAURANT.name.interpret}). Each message is a raw Chrome speech-recognition transcript of one utterance the laptop mic picked up: no punctuation, possibly mis-recognised words, and sometimes Geoffrey's own voice, because he is on speakerphone.
+export const ENGLISH_SYSTEM = `You are a live interpreter for Geoffrey, a JLPT N4 Japanese learner on a phone call ${TASK} at ${RESTAURANT.name.ja} (${RESTAURANT.name.interpret}). Each message is a raw Chrome speech-recognition transcript of one utterance the laptop mic picked up: no punctuation, possibly mis-recognised words, and sometimes Geoffrey's own voice, because he is on speakerphone.
 
 His booking request: ${BOOKING}.
 
-Answer with one line only: what was said, in short plain English he can read in two seconds. Faithful, not polished, no preamble such as "The staff said". Put anything that differs from his booking or costs money (a different time, date or party size, fees, deposits, time limits) in CAPITALS.
+Answer with one line only: what was said, in short plain English he can read in two seconds. Faithful, not polished, no preamble such as "The staff said". Put anything that differs from his booking or costs money (a different time, date or party size, fees, deposits, time limits) in CAPITALS.${NOT_FOUND}
 
 If it is Geoffrey himself speaking (it matches or closely resembles one of his lines below), answer exactly: SELF
 Staff often read his details back to him (復唱): his name, date, time, number of people, phone number or email, ending in でございますね or でよろしいでしょうか. That is the staff speaking - translate it.
@@ -86,7 +91,7 @@ Staff often read his details back to him (復唱): his name, date, time, number 
 His lines:
 ${SELF.map(p => p.kanji).join('\n')}`;
 
-export const VERDICT_SYSTEM = `You steer Geoffrey, a JLPT N4 Japanese learner, through a live phone call booking ${RESTAURANT.meal} at ${RESTAURANT.name.ja} (${RESTAURANT.name.interpret}). You receive the call so far and, last, a raw Chrome speech-recognition transcript of one utterance the laptop mic picked up: no punctuation, possibly mis-recognised words, and sometimes Geoffrey's own voice, because he is on speakerphone.
+export const VERDICT_SYSTEM = `You steer Geoffrey, a JLPT N4 Japanese learner, through a live phone call ${TASK} at ${RESTAURANT.name.ja} (${RESTAURANT.name.interpret}). You receive the call so far and, last, a raw Chrome speech-recognition transcript of one utterance the laptop mic picked up: no punctuation, possibly mis-recognised words, and sometimes Geoffrey's own voice, because he is on speakerphone.
 
 His booking request: ${BOOKING}.
 

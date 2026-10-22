@@ -8,19 +8,21 @@ import { RESTAURANT } from './restaurants.js';
 // the design spec — the simulator must never invent a policy the real restaurant
 // does not have, or the rehearsal teaches the wrong call.
 export function staffSystemFor(r) {
-  return `You are the reservation staff answering the phone at ${r.sim.identity}. A foreign caller whose Japanese is around JLPT N4 is phoning to book a table. This is a rehearsal for a real call, so behave exactly as real staff would.
+  const confirm = r.purpose === 'confirm';
+  return `You are the reservation staff answering the phone at ${r.sim.identity}. A foreign caller whose Japanese is around JLPT N4 is phoning ${confirm ? 'to check a reservation he says he already has' : 'to book a table'}. This is a rehearsal for a real call, so behave exactly as real staff would.
 
 FACTS — never contradict these:
-${r.sim.facts}
+${r.sim.facts}${confirm ? `
+- What he says he booked: ${r.booking}` : ''}
 
 HOW TO SPEAK:
 - ${r.sim.register} Do NOT simplify your Japanese unprompted.
 - If he says his Japanese is not good or asks you to speak slowly, do what real staff do: for the rest of the call, speak slowly in short sentences with plainer words, still politely, and set "slow": true on every one of those turns. If he only asks you to repeat, repeat once, more simply.
 - One turn at a time: one or two short sentences, as on a real phone line. Ask one thing at a time.
-- Ask what real staff ask for a booking: ${r.sim.asks}. Read the booking back (復唱) before confirming it.
+- Ask what real staff ask ${confirm ? 'to find a reservation' : 'for a booking'}: ${r.sim.asks}. Read the booking back (復唱) before confirming it.
 - Introduce at most ONE realistic complication during the call — for example ${r.sim.complications}. Pick it naturally and do not always pick the same one.
 - His lines reach you through speech recognition and may be garbled or mis-transcribed. React as real staff would to an unclear foreign caller: politely ask him to repeat, or confirm what you think he said.
-- End the call naturally once the booking is confirmed or clearly cannot be made, finishing with 失礼いたします.
+- End the call naturally once the ${confirm ? 'reservation is confirmed (or made again)' : 'booking is confirmed'} or clearly cannot be made, finishing with 失礼いたします.
 
 REPLY FORMAT — exactly these lines, in this order, nothing else:
 PACE: normal  (or slow, once he has asked you to speak slowly)
@@ -45,8 +47,31 @@ export const STAFF_LANE = { model: 'claude-opus-5', max_tokens: 800, thinking: {
 // Optional rehearsal scenarios. A brief is appended to the staff prompt and
 // replaces the staff's own choice of complication, so a specific situation can
 // be practised on purpose instead of waiting for it to come up by chance.
+// purpose: which kind of call a scenario rehearses (default: booking).
 export const SCENARIOS = Object.freeze({
   random: { label: 'Random complication', brief: '' },
+  'confirm-found': {
+    label: "It's in their book",
+    purpose: 'confirm',
+    brief: `SCENARIO FOR THIS REHEARSAL — this replaces choosing a complication yourself:
+- The reservation IS in your book exactly as he booked it: {DETAILS}.
+- Once he gives his name, say 少々お待ちください, look it up, then read the reservation back (date, time, party size) and confirm it is there.`,
+  },
+  'confirm-missing': {
+    label: "They can't find it",
+    purpose: 'confirm',
+    brief: `SCENARIO FOR THIS REHEARSAL — this replaces choosing a complication yourself:
+- At first you cannot find a reservation under ジェフリー. Say so politely and ask how or when he booked.
+- If he suggests the roman-letter name GEOFFREY or the surname ジェームズ, look again and find it under "GEOFFREY JAMES" in roman letters, then read it back.
+- If he does not, apologise that there is no reservation and offer to book it again now; that time is still free.`,
+  },
+  'confirm-time': {
+    label: 'Their book shows a different time',
+    purpose: 'confirm',
+    brief: `SCENARIO FOR THIS REHEARSAL — this replaces choosing a complication yourself:
+- The reservation is in your book, but for {OTHER_TIME} instead of {TIME}. Read it back with {OTHER_TIME}.
+- If he says he booked {TIME}, check: {TIME} is free, so change it and read the corrected reservation back.`,
+  },
   'insist-course': {
     label: 'They insist you choose a course',
     requires: 'course',
@@ -116,7 +141,9 @@ export function parseStaffTurn(text) {
 }
 
 export function scenariosFor(r) {
-  return Object.entries(SCENARIOS).filter(([, s]) => !s.requires || r.features[s.requires]);
+  const purpose = r.purpose ?? 'book';
+  return Object.entries(SCENARIOS).filter(([, s]) => (s.purpose ?? 'book') === purpose
+    && (!s.requires || r.features[s.requires]));
 }
 
 export function createStaffSim({ callClaude, streamClaude, scenario = 'random', restaurant = RESTAURANT }) {
@@ -129,7 +156,9 @@ export function createStaffSim({ callClaude, streamClaude, scenario = 'random', 
   const opening = openingTurnFor(restaurant);
   // The brief is shared by every restaurant; only Hiyama's date is a holiday.
   const busy = restaurant.date.holiday ? 'on a busy public holiday' : 'on a busy evening';
-  const system = brief ? `${base}\n\n${brief.replace('{BUSY}', busy)}` : base;
+  const filled = brief.replace('{BUSY}', busy).replace('{DETAILS}', restaurant.detailsSpoken)
+    .replaceAll('{TIME}', restaurant.time.en).replaceAll('{OTHER_TIME}', restaurant.booked?.otherTime?.en ?? restaurant.time.laterEn);
+  const system = brief ? `${base}\n\n${filled}` : base;
   let history = [];
 
   return {

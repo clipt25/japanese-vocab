@@ -10,6 +10,7 @@
 // become true positives instead of confidently matching something else.
 
 import { RESTAURANT, cap } from './restaurants.js';
+import { CONFIRM_STAGES, REUSED, REPLY_ALIASES, confirmSelf, confirmStaff } from './confirm.js';
 
 function staffPhrases(r) {
   const d = r.date, t = r.time, p = r.party, n = r.name, f = r.features, b = r.budget;
@@ -696,12 +697,34 @@ const ALL_STAGES = [
 const applies = phrase => phrase.when !== false;
 const strip = ({ when, ...phrase }) => phrase;
 
+// A confirmation call (restaurant.purpose === 'confirm') keeps every staff
+// phrase - the staff may say anything - but only the booking lines he still
+// needs, on the confirmation's own stages; a staff line that suggested a
+// booking line suggests its confirmation stand-in instead.
+function confirmLibrary(restaurant) {
+  const self = [
+    ...confirmSelf(restaurant),
+    ...selfPhrases(restaurant)
+      .filter(p => p.id in REUSED || ['close', 'trouble', 'panic'].includes(p.stage))
+      .map(p => ({ ...p, stage: REUSED[p.id] ?? p.stage })),
+  ].filter(applies).map(strip);
+  const have = new Set(self.map(p => p.id));
+  const staff = [...confirmStaff(restaurant), ...staffPhrases(restaurant)].filter(applies).map(strip)
+    .map(p => ({ ...p, replies: [...new Set((p.replies ?? []).map(id => REPLY_ALIASES[id] ?? id))].filter(id => have.has(id)) }));
+  return { staff, self, stages: CONFIRM_STAGES };
+}
+
 export function buildLibrary(restaurant) {
+  if (restaurant.purpose === 'confirm') return libraryFrom(confirmLibrary(restaurant), restaurant);
   const staff = staffPhrases(restaurant).filter(applies).map(strip);
   const self = selfPhrases(restaurant).filter(applies).map(strip);
+  return libraryFrom({ staff, self, stages: ALL_STAGES }, restaurant);
+}
+
+function libraryFrom({ staff, self, stages: allStages }, restaurant) {
   const all = [...staff, ...self];
   const index = new Map(all.map(p => [p.id, p]));
-  const stages = ALL_STAGES
+  const stages = allStages
     .filter(stage => self.some(p => p.stage === stage.id))
     .map(stage => stage.id === 'course' && !restaurant.features.course
       ? { ...stage, label: 'Allergies & extras', cue: 'アレルギー', when: 'They ask about allergies' } : stage);

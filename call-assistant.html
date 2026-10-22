@@ -469,6 +469,11 @@ body[data-rehearse="on"] #rh-scenario,
 body[data-mode="call"] #rh-scenario{display:none}
 @media print{#rh-scenario{display:none!important}}
 #facts{display:contents}
+#purpose-pick{min-height:44px;padding:6px 10px;border:2px solid var(--ink);border-radius:3px;
+  font-size:var(--t-ui);font-weight:700;color:var(--ink);background:var(--ground)}
+body[data-mode="call"] #purpose-pick,
+body[data-rehearse="on"] #purpose-pick{display:none}
+@media print{#purpose-pick{display:none!important}}
 #restaurant-pick{min-height:44px;padding:6px 10px;border:2px solid var(--ink);border-radius:3px;
   font-size:var(--t-ui);font-weight:700;color:var(--ink);background:var(--ground)}
 body[data-mode="call"] #restaurant-pick,
@@ -582,7 +587,7 @@ body{-webkit-text-size-adjust:100%;
   #start-call,#rehearse-btn,#mic-toggle,#composer-toggle,#past-btn,#connect-call{min-height:44px;
     padding:6px 10px;font-size:16px;border:2px solid var(--rule);border-radius:4px;font-weight:700}
   #composer-toggle kbd,#print-btn{display:none}
-  #restaurant-pick,#rh-scenario{min-height:44px;font-size:16px}   /* 16px: iOS zooms smaller inputs */
+  #restaurant-pick,#purpose-pick,#rh-scenario{min-height:44px;font-size:16px}   /* 16px: iOS zooms smaller inputs */
   #mic-status{white-space:normal;max-width:none}
   #mic-status[data-idle="true"]{display:none}
   #mic-toggle[data-on="true"]::before{content:'● '}
@@ -619,6 +624,7 @@ body{-webkit-text-size-adjust:100%;
     grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;padding:6px 0 0;margin-left:0}
   body:not([data-mode="call"]) .card__mic > *{grid-column:span 6;min-width:0}
   body:not([data-mode="call"]) #restaurant-pick{order:1}
+  body:not([data-mode="call"]) #purpose-pick{order:1}
   body:not([data-mode="call"]) #rh-scenario{order:2}
   body:not([data-mode="call"]) #rehearse-btn{order:3;grid-column:span 3}
   body:not([data-mode="call"]) #start-call{order:4;grid-column:span 3;background:var(--ink);
@@ -745,6 +751,7 @@ body{-webkit-text-size-adjust:100%;
   <div id="facts"></div>
   <div class="card__mic">
     <select id="restaurant-pick" aria-label="Restaurant to call"></select>
+    <select id="purpose-pick" aria-label="What the call is for"></select>
     <button id="start-call" type="button">Start call</button>
     <button id="rehearse-btn" type="button">Rehearse</button>
     <select id="rh-scenario" aria-label="Rehearsal scenario"></select>
@@ -836,22 +843,23 @@ body{-webkit-text-size-adjust:100%;
 <script type="importmap">
 {
   "imports": {
-    "./call/dice.js": "./call/dice.js?v=c953b0aa86",
-    "./call/fallback.js": "./call/fallback.js?v=c953b0aa86",
-    "./call/history.js": "./call/history.js?v=c953b0aa86",
-    "./call/interpret.js": "./call/interpret.js?v=c953b0aa86",
-    "./call/listen.js": "./call/listen.js?v=c953b0aa86",
-    "./call/match.js": "./call/match.js?v=c953b0aa86",
-    "./call/native-speech.js": "./call/native-speech.js?v=c953b0aa86",
-    "./call/normalize.js": "./call/normalize.js?v=c953b0aa86",
-    "./call/phrases.js": "./call/phrases.js?v=c953b0aa86",
-    "./call/register.js": "./call/register.js?v=c953b0aa86",
-    "./call/rehearse.js": "./call/rehearse.js?v=c953b0aa86",
-    "./call/restaurants.js": "./call/restaurants.js?v=c953b0aa86",
-    "./call/sessions.js": "./call/sessions.js?v=c953b0aa86",
-    "./call/speak.js": "./call/speak.js?v=c953b0aa86",
-    "./call/staff-sim.js": "./call/staff-sim.js?v=c953b0aa86",
-    "./call/ui.js": "./call/ui.js?v=c953b0aa86"
+    "./call/confirm.js": "./call/confirm.js?v=d6ca366076",
+    "./call/dice.js": "./call/dice.js?v=d6ca366076",
+    "./call/fallback.js": "./call/fallback.js?v=d6ca366076",
+    "./call/history.js": "./call/history.js?v=d6ca366076",
+    "./call/interpret.js": "./call/interpret.js?v=d6ca366076",
+    "./call/listen.js": "./call/listen.js?v=d6ca366076",
+    "./call/match.js": "./call/match.js?v=d6ca366076",
+    "./call/native-speech.js": "./call/native-speech.js?v=d6ca366076",
+    "./call/normalize.js": "./call/normalize.js?v=d6ca366076",
+    "./call/phrases.js": "./call/phrases.js?v=d6ca366076",
+    "./call/register.js": "./call/register.js?v=d6ca366076",
+    "./call/rehearse.js": "./call/rehearse.js?v=d6ca366076",
+    "./call/restaurants.js": "./call/restaurants.js?v=d6ca366076",
+    "./call/sessions.js": "./call/sessions.js?v=d6ca366076",
+    "./call/speak.js": "./call/speak.js?v=d6ca366076",
+    "./call/staff-sim.js": "./call/staff-sim.js?v=d6ca366076",
+    "./call/ui.js": "./call/ui.js?v=d6ca366076"
   }
 }
 </script>
@@ -860,7 +868,7 @@ body{-webkit-text-size-adjust:100%;
            renderStaffSheet, setStage, nextStage, prevStage, stageIndexOfPhrase,
            speakPanic, renderDebrief, renderBand, markSuggested } from './call/ui.js';
   import { interpret, isOwnLine, repliesWithItself, readJapanese } from './call/interpret.js';
-  import { RESTAURANT, RESTAURANTS } from './call/restaurants.js';
+  import { RESTAURANT, RESTAURANTS, PURPOSES } from './call/restaurants.js';
   import { createStaffSim, scoreRadar, scenariosFor } from './call/staff-sim.js';
   import { createRehearsal } from './call/rehearse.js';
   import { createHistory } from './call/history.js';
@@ -897,7 +905,7 @@ body{-webkit-text-size-adjust:100%;
   const heardWords = () => { if (statusAlert) { statusAlert = false; status.dataset.alert = 'false'; } };
 
   // ── The restaurant being called ─────────────────────────────────────────
-  document.title = `${RESTAURANT.name.short} — Call Assistant`;
+  document.title = `${RESTAURANT.purpose === 'confirm' ? 'Confirm ' : ''}${RESTAURANT.name.short} — Call Assistant`;
   const factsRoot = document.getElementById('facts');
   const [partyFact, ...extraFacts] = RESTAURANT.headerFacts;
   const facts = [
@@ -942,7 +950,15 @@ body{-webkit-text-size-adjust:100%;
   restaurantPick.value = RESTAURANT.id;
   // A reload, not a live swap: every module builds its phrases and prompts
   // for one restaurant as it loads, so nothing can go stale mid-call.
-  restaurantPick.addEventListener('change', () => { location.search = `?r=${restaurantPick.value}`; });
+  // Book or confirm: like the restaurant, read once at load, so a change is a reload.
+  const purposePick = document.getElementById('purpose-pick');
+  for (const [id, label] of Object.entries(PURPOSES)) purposePick.append(new Option(label, id));
+  purposePick.value = RESTAURANT.purpose;
+  const reloadFor = () => {
+    location.search = `?r=${restaurantPick.value}${purposePick.value === 'confirm' ? '&call=confirm' : ''}`;
+  };
+  restaurantPick.addEventListener('change', reloadFor);
+  purposePick.addEventListener('change', reloadFor);
 
   // ?trace=console: a test run logs when each line's English and card appear,
   // for the phone's console (see call/native-speech.js for the words).
