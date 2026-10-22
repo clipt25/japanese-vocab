@@ -154,9 +154,13 @@ export function installNativeSpeech(win = globalThis) {
   // ?trace=<url>: a test run posts every event, timestamped, to a logger on the
   // Mac - so the phone's ear can be scored without a debugger attached.
   const trace = new URLSearchParams(win.location?.search ?? '').get('trace');
+  // ?trace=console logs instead - an https page may not post to the Mac's
+  // plain-http logger, and the app relays console lines to the device log.
   if (trace) {
     win.__nativeSpeech = event => {
-      win.fetch?.(trace, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ t: Date.now(), ...event }) }).catch(() => {});
+      const line = JSON.stringify({ t: Date.now(), ...event });
+      if (trace === 'console') console.log(`TRACE ${line}`);
+      else win.fetch?.(trace, { method: 'POST', mode: 'no-cors', body: line }).catch(() => {});
       receive(event);
     };
   }

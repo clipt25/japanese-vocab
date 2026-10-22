@@ -836,22 +836,22 @@ body{-webkit-text-size-adjust:100%;
 <script type="importmap">
 {
   "imports": {
-    "./call/dice.js": "./call/dice.js?v=27c4b140e4",
-    "./call/fallback.js": "./call/fallback.js?v=27c4b140e4",
-    "./call/history.js": "./call/history.js?v=27c4b140e4",
-    "./call/interpret.js": "./call/interpret.js?v=27c4b140e4",
-    "./call/listen.js": "./call/listen.js?v=27c4b140e4",
-    "./call/match.js": "./call/match.js?v=27c4b140e4",
-    "./call/native-speech.js": "./call/native-speech.js?v=27c4b140e4",
-    "./call/normalize.js": "./call/normalize.js?v=27c4b140e4",
-    "./call/phrases.js": "./call/phrases.js?v=27c4b140e4",
-    "./call/register.js": "./call/register.js?v=27c4b140e4",
-    "./call/rehearse.js": "./call/rehearse.js?v=27c4b140e4",
-    "./call/restaurants.js": "./call/restaurants.js?v=27c4b140e4",
-    "./call/sessions.js": "./call/sessions.js?v=27c4b140e4",
-    "./call/speak.js": "./call/speak.js?v=27c4b140e4",
-    "./call/staff-sim.js": "./call/staff-sim.js?v=27c4b140e4",
-    "./call/ui.js": "./call/ui.js?v=27c4b140e4"
+    "./call/dice.js": "./call/dice.js?v=c953b0aa86",
+    "./call/fallback.js": "./call/fallback.js?v=c953b0aa86",
+    "./call/history.js": "./call/history.js?v=c953b0aa86",
+    "./call/interpret.js": "./call/interpret.js?v=c953b0aa86",
+    "./call/listen.js": "./call/listen.js?v=c953b0aa86",
+    "./call/match.js": "./call/match.js?v=c953b0aa86",
+    "./call/native-speech.js": "./call/native-speech.js?v=c953b0aa86",
+    "./call/normalize.js": "./call/normalize.js?v=c953b0aa86",
+    "./call/phrases.js": "./call/phrases.js?v=c953b0aa86",
+    "./call/register.js": "./call/register.js?v=c953b0aa86",
+    "./call/rehearse.js": "./call/rehearse.js?v=c953b0aa86",
+    "./call/restaurants.js": "./call/restaurants.js?v=c953b0aa86",
+    "./call/sessions.js": "./call/sessions.js?v=c953b0aa86",
+    "./call/speak.js": "./call/speak.js?v=c953b0aa86",
+    "./call/staff-sim.js": "./call/staff-sim.js?v=c953b0aa86",
+    "./call/ui.js": "./call/ui.js?v=c953b0aa86"
   }
 }
 </script>
@@ -944,6 +944,10 @@ body{-webkit-text-size-adjust:100%;
   // for one restaurant as it loads, so nothing can go stale mid-call.
   restaurantPick.addEventListener('change', () => { location.search = `?r=${restaurantPick.value}`; });
 
+  // ?trace=console: a test run logs when each line's English and card appear,
+  // for the phone's console (see call/native-speech.js for the words).
+  const tracing = new URLSearchParams(location.search).get('trace') === 'console';
+  const trace = (type, data) => { if (tracing) console.log(`TRACE ${JSON.stringify({ t: Date.now(), type, ...data })}`); };
   const mainEl = document.querySelector('main');
   const history = createHistory(document.getElementById('history-list'), {
     jumpButton: document.getElementById('history-jump'),
@@ -1134,6 +1138,7 @@ body{-webkit-text-size-adjust:100%;
         if (seq > englishShown && !done && reading.english.length < (early.english?.length ?? 0)) return;
         englishShown = seq;
         early.english = reading.english;
+        trace('english', { ja: text, en: reading.english, done: Boolean(done) });
         history.update(early.row, { en: reading.english });
         renderBand(radarRoot, { label: 'Saying', text: reading.english });
       },
@@ -1143,6 +1148,7 @@ body{-webkit-text-size-adjust:100%;
         if (!reading.replyId && !reading.custom) return;
         cardShown = seq;
         cardFinal = Boolean(authoritative);
+        trace('card', { ja: text, card: reading.replyId ?? 'custom', final: Boolean(authoritative) });
         markSuggested(reading.replyId, reading.custom);
       },
       // The finished sentence is read again anyway - unless nothing can work.
@@ -1298,6 +1304,15 @@ body{-webkit-text-size-adjust:100%;
     });
     // ?listen=1 opens the mic on load: a test run on the phone, with nobody tapping.
     if (new URLSearchParams(location.search).has('listen')) { listener.start(); toggle.dataset.on = 'true'; }
+  }
+  // Test switches are one-shot. The iPhone app reopens the last URL it showed,
+  // so a ?listen=1 left in it opened the mic on every launch.
+  {
+    const here = new URL(location.href);
+    const before = here.search;
+    for (const name of ['listen', 'trace', 'asr']) here.searchParams.delete(name);
+    // window.: `history` in this script is the call's transcript.
+    if (here.search !== before) window.history.replaceState(null, '', here);
   }
 
   // ── Connect to the call (Yolla in a Chrome tab, earphones on) ─────────────
