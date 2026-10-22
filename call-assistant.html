@@ -6,6 +6,11 @@
 <meta name="google" content="notranslate">
 <meta name="theme-color" content="#FBF9F4">
 <title>Call Assistant</title>
+<!-- Add to Home Screen opens straight onto the call assistant, full screen. -->
+<link rel="manifest" href="call-assistant.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Call">
+<link rel="apple-touch-icon" href="icon-call-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- Separate requests on purpose: css2 fails the WHOLE response if any one
@@ -551,6 +556,187 @@ body[data-past="open"] #past-calls{display:block}
 .turn__kana:empty,.turn__romaji:empty{display:none}
 .debrief__kana{font-family:var(--jp);font-size:15px;color:var(--muted);margin-top:2px}
 .debrief__romaji{font-size:15px;color:var(--ink-2);margin-top:1px}
+
+/* ── Phone ──────────────────────────────────────────────────────────────────
+   The same page in his hand: the iPhone app is only a window onto this file,
+   so the phone layout lives here, not in Swift. Laptop rules are untouched -
+   everything below applies under 600px only. Touch targets are 44px (he taps
+   one-handed, the other phone on speaker); type steps down one notch but the
+   ranking inside each card is unchanged: romaji leads what he says, English
+   leads what he hears. Reviewed at 393x759 - the app's real viewport inside
+   the safe area, not the 852px of the screen.
+
+   Two layouts, as on the laptop: before the call the page is a DOCUMENT he
+   reads (facts, briefing, then the script, with the stage bar and panic keys
+   pinned); on the call (and in rehearsal) it is a COCKPIT that never scrolls:
+   what they said, directly above what he says, stages and panic under his
+   thumb. */
+.panic__short,.card__copy{display:none}
+body{-webkit-text-size-adjust:100%;
+  /* Home-screen (standalone) Safari draws under the notch; the app does not. */
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+@media(max-width:600px){
+  :root{ --t-utter:25px; --t-gloss:22px; --t-jp:18px; --t-note:16px; }
+
+  /* ── controls, shared ── */
+  #start-call,#rehearse-btn,#mic-toggle,#composer-toggle,#past-btn,#connect-call{min-height:44px;
+    padding:6px 10px;font-size:16px;border:2px solid var(--rule);border-radius:4px;font-weight:700}
+  #composer-toggle kbd,#print-btn{display:none}
+  #restaurant-pick,#rh-scenario{min-height:44px;font-size:16px}   /* 16px: iOS zooms smaller inputs */
+  #mic-status{white-space:normal;max-width:none}
+  #mic-status[data-idle="true"]{display:none}
+  #mic-toggle[data-on="true"]::before{content:'● '}
+
+  /* ── before the call: a document ── */
+  body:not([data-mode="call"]){height:auto;min-height:100dvh;overflow:visible}
+  body:not([data-mode="call"]) main{display:block;flex:none;background:none}
+  body:not([data-mode="call"]) #script-panel{overflow:visible;padding-bottom:20px}
+  body:not([data-mode="call"]) #stepper{position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+  body:not([data-mode="call"]) #panic{position:sticky;bottom:env(safe-area-inset-bottom,0px);z-index:5}
+  body:not([data-mode="call"]) #history-panel{display:none}
+  /* Until he listens the band only repeats the stage bar's "Opening". */
+  body:not([data-mode="call"]):not(:has(#mic-toggle[data-on="true"])) #radar-panel{display:none}
+  #script{scroll-margin-top:76px}
+  body:not([data-mode="call"]) #api-alert{order:-1}
+
+  /* Facts as a checklist, the number to dial first and copyable: the call is
+     placed on the OTHER device, so this is a copy (Universal Clipboard), never tel:. */
+  body:not([data-mode="call"]) .card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:3px 12px;padding:8px 12px 10px}
+  body:not([data-mode="call"]) .card__fact{min-width:0}
+  .card__fact--prep:not(:nth-child(2)){display:none}   /* the picker names the restaurant */
+  .card__fact--prep:nth-child(2),.card__fact:nth-child(7){grid-column:1 / -1}
+  .card__fact--prep:nth-child(2){align-items:center;padding-bottom:6px;margin-bottom:3px;
+    border-bottom:1px solid var(--rule-faint)}
+  .card__val,.card__val--jp{font-size:15px}
+  .card__dial{display:flex;align-items:center;gap:10px;min-height:44px;font-size:22px;font-weight:700;
+    color:var(--ink);text-align:left}
+  .card__copy{display:inline-block;font-size:var(--t-micro);font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--ink);border:2px solid var(--rule);border-radius:4px;padding:6px 8px}
+  /* One primary (Start call), the rest grouped by job. minmax(0,1fr): without
+     it the picker's long option text widens the grid past the screen. */
+  body:not([data-mode="call"]) .card__mic{grid-column:1 / -1;min-width:0;display:grid;
+    grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;padding:6px 0 0;margin-left:0}
+  body:not([data-mode="call"]) .card__mic > *{grid-column:span 6;min-width:0}
+  body:not([data-mode="call"]) #restaurant-pick{order:1}
+  body:not([data-mode="call"]) #rh-scenario{order:2}
+  body:not([data-mode="call"]) #rehearse-btn{order:3;grid-column:span 3}
+  body:not([data-mode="call"]) #start-call{order:4;grid-column:span 3;background:var(--ink);
+    border-color:var(--ink);color:var(--ground)}
+  body:not([data-mode="call"]) #composer-toggle,
+  body:not([data-mode="call"]) #past-btn,
+  body:not([data-mode="call"]) #mic-toggle{order:5;grid-column:span 2;padding:6px 4px;font-weight:600}
+  body:not([data-mode="call"]) #connect-call{order:6}
+  body:not([data-mode="call"]) #mic-status{order:7}
+  .dial{font-size:15px;padding:8px 12px}
+
+  /* ── on the call: a cockpit ── */
+  /* One header row. Rehearse is a prep tool; the status shows only when
+     something is wrong - while the mic works, the green ● Listen says so. */
+  body[data-mode="call"] .card{padding:4px 10px}
+  body[data-mode="call"] #rehearse-btn,body[data-mode="call"] #connect-call{display:none}
+  body[data-mode="call"] .card__mic{width:100%;margin-left:0;flex-wrap:nowrap;gap:6px;padding:0}
+  body[data-mode="call"] #mic-toggle{order:-2}
+  body[data-mode="call"] #mic-status{order:-1;flex:1 1 0;min-width:0;line-height:1.2;font-size:var(--t-micro);
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  body[data-mode="call"] #composer-toggle{margin-left:auto}
+  body[data-mode="call"] #start-call{order:1}           /* End call far right, away from Listen */
+  #mic-toggle[data-on="true"] ~ #mic-status:not([data-alert="true"]){display:none}
+  body[data-mode="call"] #mic-toggle[data-on="false"] ~ #mic-status,
+  #mic-status[data-alert="true"]{color:var(--alert)}
+
+  /* What they said directly above what he says; the stage bar moves down to
+     the panic keys, where his thumb is. */
+  body[data-mode="call"] main,main[data-has-history="true"]{grid-template-columns:1fr;
+    grid-template-rows:minmax(0,42%) minmax(0,1fr) auto}
+  body[data-mode="call"] #history-panel,main[data-has-history="true"] #history-panel{grid-column:1;grid-row:1;
+    border-left:none;border-bottom:2px solid var(--rule)}
+  body[data-mode="call"] #script-panel,main[data-has-history="true"] #script-panel{grid-row:2}
+  body[data-mode="call"] #stepper,main[data-has-history="true"] #stepper{grid-row:3;border-bottom:none;
+    border-top:1px solid var(--rule);scroll-padding-inline:48px}
+  body[data-mode="call"] #script-panel .phrase__kana{display:none}   /* the one line nobody reads */
+
+  /* The transcript: the newest finished staff line keeps its kana and romaji;
+     older lines and his own keep only what identifies them. */
+  #history-list{padding:6px 10px 8px}
+  .turn{padding:6px 0 6px 8px}
+  .turn__en{font-size:19px}
+  .turn--you{padding-top:4px;padding-bottom:4px}
+  .turn--you .turn__who{display:inline;margin-right:6px}
+  .turn--you .turn__ja{display:inline;font-size:15px;margin-top:0}
+  .turn--you .turn__kana,.turn--you .turn__romaji{display:none}
+  .turn--staff:has(~ .turn--staff:not(.turn--live)) .turn__kana,
+  .turn--staff:has(~ .turn--staff:not(.turn--live)) .turn__romaji{display:none}
+  .history__jump{bottom:8px;min-height:44px}
+
+  /* ── cards ── */
+  .panel{padding:6px 10px}
+  .phrase{padding:6px 52px 7px 10px}
+  .phrase__speak{width:44px;height:44px;top:4px;right:2px;font-size:16px}
+  .phrase[data-suggested="true"] .phrase__speak{background:var(--live);border-color:var(--live);color:var(--ground)}
+  .phrase--custom::before{content:'Claude wrote this — not in script'}
+  .step{padding:5px 8px 6px}
+
+  /* ── panic: five one-word tiles, always all on screen ── a panic key he has
+     to scroll to is not one. The numerals were keyboard shortcuts; a phone has
+     no keys. A suggested key is filled, not just outlined. */
+  #panic{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .panic__btn,body[data-mode="call"] .panic__btn{flex-direction:column;align-items:flex-start;
+    justify-content:center;gap:0;padding:4px 6px;min-height:52px}
+  .panic__en,.panic__romaji,.panic__kanji,.panic__key,body[data-mode="call"] .panic__key{display:none}
+  .panic__short{display:block;font-size:15px;font-weight:700;line-height:1.15;color:var(--ink);overflow-wrap:anywhere}
+  .panic__btn[data-suggested="true"]{background:var(--live)}
+  .panic__btn[data-suggested="true"] .panic__short{color:var(--ground)}
+
+  /* ── Ask Claude: above the panic keys, the answer above the input - where
+     the keyboard is not. ── */
+  #composer{padding:8px 10px;bottom:calc(52px + env(safe-area-inset-bottom));
+    max-height:calc(100% - 106px);overflow-y:auto}
+  #composer-out{order:-1;max-height:42vh}
+  #composer-input{min-width:0;flex:1 1 100%;font-size:17px}
+  #composer-go{flex:1 1 auto;min-height:44px}
+  #key-set{flex:0 0 auto;min-height:44px}
+
+  /* ── rehearsal: two rows, not five ── */
+  body[data-rehearse="on"] #rehearse-bar{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;
+    gap:6px;padding:6px 10px}
+  #rehearse-bar .rh__status{grid-row:1;grid-column:1;min-width:0;display:flex;align-items:center;
+    justify-content:center;padding:6px}
+  #rh-input{grid-row:2;grid-column:1 / 4;min-width:0;font-size:18px}
+  #rh-send{grid-row:2;grid-column:4}
+  #rehearse-bar button{padding:6px 10px}
+  #rh-end{color:var(--alert)}
+  #rehearse-bar kbd,.rh__toggle{display:none}   /* the radar is already hidden on the call */
+
+  /* ── debrief: its two buttons always in reach ── */
+  #debrief{padding:16px 14px 0;overscroll-behavior:contain}
+  .debrief__title{font-size:22px}
+  .debrief__turn{padding:8px 10px}
+  .debrief__ja{font-size:19px}
+  .debrief__radar{font-size:15px;font-weight:600}
+  .debrief__actions{position:sticky;bottom:0;margin:14px -14px 0;
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:var(--ground);
+    border-top:2px solid var(--rule)}
+  .debrief__actions button{flex:1 1 0}
+
+  /* ── past calls: title on its own line, Close always reachable ── */
+  #past-calls{padding:0 14px 32px;overscroll-behavior:contain}
+  .past__bar{position:sticky;top:0;z-index:1;flex-wrap:wrap;gap:6px 8px;margin:0 -14px 10px;
+    padding:calc(8px + env(safe-area-inset-top)) 14px 8px;background:var(--ground);
+    border-bottom:1px solid var(--rule-faint)}
+  .past__bar h2{font-size:22px;line-height:1.3}
+  .past__bar:has(#past-back:not([hidden])) h2{order:2;flex:1 1 100%;font-size:19px}
+  #past-close{margin-left:auto}
+  .past__item{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;gap:6px}
+  .past__item .past__open{grid-row:1 / 3;padding:8px 12px;line-height:1.35}
+  .past__item .past__copy,.past__item .past__delete{grid-column:2;min-width:84px}
+
+  /* ── API banner: fits, and can be retried - the app has no reload button ── */
+  #api-alert{font-size:15px;padding:8px 12px;line-height:1.3}
+}
+/* The banner's own button, on every screen. */
+#api-alert button{display:block;margin-top:6px;min-height:44px;padding:6px 14px;border:2px solid var(--ground);
+  border-radius:4px;color:var(--ground);font-weight:700;font-size:16px}
 </style>
 </head>
 <body>
@@ -569,7 +755,7 @@ body[data-past="open"] #past-calls{display:block}
     <button id="connect-call" type="button" data-on="false"
             title="Listen to the Yolla tab directly — for calls with earphones">Connect call</button>
     <button id="mic-toggle" type="button" data-on="false">Listen</button>
-    <span id="mic-status">idle</span>
+    <span id="mic-status" data-idle="true">idle</span>
   </div>
 </header>
 
@@ -579,7 +765,7 @@ body[data-past="open"] #past-calls{display:block}
 
 <section id="rehearse-bar" aria-live="polite">
   <span id="rh-status" class="rh__status" data-state="idle">—</span>
-  <input id="rh-input" type="text" autocomplete="off" spellcheck="false"
+  <input id="rh-input" type="text" enterkeyhint="send" autocomplete="off" spellcheck="false"
          placeholder="Speak your reply — or type it">
   <button id="rh-send" type="button">Send <kbd>↵</kbd></button>
   <button id="rh-repeat" type="button">Repeat</button>
@@ -605,7 +791,7 @@ body[data-past="open"] #past-calls{display:block}
 </main>
 
 <section id="composer">
-  <input id="composer-input" type="text" placeholder="Say something else — type English…">
+  <input id="composer-input" type="text" enterkeyhint="go" placeholder="Say something else — type English…">
   <button id="composer-go" type="button">Translate</button>
   <button id="key-set" type="button">API key</button>
   <div id="composer-out"></div>
@@ -650,21 +836,22 @@ body[data-past="open"] #past-calls{display:block}
 <script type="importmap">
 {
   "imports": {
-    "./call/dice.js": "./call/dice.js?v=da16ef4cd1",
-    "./call/fallback.js": "./call/fallback.js?v=da16ef4cd1",
-    "./call/history.js": "./call/history.js?v=da16ef4cd1",
-    "./call/interpret.js": "./call/interpret.js?v=da16ef4cd1",
-    "./call/listen.js": "./call/listen.js?v=da16ef4cd1",
-    "./call/match.js": "./call/match.js?v=da16ef4cd1",
-    "./call/normalize.js": "./call/normalize.js?v=da16ef4cd1",
-    "./call/phrases.js": "./call/phrases.js?v=da16ef4cd1",
-    "./call/register.js": "./call/register.js?v=da16ef4cd1",
-    "./call/rehearse.js": "./call/rehearse.js?v=da16ef4cd1",
-    "./call/restaurants.js": "./call/restaurants.js?v=da16ef4cd1",
-    "./call/sessions.js": "./call/sessions.js?v=da16ef4cd1",
-    "./call/speak.js": "./call/speak.js?v=da16ef4cd1",
-    "./call/staff-sim.js": "./call/staff-sim.js?v=da16ef4cd1",
-    "./call/ui.js": "./call/ui.js?v=da16ef4cd1"
+    "./call/dice.js": "./call/dice.js?v=27c4b140e4",
+    "./call/fallback.js": "./call/fallback.js?v=27c4b140e4",
+    "./call/history.js": "./call/history.js?v=27c4b140e4",
+    "./call/interpret.js": "./call/interpret.js?v=27c4b140e4",
+    "./call/listen.js": "./call/listen.js?v=27c4b140e4",
+    "./call/match.js": "./call/match.js?v=27c4b140e4",
+    "./call/native-speech.js": "./call/native-speech.js?v=27c4b140e4",
+    "./call/normalize.js": "./call/normalize.js?v=27c4b140e4",
+    "./call/phrases.js": "./call/phrases.js?v=27c4b140e4",
+    "./call/register.js": "./call/register.js?v=27c4b140e4",
+    "./call/rehearse.js": "./call/rehearse.js?v=27c4b140e4",
+    "./call/restaurants.js": "./call/restaurants.js?v=27c4b140e4",
+    "./call/sessions.js": "./call/sessions.js?v=27c4b140e4",
+    "./call/speak.js": "./call/speak.js?v=27c4b140e4",
+    "./call/staff-sim.js": "./call/staff-sim.js?v=27c4b140e4",
+    "./call/ui.js": "./call/ui.js?v=27c4b140e4"
   }
 }
 </script>
@@ -683,13 +870,31 @@ body[data-past="open"] #past-calls{display:block}
   import { initVoices, setSpeechGate, speak } from './call/speak.js';
   import { createListener, isSecureForMic } from './call/listen.js';
   import { composeEnglish, translateJapanese, hasKey, setKey, callClaude, streamClaude, checkApi } from './call/fallback.js';
+  import { installNativeSpeech } from './call/native-speech.js';
+
+  // In the iPhone app, Apple's recogniser stands in for the browser's - before
+  // createListener() below looks for one. Elsewhere this does nothing.
+  const nativeEar = installNativeSpeech();
 
   const radarRoot = document.getElementById('radar');
   const toggle = document.getElementById('mic-toggle');
   const status = document.getElementById('mic-status');
   const out = document.getElementById('composer-out');
   const input = document.getElementById('composer-input');
-  const setStatus = text => { status.textContent = text; };
+  // "idle" is the resting state, not news: on a phone it is not worth a row.
+  // A problem is news until words arrive again (heardWords below): while the
+  // listener retries it flips back to "listening" between failures, and on a
+  // phone the green ● Listen would otherwise say all is well while it is deaf.
+  const PROBLEM = /error|fail|blocked|gave up|lost|unsupported|not available|taken/i;
+  let statusAlert = false;
+  const setStatus = text => {
+    if (PROBLEM.test(text)) statusAlert = true;
+    if (text === 'idle') statusAlert = false;
+    if (!(statusAlert && /^listening/.test(text))) status.textContent = text;
+    status.dataset.idle = String(text === 'idle');
+    status.dataset.alert = String(statusAlert);
+  };
+  const heardWords = () => { if (statusAlert) { statusAlert = false; status.dataset.alert = 'false'; } };
 
   // ── The restaurant being called ─────────────────────────────────────────
   document.title = `${RESTAURANT.name.short} — Call Assistant`;
@@ -711,7 +916,21 @@ body[data-past="open"] #past-calls{display:block}
     const key = Object.assign(document.createElement('span'), { className: 'card__key', textContent: f.key });
     const val = Object.assign(document.createElement('span'), { textContent: f.value,
       className: 'card__val' + (f.jp ? ' card__val--jp' : '') + (f.warn ? ' card__val--warn' : '') });
-    fact.append(key, val);
+    if (f.key === 'Dial') {
+      // On a phone the call is placed on the OTHER device, so the number is
+      // copied (Universal Clipboard carries it across), never dialled here.
+      const dial = Object.assign(document.createElement('button'), { type: 'button', className: 'card__val card__dial' });
+      const copy = Object.assign(document.createElement('span'), { className: 'card__copy', textContent: 'Copy' });
+      dial.append(f.value, copy);
+      dial.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(f.value.replace(/\s+/g, '')); copy.textContent = 'Copied'; }
+        catch { copy.textContent = 'Copy failed'; }
+        setTimeout(() => { copy.textContent = 'Copy'; }, 2000);
+      });
+      fact.append(key, dial);
+    } else {
+      fact.append(key, val);
+    }
     factsRoot.append(fact);
   }
   const callWindow = document.getElementById('call-window');
@@ -758,15 +977,27 @@ body[data-past="open"] #past-calls{display:block}
 
   // ── When translation cannot work, say so where he is looking ───────────────
   const apiAlert = document.getElementById('api-alert');
+  function showAlert(text, action, onAction) {
+    const button = Object.assign(document.createElement('button'), { type: 'button', textContent: action });
+    button.addEventListener('click', onAction);
+    apiAlert.replaceChildren(text, button);
+    apiAlert.hidden = false;
+  }
   function reportApiError(error, where) {
     setStatus(`${where}: ${error.message}`);
     if (!error.fatal) return;
-    apiAlert.textContent = `Translation is OFF — ${error.message.replace(/\.?$/, '.')} `
-      + 'Fix it at console.anthropic.com (Plans & Billing), then reload this page.';
-    apiAlert.hidden = false;
+    // A button, not "reload this page": the iPhone app has no reload.
+    showAlert(`Translation is OFF — ${error.message.replace(/\.?$/, '.')} `
+      + 'Fix it at console.anthropic.com (Plans & Billing), then check again.', 'Check again', preflight);
+  }
+  function askKey() {
+    const entered = prompt('Anthropic API key (stored only on this device):', '');
+    if (entered) { setKey(entered); preflight(); }
   }
   async function preflight() {
-    if (!hasKey()) return;
+    // A new phone has no key: say so before the call, with the way to fix it -
+    // otherwise the only way in is a button inside Ask Claude.
+    if (!hasKey()) { showAlert('Live translation is off — no API key on this device.', 'Add API key', askKey); return; }
     try { await checkApi(); apiAlert.hidden = true; }
     catch (error) { reportApiError(error, 'translator check'); }
   }
@@ -862,6 +1093,12 @@ body[data-past="open"] #past-calls{display:block}
   // With the call connected, everything heard is the restaurant: the Yolla tab
   // never carries his own voice, and staff echo his words back.
   const staffOnly = () => listener?.source === 'call';
+  // Words as they are spoken: the call track on the laptop, and Apple's
+  // recogniser in the iPhone app - it streams each word within ~0.2 s, so
+  // waiting for the sentence to end cost ~2 s per line. On the phone the mic
+  // hears him too; his own card lines are caught as they firm up (isOwnLine
+  // below) and the verdict lanes still sort the rest, as they do on finals.
+  const liveWords = () => staffOnly() || nativeEar;
 
   function heardInterim(text) {
     if (!text || (!staffOnly() && isOwnLine(text))) return;
@@ -1011,12 +1248,14 @@ body[data-past="open"] #past-calls{display:block}
   }
 
   const listener = createListener({
-    // Only the call track: on speakerphone, provisional words are often his own voice.
-    onInterim: text => { if (listener?.source === 'call' && hasKey()) heardInterim(text); },
+    // The call track, or the iPhone app's recogniser (see liveWords). Chrome's own
+    // mic interims stay off: on speakerphone they are often his voice, and late.
+    onInterim: text => { if (liveWords() && hasKey()) heardInterim(text); },
     // Measured: on garbled or mixed speech Chrome sometimes ends a sentence with an
     // EMPTY final. Close it with the words it did show, so no row stays live forever.
     onRaw: (text, isFinal) => {
-      if (isFinal && !text.trim() && early?.row?.ja && listener?.source === 'call' && hasKey()) heardFinal(early.row.ja);
+      if (text.trim()) heardWords();
+      if (isFinal && !text.trim() && early?.row?.ja && liveWords() && hasKey()) heardFinal(early.row.ja);
     },
     onMatch: (result, meta) => {
       if (hasKey()) {
@@ -1045,7 +1284,8 @@ body[data-past="open"] #past-calls{display:block}
   // speakerphone that audio also goes down the line to the restaurant.
   if (listener) setSpeechGate({ before: () => { if (listener.source === 'mic') listener.pause(); }, after: () => listener.resume() });
 
-  if (!isSecureForMic()) {
+  // The app's recogniser is native, so the page's origin does not gate the mic.
+  if (!nativeEar && !isSecureForMic()) {
     toggle.disabled = true;
     setStatus('open via https or localhost, not file://');
   } else if (!listener) {
@@ -1056,6 +1296,8 @@ body[data-past="open"] #past-calls{display:block}
       if (listener.running) { listener.stop(); toggle.dataset.on = 'false'; }
       else { listener.start(); toggle.dataset.on = 'true'; }
     });
+    // ?listen=1 opens the mic on load: a test run on the phone, with nobody tapping.
+    if (new URLSearchParams(location.search).has('listen')) { listener.start(); toggle.dataset.on = 'true'; }
   }
 
   // ── Connect to the call (Yolla in a Chrome tab, earphones on) ─────────────
@@ -1124,12 +1366,12 @@ body[data-past="open"] #past-calls{display:block}
   }
   connectBtn.addEventListener('click', connectCall);
   if (new URLSearchParams(location.search).has('debug')) window.callAssistant = { attachCallStream };
-  if (!navigator.mediaDevices?.getDisplayMedia) connectBtn.disabled = true;
+  // No tab capture (any phone): nothing to connect, so no button to wonder about.
+  if (!navigator.mediaDevices?.getDisplayMedia) connectBtn.hidden = true;
 
-  document.getElementById('key-set').addEventListener('click', () => {
-    const entered = prompt('Anthropic API key (stored only in this browser):', '');
-    if (entered) setKey(entered);
-  });
+  document.getElementById('key-set').addEventListener('click', askKey);
+  // A dead key or an empty balance shows up while he prepares, not when he dials.
+  preflight();
 
   async function runComposer() {
     const english = input.value.trim();
@@ -1167,7 +1409,7 @@ body[data-past="open"] #past-calls{display:block}
   const rhInput = document.getElementById('rh-input');
   const STATUS_TEXT = { idle: '—', staff: 'Staff speaking', you: 'Your turn',
                         thinking: 'Staff thinking…', ended: 'Ended' };
-  const hasMic = isSecureForMic() && Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition);
+  const hasMic = (nativeEar || isSecureForMic()) && Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition);
   const listenerGate = listener
     ? { before: () => { if (listener.source === 'mic') listener.pause(); }, after: () => listener.resume() }
     : { before() {}, after() {} };
@@ -1207,7 +1449,7 @@ body[data-past="open"] #past-calls{display:block}
   function startRehearsal() {
     preflight();
     if (!hasKey()) {
-      const entered = prompt('The staff in the rehearsal is played by Claude.\nAnthropic API key (stored only in this browser):', '');
+      const entered = prompt('The staff in the rehearsal is played by Claude.\nAnthropic API key (stored only on this device):', '');
       if (!entered) return;
       setKey(entered);
     }

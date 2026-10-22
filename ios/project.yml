@@ -1,0 +1,42 @@
+# The iPhone app is a window onto the hosted call assistant, not a copy of it.
+# Everything the user sees is call-assistant.html, loaded from GitHub Pages on
+# every launch, so a web deploy reaches the phone without a rebuild. The Swift
+# here only adds what Safari cannot: Apple's speech recogniser (SpeechBridge).
+# Regenerate after adding files:  xcodegen generate
+name: CallAssistant
+options:
+  bundleIdPrefix: uk.clipt
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+targets:
+  CallAssistant:
+    type: application
+    platform: iOS
+    sources: [CallAssistant]
+    info:
+      path: CallAssistant/Info.plist
+      properties:
+        CFBundleDisplayName: Call Assistant
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen:
+          UIColorName: Ground
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSMicrophoneUsageDescription: Listens to the restaurant on speakerphone so each line can be shown in English.
+        NSSpeechRecognitionUsageDescription: Turns the restaurant's Japanese into text so it can be translated as they speak.
+        ITSAppUsesNonExemptEncryption: false
+        # A dev build may load the Mac's `python3 serve.py` over plain http.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: uk.clipt.callassistant
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: NO
+        DEVELOPMENT_TEAM: U23PY2U6XT
+        CODE_SIGN_STYLE: Automatic
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

@@ -1,0 +1,15 @@
+{
+  "name": "Call Assistant",
+  "short_name": "Call",
+  "description": "Live help for booking restaurants by phone in Japanese",
+  "start_url": "./call-assistant.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FBF9F4",
+  "theme_color": "#FBF9F4",
+  "icons": [
+    { "src": "icon-call-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icon-call-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

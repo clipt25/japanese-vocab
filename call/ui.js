@@ -64,8 +64,21 @@ export function setStage(index) {
   // stage he left - a cockpit instrument reading a stale value.
   const standing = radarRoot?.querySelector('.radar__band-text--stage');
   if (standing) standing.textContent = STAGES[index].label;
-  scriptRoot.scrollTop = 0;
+  scrollScriptToTop();
 }
+
+// #script never scrolls - its panel does (this reset used to do nothing, and a
+// new stage opened wherever the last one had been scrolled to). Before a call
+// on a phone the whole page scrolls instead, under a sticky stage bar.
+function scrollScriptToTop() {
+  scriptRoot?.closest('#script-panel')?.scrollTo?.(0, 0);
+  if (stepperRoot && getComputedStyle(stepperRoot).position === 'sticky'
+      && stepperRoot.getBoundingClientRect().top <= 1) scriptRoot.scrollIntoView?.({ block: 'start' });
+}
+
+// A phone shows a few cards at a time: put the one to say at the top, right
+// under what they just said. 'nearest' parked it at the bottom edge.
+const narrow = () => globalThis.matchMedia?.('(max-width: 600px)').matches ?? false;
 
 export function nextStage() { setStage(Math.min(currentStage + 1, STAGES.length - 1)); }
 export function prevStage() { setStage(Math.max(currentStage - 1, 0)); }
@@ -125,6 +138,8 @@ export function renderPanic(root, { onPick } = {}) {
     button.type = 'button';
     button.append(el('span', 'panic__key', String(index + 1)));
     button.append(el('span', 'panic__en', phrase.en));
+    // A phone's fifth of the width fits a word, not a sentence.
+    if (phrase.short) button.append(el('span', 'panic__short', phrase.short));
     button.append(el('span', 'panic__romaji', phrase.romaji));
     button.append(el('span', 'panic__kanji', phrase.kanji));
     button.addEventListener('click', () => (onPick ? onPick(index) : speak(phrase)));
@@ -222,7 +237,7 @@ export function markSuggested(phraseId, custom = null) {
     card.dataset.suggested = 'true';
     const stage = scriptRoot?.querySelector('.stage:not([hidden])');
     stage?.insertBefore(card, stage.querySelector('.phrase'));
-    if (scriptRoot) scriptRoot.scrollTop = 0;
+    scrollScriptToTop();
     return;
   }
   if (!phraseId) return;
@@ -237,7 +252,7 @@ export function markSuggested(phraseId, custom = null) {
   const card = scriptRoot?.querySelector(`.phrase[data-id="${phraseId}"]`);
   if (!card) return;
   card.dataset.suggested = 'true';
-  card.scrollIntoView({ block: 'nearest' });
+  card.scrollIntoView({ block: narrow() ? 'start' : 'nearest' });
 }
 
 export function renderFallbackResult(root, forms, who = 'staff') {

@@ -654,25 +654,25 @@ function selfPhrases(r) {
 
   { id: 'panic-again', who: 'self', stage: 'panic',
     kanji: 'もう一度お願いします。', kana: 'もういちどおねがいします',
-    romaji: 'Mō ichido onegai shimasu.', en: 'Once more, please.' },
+    romaji: 'Mō ichido onegai shimasu.', en: 'Once more, please.', short: 'Again' },
 
   { id: 'panic-slower', who: 'self', stage: 'panic',
     kanji: 'もう少しゆっくりお願いします。', kana: 'もうすこしゆっくりおねがいします',
-    romaji: 'Mō sukoshi yukkuri onegai shimasu.', en: 'A little more slowly, please.' },
+    romaji: 'Mō sukoshi yukkuri onegai shimasu.', en: 'A little more slowly, please.', short: 'Slower' },
 
   { id: 'panic-louder', who: 'self', stage: 'panic',
     kanji: 'もう少し大きい声でお願いします。',
     kana: 'もうすこしおおきいこえでおねがいします',
     romaji: 'Mō sukoshi ōkii koe de onegai shimasu.',
-    en: 'A little louder, please.' },
+    en: 'A little louder, please.', short: 'Louder' },
 
   { id: 'panic-dont-understand', who: 'self', stage: 'panic',
     kanji: 'すみません、よく分かりませんでした。', kana: 'すみません、よくわかりませんでした',
-    romaji: 'Sumimasen, yoku wakarimasen deshita.', en: "Sorry, I didn't quite understand." },
+    romaji: 'Sumimasen, yoku wakarimasen deshita.', en: "Sorry, I didn't quite understand.", short: "Didn't get it" },
 
   { id: 'panic-wait', who: 'self', stage: 'panic',
     kanji: '少し待ってください。', kana: 'すこしまってください',
-    romaji: 'Sukoshi matte kudasai.', en: 'Please wait a moment.',
+    romaji: 'Sukoshi matte kudasai.', en: 'Please wait a moment.', short: 'Wait',
     note: 'NOT お待ちください — that is the staff’s phrase, and from a customer it sounds like an order.' },
   ];
 }
