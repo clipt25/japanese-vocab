@@ -140,7 +140,10 @@ export function speakableSoFar(text) {
 
 export function parseStaffTurn(text) {
   if (!/^\s*(\{|```)/.test(text)) {
-    const ja = field(text, 'JA');
+    // Measured 2026-10-23: Opus occasionally drops the JA line. The kana is the
+    // same sentence, and it is what gets spoken anyway - use it rather than
+    // stopping the rehearsal mid-call.
+    const ja = field(text, 'JA') || field(text, 'KANA');
     if (!ja) throw new Error('Staff reply had no Japanese line');
     return { ja, kana: field(text, 'KANA'), romaji: field(text, 'ROMAJI'), en: field(text, 'EN'),
              slow: /^slow/i.test(field(text, 'PACE')), end: /^yes/i.test(field(text, 'END')) };
@@ -195,10 +198,17 @@ export function createStaffSim({ callClaude, streamClaude, scenario = 'random', 
 
       history.push({ role: 'user', content });
       try {
-        const text = streamClaude
-          ? await streamClaude({ ...STAFF_LANE, system, messages: history }, partial => onProgress?.(speakableSoFar(partial)))
-          : await callClaude({ system, messages: history, maxTokens: 3000 });
-        const turn = parseStaffTurn(text);
+        const ask = () => (streamClaude
+          ? streamClaude({ ...STAFF_LANE, system, messages: history }, partial => onProgress?.(speakableSoFar(partial)))
+          : callClaude({ system, messages: history, maxTokens: 3000 }));
+        let turn;
+        try {
+          turn = parseStaffTurn(await ask());
+        } catch (error) {
+          // No Japanese and no kana means nothing was spoken: ask once more.
+          if (!/no Japanese line/.test(error.message)) throw error;
+          turn = parseStaffTurn(await ask());
+        }
         history.push({ role: 'assistant', content: toLines(turn) });
         return turn;
       } catch (error) {

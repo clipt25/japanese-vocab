@@ -179,3 +179,25 @@ test('the no-reservations scenario overrides the facts, and both end the call po
   assert.match(SCENARIOS['no-reservations'].brief, /overrides anything in the facts about reservations/);
   for (const id of ['no-table', 'no-reservations']) assert.match(SCENARIOS[id].brief, /end the call politely/);
 });
+
+test('a reply missing its JA line falls back to the kana, and an empty one is asked again', async () => {
+  const noJa = 'PACE: normal\nKANA: しょうしょうおまちください。\nROMAJI: Shōshō omachi kudasai.\nEN: One moment.\nEND: no';
+  assert.equal(parseStaffTurn(noJa).ja, 'しょうしょうおまちください。');
+  const replies = ['PACE: normal\nEN: hmm', 'PACE: normal\nKANA: はい。\nJA: はい。\nEN: Yes.\nEND: no'];
+  let calls = 0;
+  const sim = createStaffSim({ streamClaude: async () => replies[calls++] });
+  sim.opening();
+  const turn = await sim.reply('予約をお願いします');
+  assert.equal(calls, 2);
+  assert.equal(turn.ja, 'はい。');
+});
+
+test('Koushuya: Sunday 1 Nov at noon, with 12:30 or 1:00 as the fallback', async () => {
+  const { RESTAURANTS } = await import('../restaurants.js');
+  const { buildLibrary } = await import('../phrases.js');
+  const lib = buildLibrary(RESTAURANTS.koushuya);
+  assert.equal(lib.byId('self-datetime').kanji, '11月1日の昼12時にお願いします。');
+  assert.equal(lib.byId('self-datetime').kana, 'じゅういちがつついたちのひるじゅうにじにおねがいします');
+  assert.equal(lib.byId('self-later-times').kanji, '12時半か1時は空いていますか。');
+  assert.match(RESTAURANTS.koushuya.booking, /nothing before 11:45/);
+});

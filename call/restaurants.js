@@ -259,6 +259,56 @@ export const RESTAURANTS = Object.freeze({
       complications: 'the 18:30 table is full but 19:00 or 19:30 is free, or you need a Japanese contact number',
     },
   },
+
+  // Checked 2026-10-23: Google Maps 4.9 (6,081 reviews), Tabelog 3.37 (58);
+  // Hitosara: open every day 10:00–21:00, 43 seats, ~¥2,500 a head, cards +
+  // PayPay. Online booking showed full, so he calls. Day 4 farewell lunch:
+  // the car goes back at 11:30, the Fuji Excursion leaves at 15:00.
+  koushuya: {
+    id: 'koushuya',
+    label: '甲州家 Kawaguchiko — Sun 1 Nov, 12:00',
+    name: { ja: '牛かつ専門店 甲州家', short: '甲州家', shortKana: 'こうしゅうや', shortRomaji: 'Kōshūya',
+            en: 'Gyukatsu Koushuya', interpret: 'Koushuya beef-cutlet restaurant, Kawaguchiko',
+            openingKana: 'ぎゅうかつせんもんてんこうしゅうや' },
+    dial: '+81 555 73 8393',
+    meal: 'lunch',
+    date: { ja: '11月1日', kana: 'じゅういちがつついたち', romaji: 'jūichi-gatsu tsuitachi',
+            weekdayJa: '日曜日', weekdayKana: 'にちようび', weekdayRomaji: 'nichiyōbi', weekdayEn: 'Sunday',
+            enShort: 'November 1st', header: 'Sun 1 Nov 2026', holiday: false,
+            note: '1日 is ついたち — NOT いちにち.' },
+    time: {
+      ja: '12時', kana: 'じゅうにじ', romaji: 'jūni-ji',
+      fullJa: '12時', fullKana: 'じゅうにじ', fullRomaji: 'jūni-ji',
+      periodJa: '昼', periodKana: 'ひる', periodRomaji: 'hiru',
+      en: '12:00', enSpoken: '12 noon', header: '12:00',
+      laterJa: '12時半', laterKana: 'じゅうにじはん', laterRomaji: 'jūni-ji han', laterEn: '12:30',
+    },
+    party: PARTY[4],
+    partyCount: 4,
+    features: { seating: false, course: false, serviceCharge: false, cashless: false },
+    budget: null,
+    // 12:00 is the ask; 12:30 or 13:00 still makes the 15:00 train. Nothing
+    // before 11:45 - the rental car is due back at 11:30.
+    laterTimes: { ja: '12時半か1時', kana: 'じゅうにじはんかいちじ', romaji: 'jūni-ji han ka ichi-ji', en: '12:30 or 1:00',
+                  tooEarly: { ja: '11時半', kana: 'じゅういちじはん', romaji: 'jūichi-ji han', en: '11:30' } },
+    headerFacts: [{ key: 'Party', value: '4' }, { key: 'Online', value: 'showed full — phone', warn: true }],
+    callWindow: { strong: 'Call 13:00–15:00 Jakarta time',
+                  rest: ' (15:00–17:00 Tokyo), the mid-afternoon lull; open every day 10:00–21:00. Times: 12:00, else 12:30 or 13:00 — not before 11:45 (car return 11:30). If full: walk in at the 10:00 opening, or Ramen Hachiyo / Kiraku Shokudo.' },
+    booking: `Sunday 1 November 2026, 12:00 lunch, 4 people, ${BOOKER}; if 12:00 is full he can take 12:30 or 13:00, but nothing before 11:45`,
+    detailsSpoken: '1 November, 12 noon, 4 people',
+    changeExample: { accepted: '12:30 or 13:00 instead of 12:00', agreed: '12:30 instead of 12:00' },
+    sim: {
+      identity: '牛かつ専門店 甲州家 (Gyukatsu Koushuya), a popular beef-cutlet restaurant at 3753-1 Funatsu, Fujikawaguchiko, Yamanashi, four minutes on foot from Kawaguchiko station. Guests finish each slice of beef cutlet on a Mt Fuji lava-stone plate',
+      facts: `- Open every day 10:00–21:00. 43 seats.
+- 1 November 2026 is a Sunday, in autumn-leaves season, so lunch is very busy with tourists.
+- 牛かつ定食 (beef cutlet set) with rice, soup and grated yam (とろろ); about ¥2,500 per person. Nothing has to be chosen when booking.
+- Cards, transport IC cards and PayPay are accepted.
+- For this rehearsal, assume nobody on duty speaks English.`,
+      register: 'Polite, brisk restaurant phone Japanese: です/ます with standard service phrases such as かしこまりました and 少々お待ちください.',
+      asks: 'date, time, party size, name (and the katakana spelling of a foreign name), contact number',
+      complications: 'the 12:00 table is full but 12:30 or 13:00 is free, they only offer 11:30 (too early for him), or you need a Japanese contact number',
+    },
+  },
 });
 
 export const DEFAULT_RESTAURANT = 'hiyama';

@@ -120,7 +120,7 @@ test('kana-first reply parses into a turn, and back', () => {
   assert.equal(turn.end, false);
   assert.equal(parseStaffTurn(LINES.replace('END: no', 'END: yes').replace('PACE: normal', 'PACE: slow')).end, true);
   assert.deepEqual(parseStaffTurn(toLines(turn)), turn);
-  assert.throws(() => parseStaffTurn('PACE: normal\nKANA: はい'), /no Japanese/i);
+  assert.throws(() => parseStaffTurn('PACE: normal\nEN: Yes.'), /no Japanese/i);
 });
 
 test('streamed staff: progress as it arrives, history kept in the line format', async () => {
