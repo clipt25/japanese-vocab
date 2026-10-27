@@ -10,6 +10,8 @@
 const REHEARSAL_RATE = 0.8;
 let japaneseVoice = null;
 let gate = { before() {}, after() {} };
+// Prompter mode (prompter.js): no TTS during a live call on this same phone.
+let allowed = () => true;
 
 // The first ja-JP voice macOS lists is "Eddy", one of the Eloquence voices.
 // Played through a 300-3400Hz phone band and transcribed by Whisper, Eddy
@@ -37,6 +39,7 @@ export function initVoices() {
 
 export function hasJapaneseVoice() { return japaneseVoice !== null; }
 export function setSpeechGate(next) { gate = next; }
+export function setSpeechAllowed(next) { allowed = next; }
 
 // onEnd fires exactly once when the utterance finishes, errors, or — because
 // Chrome is known to drop the end event on some utterances — when a generous
@@ -44,7 +47,7 @@ export function setSpeechGate(next) { gate = next; }
 // the caller's turn, so a lost event must not leave the call hanging.
 export function speak(phrase, { rate = REHEARSAL_RATE, onEnd } = {}) {
   const text = typeof phrase === 'string' ? phrase : phrase?.kana;
-  if (!('speechSynthesis' in window) || !text) { onEnd?.(); return false; }
+  if (!('speechSynthesis' in window) || !text || !allowed()) { onEnd?.(); return false; }
 
   let finished = false;
   const finish = () => {

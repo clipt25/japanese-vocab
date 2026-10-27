@@ -127,11 +127,12 @@ h2,h3{font-weight:600}
   #print-btn{display:none}
 }
 
-#mic-toggle,#print-btn,#composer-go,#key-set,#start-call,#composer-toggle{
+#mic-toggle,#print-btn,#composer-go,#key-set,#start-call,#composer-toggle,#prompter-toggle{
   border:2px solid var(--rule);border-radius:3px;padding:4px 11px;
   font-size:var(--t-find);font-weight:600;letter-spacing:.03em;color:var(--ink);
   min-height:28px}
 #start-call,#mic-toggle{min-height:29px;font-size:var(--t-ui);padding:3px 13px}
+#prompter-toggle[data-on="true"]{background:var(--ink);border-color:var(--ink);color:var(--ground)}
 #mic-toggle[data-on="true"]{background:var(--live);border-color:var(--live);
   color:var(--ground)}                                     /* 7.22:1 reversed */
 #mic-toggle:disabled{opacity:.55;cursor:not-allowed}
@@ -426,6 +427,7 @@ body[data-rehearse="on"] #rehearse-bar{display:flex}
 body[data-rehearse="on"] #start-call,
 body[data-rehearse="on"] #rehearse-btn,
 body[data-rehearse="on"] #mic-toggle,
+body[data-rehearse="on"] #prompter-toggle,
 body[data-rehearse="on"] #mic-status{display:none}
 .rh__status{flex:0 0 auto;min-width:9.5em;text-align:center;font-size:var(--t-micro);
   font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:8px 10px;
@@ -584,7 +586,7 @@ body{-webkit-text-size-adjust:100%;
   :root{ --t-utter:25px; --t-gloss:22px; --t-jp:18px; --t-note:16px; }
 
   /* ── controls, shared ── */
-  #start-call,#rehearse-btn,#mic-toggle,#composer-toggle,#past-btn,#connect-call{min-height:44px;
+  #start-call,#rehearse-btn,#mic-toggle,#composer-toggle,#past-btn,#connect-call,#prompter-toggle{min-height:44px;
     padding:6px 10px;font-size:16px;border:2px solid var(--rule);border-radius:4px;font-weight:700}
   #composer-toggle kbd,#print-btn{display:none}
   #restaurant-pick,#purpose-pick,#rh-scenario{min-height:44px;font-size:16px}   /* 16px: iOS zooms smaller inputs */
@@ -633,6 +635,7 @@ body{-webkit-text-size-adjust:100%;
   body:not([data-mode="call"]) #past-btn,
   body:not([data-mode="call"]) #mic-toggle{order:5;grid-column:span 2;padding:6px 4px;font-weight:600}
   body:not([data-mode="call"]) #connect-call{order:6}
+  body:not([data-mode="call"]) #prompter-toggle{order:6}
   body:not([data-mode="call"]) #mic-status{order:7}
   .dial{font-size:15px;padding:8px 12px}
 
@@ -763,6 +766,7 @@ body{-webkit-text-size-adjust:100%;
             title="Listen to the Yolla tab directly — for calls with earphones">Connect call</button>
     <button id="mic-toggle" type="button" data-on="false">Listen</button>
     <span id="mic-status" data-idle="true">idle</span>
+    <button id="prompter-toggle" type="button" data-on="false" aria-pressed="false">Prompter</button>
   </div>
 </header>
 
@@ -843,23 +847,24 @@ body{-webkit-text-size-adjust:100%;
 <script type="importmap">
 {
   "imports": {
-    "./call/confirm.js": "./call/confirm.js?v=7a9582b366",
-    "./call/dice.js": "./call/dice.js?v=7a9582b366",
-    "./call/fallback.js": "./call/fallback.js?v=7a9582b366",
-    "./call/history.js": "./call/history.js?v=7a9582b366",
-    "./call/interpret.js": "./call/interpret.js?v=7a9582b366",
-    "./call/listen.js": "./call/listen.js?v=7a9582b366",
-    "./call/match.js": "./call/match.js?v=7a9582b366",
-    "./call/native-speech.js": "./call/native-speech.js?v=7a9582b366",
-    "./call/normalize.js": "./call/normalize.js?v=7a9582b366",
-    "./call/phrases.js": "./call/phrases.js?v=7a9582b366",
-    "./call/register.js": "./call/register.js?v=7a9582b366",
-    "./call/rehearse.js": "./call/rehearse.js?v=7a9582b366",
-    "./call/restaurants.js": "./call/restaurants.js?v=7a9582b366",
-    "./call/sessions.js": "./call/sessions.js?v=7a9582b366",
-    "./call/speak.js": "./call/speak.js?v=7a9582b366",
-    "./call/staff-sim.js": "./call/staff-sim.js?v=7a9582b366",
-    "./call/ui.js": "./call/ui.js?v=7a9582b366"
+    "./call/confirm.js": "./call/confirm.js?v=0c88d15d20",
+    "./call/dice.js": "./call/dice.js?v=0c88d15d20",
+    "./call/fallback.js": "./call/fallback.js?v=0c88d15d20",
+    "./call/history.js": "./call/history.js?v=0c88d15d20",
+    "./call/interpret.js": "./call/interpret.js?v=0c88d15d20",
+    "./call/listen.js": "./call/listen.js?v=0c88d15d20",
+    "./call/match.js": "./call/match.js?v=0c88d15d20",
+    "./call/native-speech.js": "./call/native-speech.js?v=0c88d15d20",
+    "./call/normalize.js": "./call/normalize.js?v=0c88d15d20",
+    "./call/phrases.js": "./call/phrases.js?v=0c88d15d20",
+    "./call/prompter.js": "./call/prompter.js?v=0c88d15d20",
+    "./call/register.js": "./call/register.js?v=0c88d15d20",
+    "./call/rehearse.js": "./call/rehearse.js?v=0c88d15d20",
+    "./call/restaurants.js": "./call/restaurants.js?v=0c88d15d20",
+    "./call/sessions.js": "./call/sessions.js?v=0c88d15d20",
+    "./call/speak.js": "./call/speak.js?v=0c88d15d20",
+    "./call/staff-sim.js": "./call/staff-sim.js?v=0c88d15d20",
+    "./call/ui.js": "./call/ui.js?v=0c88d15d20"
   }
 }
 </script>
@@ -875,7 +880,8 @@ body{-webkit-text-size-adjust:100%;
   import { startSession, saveSession, loadSessions, deleteSession, sessionToText, describeSession } from './call/sessions.js';
   import { match } from './call/match.js';
   import { PANIC, STAFF } from './call/phrases.js';
-  import { initVoices, setSpeechGate, speak } from './call/speak.js';
+  import { initVoices, setSpeechGate, setSpeechAllowed, speak } from './call/speak.js';
+  import { createPrompter } from './call/prompter.js';
   import { createListener, isSecureForMic } from './call/listen.js';
   import { composeEnglish, translateJapanese, hasKey, setKey, callClaude, streamClaude, checkApi } from './call/fallback.js';
   import { installNativeSpeech } from './call/native-speech.js';
@@ -1306,6 +1312,22 @@ body{-webkit-text-size-adjust:100%;
   // speakerphone that audio also goes down the line to the restaurant.
   if (listener) setSpeechGate({ before: () => { if (listener.source === 'mic') listener.pause(); }, after: () => listener.resume() });
 
+  // Prompter mode (call/prompter.js): the call is on this same phone, so a live
+  // call opens no mic and plays no TTS. Remembered on this device.
+  const micUsable = Boolean(listener) && (nativeEar || isSecureForMic());
+  const prompter = createPrompter({
+    listener: micUsable ? listener : null, micButton: micUsable ? toggle : null,
+    isLiveCall: () => document.body.dataset.mode === 'call' && document.body.dataset.rehearse !== 'on',
+  });
+  setSpeechAllowed(prompter.audioAllowed);
+  const prompterBtn = document.getElementById('prompter-toggle');
+  const showPrompter = () => {
+    prompterBtn.dataset.on = String(prompter.on);
+    prompterBtn.setAttribute('aria-pressed', String(prompter.on));
+  };
+  prompterBtn.addEventListener('click', () => { prompter.set(!prompter.on); showPrompter(); });
+  showPrompter();
+
   // The app's recogniser is native, so the page's origin does not gate the mic.
   if (!nativeEar && !isSecureForMic()) {
     toggle.disabled = true;
@@ -1430,7 +1452,8 @@ body{-webkit-text-size-adjust:100%;
     if (!inCall) { recent.length = 0; markSuggested(null); showIdleBand(); history.clear(); preflight(); beginSession('call'); }
     else endSession();
     startBtn.textContent = inCall ? 'Start call' : 'End call';
-    if (!inCall && listener && !listener.running) {
+    prompter.sync();
+    if (!inCall && listener && !listener.running && prompter.audioAllowed()) {
       listener.start(); toggle.dataset.on = 'true';
     }
   });
@@ -1488,6 +1511,7 @@ body{-webkit-text-size-adjust:100%;
     document.body.dataset.debrief = 'closed';
     document.body.dataset.mode = 'call';
     document.body.dataset.rehearse = 'on';
+    prompter.sync();
     rhInput.value = '';
     recent.length = 0; interpreted.clear(); markSuggested(null); history.clear();
     beginSession('rehearsal');
@@ -1529,6 +1553,7 @@ body{-webkit-text-size-adjust:100%;
     rehearsal = null;
     document.body.dataset.rehearse = 'off';
     document.body.dataset.mode = 'prep';
+    prompter.sync();
     document.body.dataset.debrief = 'open';
   }
 
